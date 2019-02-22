@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.6";}
+	getVersion(){return "0.0.7";}
 	getDescription(){return "Switch between multiple accounts with AltLeft+1 up to AltLeft+0";}
 	
 	
@@ -80,7 +80,9 @@ class AccountSwitcher {
 			};
 			NeatoLib.Keybinds.attachListener("accountswitcher-keybind-" + i, keybind, () => {
 				let token = this.settings["token" + i];
-				if(token.length > 10){
+				if(token == this.UserInfoStore.getToken()){
+					NeatoLib.showToast("You're already using this account", "error");
+				}else if(token.length > 10){
 					this.AccountManager.loginToken(this.settings["token" + i]);
 					location.reload();
 				}else{
