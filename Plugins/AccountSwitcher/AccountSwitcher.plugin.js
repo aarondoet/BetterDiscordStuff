@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.7";}
+	getVersion(){return "0.0.8";}
 	getDescription(){return "Switch between multiple accounts with AltLeft+1 up to AltLeft+0";}
 	
 	
@@ -96,6 +96,7 @@ class AccountSwitcher {
 	
 	getSettingsPanel() {
 		setTimeout(() => {
+			NeatoLib.Settings.pushElement(this.createWarning(), this.getName());
 			for(let i = 1; i < 11; i++){
 				NeatoLib.Settings.pushElement(this.createTextField("Token " + i, this.settings["name" + i], this.settings["token" + i], "Account name (can be whatever you want)", "Account token", 
 				e => {
@@ -115,7 +116,10 @@ class AccountSwitcher {
 				document.execCommand('copy');
 				document.body.removeChild(tempInput);
 				NeatoLib.showToast("Token copied", "success");
-			}), this.getName());
+			}, "margin-top:10px;"), this.getName());
+			NeatoLib.Settings.pushElement(NeatoLib.Settings.Elements.createButton("Get support", e => {
+				window.open("https://l0c4lh057.github.io/discord.html");
+			}, "margin-left:10px;margin-top:10px;"), this.getName());
 		}, 0);
 
 		return this.pluginNameLabel(this.getName());
@@ -149,7 +153,7 @@ class AccountSwitcher {
 					display: none;
 				}
 			</style>
-			<h style="color: white;font-size: 30px;font-weight: bold;">${name.replace(/([A-Z])/g, ' $1').trim()} by l0c4lh057</h>`;
+			<h style="color: #ccc;font-size: 30px;font-weight: bold;">${name.replace(/([A-Z])/g, ' $1').trim()} by l0c4lh057</h>`;
 	}
 	
 	createTextField(label, value1, value2, placeholder1, placeholder2, callback1, callback2, options = {}) {
@@ -165,11 +169,27 @@ class AccountSwitcher {
 			</style>
 			<div class="neato-text-field-p">${label}</div>
 			<div class="neato-text-field-p" style="opacity:0.5;font-size:17px;">${options.description || ""}</div>
-			<input value="${value1}" placeholder="${placeholder1}" type="${options.type || "text"}" style="${NeatoLib.Settings.Styles.textField}width:42%;margin-left:10px;">
-			<input value="${value2}" placeholder="${placeholder2}" type="${options.type || "text"}" style="${NeatoLib.Settings.Styles.textField}width:42%;">
+			<input value="${value1}" placeholder="${placeholder1}" type="${"text"}" style="${NeatoLib.Settings.Styles.textField}width:32%;margin-left:10px;">
+			<input value="${value2}" placeholder="${placeholder2}" type="${"password"}" style="${NeatoLib.Settings.Styles.textField}width:52%;">
 		`);
 		element.querySelectorAll("input")[0].addEventListener(options.callbackType || "focusout", e => callback1(e));
 		element.querySelectorAll("input")[1].addEventListener(options.callbackType || "focusout", e => callback2(e));
+		element.querySelectorAll("input")[1].addEventListener(options.callbackType || "focusin", e => e.target.type = "text");
+		element.querySelectorAll("input")[1].addEventListener(options.callbackType || "focusout", e => e.target.type = "password");
+		return element;
+	}
+	
+	createWarning(){
+		let element = document.createElement("div");
+		element.insertAdjacentHTML("beforeend", `
+			<style>
+				.accountswitcher.warning {
+					color: #ff1919;
+					padding-top: 20px;
+				}
+			</style>
+			<div class="accountswitcher warning">Do <strong>NOT</strong> share any of your tokens with someone else. Otherwise they can use your account with all actions that don't need a password. This can't be prevented by 2fa.<br>If you think someone has your token, enable 2fa and change your password. For both actions your account will get a new token. But don't forget to change the token in this settings!</div>
+		`);
 		return element;
 	}
 }
