@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "0.0.5";}
+	getVersion () {return "0.0.6";}
 	getAuthor () {return "l0c4lh057";}
 	
 	start(){
@@ -62,6 +62,21 @@ class Minespoiler {
 				}
 			}
 		}
+		document.lostGame = false;
+		this.css = `
+			.hidden-HHr2R9:not(.flaggedAsMine) img.emoji {
+				opacity: 0;
+			}
+			.flaggedAsMine img.emoji {
+				content: url("/assets/a1f0c106b0a0f68f6b11c2dc0cc8d249.svg");
+			}
+			span.spoilerText-3p6IlD.hidden-HHr2R9.flaggedAsMine .inlineContent-3ZjPuv {
+				opacity: 1;
+			}
+		`;
+		ZLibrary.PluginUtilities.addStyle("minespoiler-css", this.css);
+		$(document).on("click.minespoiler", this.revealField);
+		$(document).on("contextmenu.minespoiler", this.flagMine);
 		this.onSwitch();
 	}
 	
@@ -73,6 +88,9 @@ class Minespoiler {
 	stop(){
 		const chatbox = this.getChatbox();
 		if(chatbox) chatbox.removeEventListener("keydown", this.onChatInput);
+		$(document).off("click.minespoiler");
+		$(document).off("contextmenu.minespoiler");
+		ZLibrary.PluginUtilities.removeStyle("minespoiler-css");
 	}
 	
 	getChatbox(){
@@ -117,17 +135,62 @@ class Minespoiler {
 		return Math.floor(Math.random() * max);
 	}
 	
-	onMessageContextMenu (instance, menu) {
-			console.log("dsfgdfg");
-		if (instance.props && instance.props.message && instance.props.target) {
-			let targetSpoiler = instance.props.target;
-			if(!targetSpoiler.classList.contains("spoilerText-3p6IlD") || !targetSpoiler.classList.contains("hidden-HHr2R9")) return;
-			let messagediv = BDFDB.getParentEle(".message-1PNnaP", targetSpoiler);
-			if (!messagediv) return;
-			if(!messagediv.innerHTML.toLowerCase().includes("minesweeper")) return;
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	revealField(e){
+		if(document.lostGame) return;
+		if(!e.target.hasClass) return;
+		if(e.target.hasClass("spoilerText-3p6IlD")){
+			let message = e.target.parentsUntil(".message-1PNnaP").reverse()[0];
+			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
+			let isEmoji = false;
+			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
+				if(e.target.innerHTML.includes(emoji)) isEmoji = true;
+			}
+			if(!isEmoji) return;
 			
-			menu.style.display = "none";
-			targetSpoiler.toggleClass("flaggedAsMine");
+			// check if it is flagged -> add hidden-HHr2R9 and da-hidden again
+			if(false /* is flagged */){
+				// prevent spoiler from being shown
+			}else{
+				if(e.target.innerHTML.includes(":boom:")){
+					document.lostGame = true;
+					for(let spoiler of message.findAll(".hidden-HHr2R9")){
+						spoiler.click();
+					}
+					document.lostGame = false;
+				}
+			}
+			
+			let revealedAllFields = true;
+			for(let spoiler of message.findAll(".hidden-HHr2R9")){
+				if(!spoiler.innerHTML.includes(":boom:")) revealedAllFields = false;
+			}
+			if(revealedAllFields) for(let spoiler of message.findAll(".hidden-HHr2R9")) spoiler.addClass("flaggedAsMine");
+		}
+	}
+	
+	flagMine(e){
+		if(!e.target.hasClass) return;
+		if(e.target.hasClass("spoilerText-3p6IlD") && e.target.hasClass("hidden-HHr2R9")){
+			let message = e.target.parentsUntil(".message-1PNnaP").reverse()[0];
+			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
+			let isEmoji = false;
+			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
+				if(e.target.innerHTML.includes(emoji)) isEmoji = true;
+			}
+			if(!isEmoji) return;
+			$(".contextMenu-HLZMGh").hide();
+			$(e.target).toggleClass("flaggedAsMine");
+			
+			
 		}
 	}
 	
