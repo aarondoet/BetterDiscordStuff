@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "0.0.6";}
+	getVersion () {return "0.0.7";}
 	getAuthor () {return "l0c4lh057";}
 	
 	start(){
@@ -145,7 +145,6 @@ class Minespoiler {
 	
 	
 	revealField(e){
-		if(document.lostGame) return;
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD")){
 			let message = e.target.parentsUntil(".message-1PNnaP").reverse()[0];
@@ -161,11 +160,43 @@ class Minespoiler {
 				// prevent spoiler from being shown
 			}else{
 				if(e.target.innerHTML.includes(":boom:")){
-					document.lostGame = true;
 					for(let spoiler of message.findAll(".hidden-HHr2R9")){
-						spoiler.click();
+						spoiler.removeClass("hidden-HHr2R9");
+						spoiler.removeClass("da-hidden");
 					}
-					document.lostGame = false;
+				}else if(e.target.innerHTML.includes(":zero:")){
+					let matches = message.innerHTML.match(/\((\d+)x(\d+) with \d+ bombs\)/);
+					let width = parseInt(matches[1]);
+					let height = parseInt(matches[2]);
+					let clickElement = function(element){
+						if(!element) return;
+						if(element.hasClass("checked") || element.hasClass("flaggedAsMine")) return;
+						element.addClass("checked");
+						element.removeClass("hidden-HHr2R9");
+						element.removeClass("da-hidden");
+						checkSurroundingFields(element);
+					}
+					let checkSurroundingFields = function(element){
+						if(!element.innerHTML.includes(":zero:")) return;
+						let el = element;
+						let position = -1;
+						while(true){
+							if(!el.hasClass("spoilerText-3p6IlD")) break;
+							if(el) el = el.previousElementSibling;
+							position++;
+						}
+						let siblings = element.siblings(".spoilerText-3p6IlD");
+						if(position > width + 1 && position % width > 0) clickElement(siblings[position - width - 1]);
+						if(position > width - 1) clickElement(siblings[position - width]);
+						if(position > width - 1 && position % width < width - 1) clickElement(siblings[position - width + 1]);
+						if(position % width > 0) clickElement(siblings[position - 1]);
+						siblings.unshift(null); // add element to fix the index problem caused by the element itself not being in the list
+						if(position % width < width - 1) clickElement(siblings[position + 1]);
+						if(position % width > 0 && position < (height - 1) * width) clickElement(siblings[position + width - 1]);
+						if(position < (height - 1) * width) clickElement(siblings[position + width]);
+						if(position % width < width - 1 && position < (height - 1) * width) clickElement(siblings[position + width + 1]);
+					}
+					checkSurroundingFields(e.target);
 				}
 			}
 			
