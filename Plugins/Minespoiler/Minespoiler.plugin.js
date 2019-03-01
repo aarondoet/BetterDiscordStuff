@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "0.0.7";}
+	getVersion () {return "0.0.8";}
 	getAuthor () {return "l0c4lh057";}
 	
 	start(){
@@ -160,6 +160,9 @@ class Minespoiler {
 				// prevent spoiler from being shown
 			}else{
 				if(e.target.innerHTML.includes(":boom:")){
+					for(let spoiler of message.findAll(".flaggedAsMine")){
+						spoiler.removeClass("flaggedAsMine");
+					}
 					for(let spoiler of message.findAll(".hidden-HHr2R9")){
 						spoiler.removeClass("hidden-HHr2R9");
 						spoiler.removeClass("da-hidden");
