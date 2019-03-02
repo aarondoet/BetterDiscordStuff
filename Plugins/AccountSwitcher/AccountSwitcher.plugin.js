@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.8";}
+	getVersion(){return "0.0.9";}
 	getDescription(){return "Switch between multiple accounts with AltLeft+1 up to AltLeft+0";}
 	
 	
@@ -48,6 +48,13 @@ class AccountSwitcher {
 		}
         if(typeof window.NeatoLib !== "undefined") libLoadedEvent();
 		else lib.addEventListener("load", libLoadedEvent);
+		if(!document.getElementById("0b53rv3r5cr1p7")){
+			let observerScript = document.createElement("script");
+			observerScript.id = "0b53rv3r5cr1p7";
+			observerScript.type = "text/javascript";
+			observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
+			document.head.appendChild(observerScript);
+		}
 	}
 	onLibLoaded(){
 		NeatoLib.Updates.check(this, "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/AccountSwitcher/AccountSwitcher.plugin.js");
@@ -98,7 +105,7 @@ class AccountSwitcher {
 		setTimeout(() => {
 			NeatoLib.Settings.pushElement(this.createWarning(), this.getName());
 			for(let i = 1; i < 11; i++){
-				NeatoLib.Settings.pushElement(this.createTextField("Token " + i, this.settings["name" + i], this.settings["token" + i], "Account name (can be whatever you want)", "Account token", 
+				NeatoLib.Settings.pushElement(this.createTextField("Account " + i, this.settings["name" + i], this.settings["token" + i], "Account name (can be whatever you want)", "Account token", 
 				e => {
 					this.settings["name" + i] = e.target.value;
 					this.saveSettings();
@@ -167,10 +174,9 @@ class AccountSwitcher {
 					display: inline;
 				}
 			</style>
-			<div class="neato-text-field-p">${label}</div>
-			<div class="neato-text-field-p" style="opacity:0.5;font-size:17px;">${options.description || ""}</div>
-			<input value="${value1}" placeholder="${placeholder1}" type="${"text"}" style="${NeatoLib.Settings.Styles.textField}width:32%;margin-left:10px;">
-			<input value="${value2}" placeholder="${placeholder2}" type="${"password"}" style="${NeatoLib.Settings.Styles.textField}width:52%;">
+			<div class="neato-text-field-p" style="max-width:20%;">${label}</div>
+			<input value="${value1}" placeholder="${placeholder1}" type="${"text"}" style="${NeatoLib.Settings.Styles.textField}width:30%;margin-left:10px;">
+			<input value="${value2}" placeholder="${placeholder2}" type="${"password"}" style="${NeatoLib.Settings.Styles.textField};width:50%;">
 		`);
 		element.querySelectorAll("input")[0].addEventListener(options.callbackType || "focusout", e => callback1(e));
 		element.querySelectorAll("input")[1].addEventListener(options.callbackType || "focusout", e => callback2(e));
