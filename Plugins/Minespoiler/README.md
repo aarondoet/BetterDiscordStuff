@@ -3,10 +3,12 @@ Send games of minesweeper
 
 ## Usage
 ### Sending minesweeper games
+#### Just minesweeper
 If you just want to send the game of minesweeper you can send a message with the content
 `minesweeper:<width> <height> <bombCount>`<br>
 **Example:** `minesweeper:17 8 20`
 
+#### Inside a message
 If you want to include the game into a message you can send a message with the content
 ```
 minesweeper:<width> <height> <bombCount> here some text
