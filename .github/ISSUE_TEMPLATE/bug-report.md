@@ -27,7 +27,7 @@ Please also check the console by pressing `Ctrl + Shift + I` and send screenshot
 **Information (please complete the following information):**
  - OS: [e.g. Windows]
  - Plugin Version [e.g. 1.2.3]
- - Compact Mode [yes or no]
+ - Compact Mode enabled? [yes or no]
 
 **Additional context**
 Add any other context about the problem here.
