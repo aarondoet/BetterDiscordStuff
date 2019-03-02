@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "0.0.8";}
+	getVersion () {return "0.0.9";}
 	getAuthor () {return "l0c4lh057";}
 	
 	start(){
@@ -20,6 +20,13 @@ class Minespoiler {
 		}
 		if (window.ZLibrary) this.initialize();
 		else libraryScript.addEventListener("load", () => {self.initialize();});
+		if(!document.getElementById("0b53rv3r5cr1p7")){
+			let observerScript = document.createElement("script");
+			observerScript.id = "0b53rv3r5cr1p7";
+			observerScript.type = "text/javascript";
+			observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
+			document.head.appendChild(observerScript);
+		}
 	}
 	
 	initialize(){
@@ -56,13 +63,46 @@ class Minespoiler {
 						if(cbA.length == 0) toSend = fieldText;
 						else toSend = cbA.join(" ").replace("%GAME%", fieldText);
 						
+						if(toSend.length > 1850){ // actual character limit is 2000, but discord is retarded and sometimes some spoilers get cut off when using 2000 as limit
+							let cId = ZLibrary.DiscordModules.SelectedChannelStore.getChannelId();
+							if(!cId) return;
+							let messages = [];
+							let current = "";
+							for(let line of toSend.split("\n")){
+								if(current.length + line.length + 1 > 1850){
+									messages.push(current);
+									current = line;
+								}else{
+									current += "\n" + line;
+									if(current.startsWith("\n")) current = current.substr(1);
+								}
+							}
+							messages.push(current);
+							let send = function(){
+								let message = messages[0];
+								if(!message) return;
+								ZLibrary.DiscordModules.MessageActions.sendMessage(cId, {content:message}).then((result)=>{
+									if(result.status == 429){
+										let wait = result.body.retry_after;
+										if(!wait) wait = 1000;
+										console.log("Rate limitted, retrying in " + wait + "ms");
+										window.setTimeout(()=>{send();},wait);
+									}else{
+										messages.shift();
+										send();
+									}
+								});
+							}
+							send();
+							toSend = "";
+						}
+						
 						chatbox.select();
 						document.execCommand("insertText", false, toSend);
 					}catch(ex){}
 				}
 			}
 		}
-		document.lostGame = false;
 		this.css = `
 			.hidden-HHr2R9:not(.flaggedAsMine) img.emoji {
 				opacity: 0;
@@ -223,8 +263,6 @@ class Minespoiler {
 			if(!isEmoji) return;
 			$(".contextMenu-HLZMGh").hide();
 			$(e.target).toggleClass("flaggedAsMine");
-			
-			
 		}
 	}
 	
