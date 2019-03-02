@@ -5,8 +5,18 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "0.0.9";}
+	getVersion () {return "1.0.0";}
 	getAuthor () {return "l0c4lh057";}
+	
+	load(){
+		if(!document.getElementById("0b53rv3r5cr1p7")){
+			let observerScript = document.createElement("script");
+			observerScript.id = "0b53rv3r5cr1p7";
+			observerScript.type = "text/javascript";
+			observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
+			document.head.appendChild(observerScript);
+		}
+	}
 	
 	start(){
 		var self = this;
@@ -20,13 +30,6 @@ class Minespoiler {
 		}
 		if (window.ZLibrary) this.initialize();
 		else libraryScript.addEventListener("load", () => {self.initialize();});
-		if(!document.getElementById("0b53rv3r5cr1p7")){
-			let observerScript = document.createElement("script");
-			observerScript.id = "0b53rv3r5cr1p7";
-			observerScript.type = "text/javascript";
-			observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
-			document.head.appendChild(observerScript);
-		}
 	}
 	
 	initialize(){
@@ -195,6 +198,8 @@ class Minespoiler {
 			}
 			if(!isEmoji) return;
 			
+			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, \d+ remaining)?\)/);
+			let lost = false;
 			// check if it is flagged -> add hidden-HHr2R9 and da-hidden again
 			if(false /* is flagged */){
 				// prevent spoiler from being shown
@@ -207,8 +212,8 @@ class Minespoiler {
 						spoiler.removeClass("hidden-HHr2R9");
 						spoiler.removeClass("da-hidden");
 					}
+					lost = true;
 				}else if(e.target.innerHTML.includes(":zero:")){
-					let matches = message.innerHTML.match(/\((\d+)x(\d+) with \d+ bombs\)/);
 					let width = parseInt(matches[1]);
 					let height = parseInt(matches[2]);
 					let clickElement = function(element){
@@ -248,6 +253,12 @@ class Minespoiler {
 				if(!spoiler.innerHTML.includes(":boom:")) revealedAllFields = false;
 			}
 			if(revealedAllFields) for(let spoiler of message.findAll(".hidden-HHr2R9")) spoiler.addClass("flaggedAsMine");
+			if(lost)
+				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you lost <img src="/assets/ef756c6ecfdc1cf509cb0175dd33c76d.svg" class="emoji" alt=":boom:" draggable="false">)`;
+			else if(revealedAllFields)
+				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you won <img src="/assets/612f3fc9dedfd368820b55c4cf259c07.svg" class="emoji" alt=":tada:" draggable="false">)`;
+			else
+				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length} remaining)`;
 		}
 	}
 	
@@ -263,6 +274,8 @@ class Minespoiler {
 			if(!isEmoji) return;
 			$(".contextMenu-HLZMGh").hide();
 			$(e.target).toggleClass("flaggedAsMine");
+			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, \d+ remaining)?\)/);
+			message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length} remaining)`;
 		}
 	}
 	
