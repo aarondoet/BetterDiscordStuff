@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+_**Before you submit an issue please restart your discord. If the issue is still there feel free to write a bug report.**_
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
@@ -26,7 +28,8 @@ Please also check the console by pressing `Ctrl + Shift + I` and send screenshot
 
 **Information (please complete the following information):**
  - OS: [e.g. Windows]
- - Plugin Version [e.g. 1.2.3]
+ - Plugin Version: [e.g. 1.2.3]
+ - Discord version: [PTB, Stable, Canary]
  - Compact Mode enabled? [yes or no]
 
 **Additional context**
