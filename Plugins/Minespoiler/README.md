@@ -18,7 +18,7 @@ here some other text that is below the game
 There is no linebreak in front of or behind the game so you should add it by yourself
 
 ### Playing minesweeper
-There are some tweeks for playing minesweeper, but they are only possible for people who have this plugin.<br>
+There are some tweaks for playing minesweeper, but they are only possible for people who have this plugin.<br>
 * With this plugin you can actually right click a field to mark it as a bomb.
 * When you click a field that is a :zero: it will automatically reveal all fields next to it
 * When you finished revealing all fields without a bomb all bombs will get flagged
