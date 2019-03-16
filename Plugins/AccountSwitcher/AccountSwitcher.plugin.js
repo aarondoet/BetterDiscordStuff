@@ -93,7 +93,7 @@ class AccountSwitcher {
 			But don't forget your password! You can't recover the tokens in case you forgot it.<br>
 			You can go to settings and disable the encryption feature to reset your password, but all the tokens are gone.<br>
 			<br>
-			You now can select accounts by clicking on your avatar at the bottom (where mute and settings are). An account selection will pop up and you can switch your account.<br>
+			You now can select accounts by middle clicking on your avatar at the bottom (where mute and settings are). An account selection will pop up and you can switch your account.<br>
 			In the list there are all account listed the plugin know the avatar of. Avatars get detected automatically
 			<ul style="list-style:circle inside;">
 				<li>when you switch your account using this plugin,</li>
