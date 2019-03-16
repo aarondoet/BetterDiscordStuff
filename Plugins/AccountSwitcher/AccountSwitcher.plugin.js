@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.0";}
+	getVersion(){return "1.0.1";}
 	getDescription(){return "Switch between multiple accounts with AltLeft+1 up to AltLeft+0";}
 	
 	
@@ -84,7 +84,7 @@ class AccountSwitcher {
 		this.UserInfoStore = NeatoLib.Modules.get(["getToken"]);
 		this.settings = NeatoLib.Settings.load(this, this.defaultSettings);
 		this.registerKeybinds();
-		if(this.settings.lastUsedVersion != this.getVersion()){
+		if(this.settings.lastUsedVersion != this.getVersion() && this.settings.lastUsedVersion != "1.0.0"){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `
 			You can now add a password in the settings to encrypt your tokens. To enable this go to the plugin settings and enable  &quot;encryption&quot;.<br>
@@ -223,7 +223,7 @@ class AccountSwitcher {
 			NeatoLib.showToast("You're already using this account", "error");
 		}else if(token.length > 10){
 			this.AccountManager.loginToken(token);
-			location.reload();
+			//location.reload();
 		}else{
 			NeatoLib.showToast("This token is not valid.", "error");
 		}
