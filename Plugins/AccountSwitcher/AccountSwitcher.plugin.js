@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.1";}
+	getVersion(){return "1.0.2";}
 	getDescription(){return "Switch between multiple accounts with AltLeft+1 up to AltLeft+0";}
 	
 	
@@ -84,7 +84,7 @@ class AccountSwitcher {
 		this.UserInfoStore = NeatoLib.Modules.get(["getToken"]);
 		this.settings = NeatoLib.Settings.load(this, this.defaultSettings);
 		this.registerKeybinds();
-		if(this.settings.lastUsedVersion != this.getVersion() && this.settings.lastUsedVersion != "1.0.0"){
+		if(this.settings.lastUsedVersion != this.getVersion() && this.settings.lastUsedVersion != "1.0.0" && this.settings.lastUsedVersion != "1.0.1"){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `
 			You can now add a password in the settings to encrypt your tokens. To enable this go to the plugin settings and enable  &quot;encryption&quot;.<br>
@@ -101,16 +101,9 @@ class AccountSwitcher {
 				<li>when you add the account you are currently using to your account list.</li>
 			</ul>
 			`);
-		}
-		if(this.settings.switchedTo != ""){
-			let switchedTo = this.settings.switchedTo;
-			this.settings.switchedTo = "";
-			this.saveSettings();
-			for(let i = 1; i < 11; i++){
-				if(this.settings["token" + i] == switchedTo){
-					this.settings["avatar" + i] = NeatoLib.Modules.get(["getCurrentUser"]).getCurrentUser().avatarURL || "";
-				}
-			}
+		}else if(this.settings.lastUsedVersion != this.getVersion()){
+			this.settings.lastUsedVersion = this.getVersion();
+			this.alertText("Changelog", `Bugfixes only`);
 		}
 		if(!this.settings.encrypted){
 			let token = this.UserInfoStore.getToken();
@@ -121,7 +114,9 @@ class AccountSwitcher {
 			}
 		}
 		this.saveSettings();
-		$(".inner-1W0Bkn").on("auxclick.accountswitcher", e => {
+		$(document.body).on("auxclick.accountswitcher", e => {
+			if(!e.target.hasClass) return;
+			if(!e.target.hasClass("inner-1W0Bkn")) return;
 			if(e.which == 2) this.openSwitchMenu(e);
 		});
 		NeatoLib.injectCSS(`
@@ -144,7 +139,19 @@ class AccountSwitcher {
 	}
 	stop(){
 		this.unregisterKeybinds();
-		$(".inner-1W0Bkn").off("auxclick.accountswitcher");
+		$(document.body).off("auxclick.accountswitcher");
+	}
+	onSwitch(){
+		if(this.settings.switchedTo != ""){
+			let switchedTo = this.settings.switchedTo;
+			this.settings.switchedTo = "";
+			this.saveSettings();
+			for(let i = 1; i < 11; i++){
+				if(this.settings["token" + i] == switchedTo){
+					this.settings["avatar" + i] = NeatoLib.Modules.get(["getCurrentUser"]).getCurrentUser().avatarURL || "";
+				}
+			}
+		}
 	}
 	
 	saveSettings() {
@@ -441,9 +448,11 @@ class AccountSwitcher {
 		if(a.find("#accountswitcher-passwordinput")){
 			a.find("#accountswitcher-passwordinput").on("keydown", e => {
 				if(e.which == 13) a.find(".footer button").click();
+				else if(e.which == 27) a.find(".bd-backdrop").click();
 			});
 			a.find("#accountswitcher-passwordinput").focus();
 		}
+		return a.find(".bd-modal-inner")[0];
 	}
 
 
