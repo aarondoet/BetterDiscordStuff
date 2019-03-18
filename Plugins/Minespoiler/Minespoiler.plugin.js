@@ -5,9 +5,28 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.1";}
+	getVersion () {return "1.0.2";}
 	getAuthor () {return "l0c4lh057";}
 	
+	getSettingsPanel(){
+		let panel = $(`<form class="form" style="width:100%;"></form>`)[0];
+		new ZLibrary.Settings.SettingGroup(this.getName(), {shown:true}).appendTo(panel)
+		.append(
+			new ZLibrary.Settings.Switch("Clyde mode", "If you enable this option games will be sent as a Clyde message. Only you will see them, nobody else.", this.settings.sendAsClyde, (e)=>{
+				this.settings.sendAsClyde = e;
+				this.saveSettings();
+			})
+		);
+		return panel;
+	}
+
+	get defaultSettings(){
+		return {
+			sendAsClyde: false,
+			lastUsedVersion: "0.0.0"
+		}
+	}
+
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
 			let observerScript = document.createElement("script");
@@ -33,10 +52,11 @@ class Minespoiler {
 	}
 	
 	initialize(){
+		this.loadSettings();
 		ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/Minespoiler/Minespoiler.plugin.js");
 		var self = this;
 		this.prefix = "minesweeper:";
-		this.intToEmoji = JSON.parse('{"-1":":boom:","0":":zero:","1":":one:","2":":two:","3":":three:","4":":four:","5":":five:","6":":six:","7":":seven:","8":":eight:"}');
+		this.intToEmoji = {"-1":":boom:","0":":zero:","1":":one:","2":":two:","3":":three:","4":":four:","5":":five:","6":":six:","7":":seven:","8":":eight:"};
 		this.onChatInput = e => {
 			const chatbox = e.target;
 			if(e.which == 13 && !e.shiftKey && !e.ctrlKey && chatbox.value){
@@ -48,7 +68,8 @@ class Minespoiler {
 						let wid = parseInt(cbA[0]);
 						let hei = parseInt(cbA[1]);
 						let cnt = parseInt(cbA[2]);
-						if(cnt > wid * hei) cnt = wid * hei;
+						if(cnt < 1) cnt = 1;
+						if(cnt >= wid * hei) cnt = wid * hei - 1;
 						
 						let field = this.generate(wid, hei, cnt);
 						
@@ -66,24 +87,29 @@ class Minespoiler {
 						if(cbA.length == 0) toSend = fieldText;
 						else toSend = cbA.join(" ").replace("%GAME%", fieldText);
 						
-						if(toSend.length > 1850){ // actual character limit is 2000, but discord is retarded and sometimes some spoilers get cut off when using 2000 as limit
-							let cId = ZLibrary.DiscordModules.SelectedChannelStore.getChannelId();
-							if(!cId) return;
-							let messages = [];
-							let current = "";
-							for(let line of toSend.split("\n")){
-								if(current.length + line.length + 1 > 1850){
-									messages.push(current);
-									current = line;
-								}else{
-									current += "\n" + line;
-									if(current.startsWith("\n")) current = current.substr(1);
-								}
+						let messages = [];
+						let current = "";
+						let cId = ZLibrary.DiscordModules.SelectedChannelStore.getChannelId();
+						if(!cId) return;
+						for(let line of toSend.split("\n")){
+							if(current.length + line.length + 1 > 1850){ // actual character limit is 2000, but discord is retarded and sometimes some spoilers get cut off when using 2000 as limit
+								messages.push(current);
+								current = line;
+							}else{
+								current += "\n" + line;
+								if(current.startsWith("\n")) current = current.substr(1);
 							}
-							messages.push(current);
-							let send = function(){
-								let message = messages[0];
-								if(!message) return;
+						}
+						messages.push(current);
+						let send = ()=>{
+							let message = messages[0];
+							if(!message) return;
+							// discord is retarded and even cuts off messages that exceed a character limit that are from clyde
+							if(this.settings.sendAsClyde){
+								ZLibrary.DiscordModules.MessageActions.sendBotMessage(cId, message);
+								messages.shift();
+								send();
+							}else{
 								ZLibrary.DiscordModules.MessageActions.sendMessage(cId, {content:message}).then((result)=>{
 									if(result.status == 429){
 										let wait = result.body.retry_after;
@@ -96,9 +122,9 @@ class Minespoiler {
 									}
 								});
 							}
-							send();
-							toSend = "";
 						}
+						send();
+						toSend = "";
 						
 						chatbox.select();
 						document.execCommand("insertText", false, toSend);
@@ -121,6 +147,13 @@ class Minespoiler {
 		$(document).on("click.minespoiler", this.revealField);
 		$(document).on("contextmenu.minespoiler", this.flagMine);
 		this.onSwitch();
+		if(this.settings.lastUsedVersion != this.getVersion()){
+			this.settings.lastUsedVersion = this.getVersion();
+			this.saveSettings();
+			BdApi.alert("Minespoiler - Changelog", `
+				You can now change the settings to send the messages with clyde so only you can see it.
+			`);
+		}
 	}
 	
 	onSwitch(){
@@ -148,7 +181,7 @@ class Minespoiler {
 			field[i] = new Array(width + 2).fill(0);
 		}
 		
-		if(bombs > width * height) bombs = width * height;
+		if(bombs >= width * height) bombs = width * height - 1;
 		
 		while(bombs > 0){
 			let x = this.random(width) + 1;
@@ -289,6 +322,16 @@ class Minespoiler {
 			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, \d+ remaining)?\)/);
 			message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${(parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length) < 0 ? 0 : (parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length)} remaining)`;
 		}
+	}
+
+
+
+
+	saveSettings() {
+		ZLibrary.PluginUtilities.saveSettings(this.getName(), this.settings);
+	}
+	loadSettings() {
+		this.settings = ZLibrary.PluginUtilities.loadSettings(this.getName(), this.defaultSettings);
 	}
 	
 }
