@@ -3,7 +3,7 @@ name: Feature request
 about: Suggest an idea for this project
 title: "[PluginName] Request: very short description of your idea"
 labels: enhancement
-assignees: ''
+assignees: l0c4lh057
 
 ---
 

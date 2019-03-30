@@ -3,7 +3,7 @@ name: Bug report
 about: Create a report to help us improve
 title: "[PluginName] Issue: very short issue description"
 labels: bug
-assignees: ''
+assignees: l0c4lh057
 
 ---
 
