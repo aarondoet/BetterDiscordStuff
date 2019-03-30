@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.2";}
+	getVersion(){return "1.0.3";}
 	getDescription(){return "Switch between multiple accounts with AltLeft+1 up to AltLeft+0";}
 	
 	
@@ -84,7 +84,7 @@ class AccountSwitcher {
 		this.UserInfoStore = NeatoLib.Modules.get(["getToken"]);
 		this.settings = NeatoLib.Settings.load(this, this.defaultSettings);
 		this.registerKeybinds();
-		if(this.settings.lastUsedVersion != this.getVersion() && this.settings.lastUsedVersion != "1.0.0" && this.settings.lastUsedVersion != "1.0.1"){
+		if(this.settings.lastUsedVersion != this.getVersion() && this.settings.lastUsedVersion != "1.0.0" && this.settings.lastUsedVersion != "1.0.1" && this.settings.lastUsedVersion != "1.0.2"){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `
 			You can now add a password in the settings to encrypt your tokens. To enable this go to the plugin settings and enable  &quot;encryption&quot;.<br>
@@ -103,7 +103,7 @@ class AccountSwitcher {
 			`);
 		}else if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
-			this.alertText("Changelog", `Bugfixes only`);
+			this.alertText("Changelog", `If you switch your account &quot;AccountDetailsPlus&quot; restarts (if you have it enabled). It reads your username when starting and displays it even after switching your account. With restarting the plugin this should not happen anymore.`);
 		}
 		if(!this.settings.encrypted){
 			let token = this.UserInfoStore.getToken();
@@ -230,11 +230,22 @@ class AccountSwitcher {
 			NeatoLib.showToast("You're already using this account", "error");
 		}else if(token.length > 10){
 			this.AccountManager.loginToken(token);
+			if(window.pluginCookie.AccountDetailsPlus){
+				this.stopAccountDetailsPlus();
+				window.setTimeout(()=>{this.startAccountDetailsPlus();}, 5000);
+			}
 			//location.reload();
 		}else{
 			NeatoLib.showToast("This token is not valid.", "error");
 		}
 	};
+
+	stopAccountDetailsPlus(){
+		pluginModule.disablePlugin("AccountDetailsPlus");
+	}
+	startAccountDetailsPlus(){
+		pluginModule.enablePlugin("AccountDetailsPlus");
+	}
 
 	
 	
