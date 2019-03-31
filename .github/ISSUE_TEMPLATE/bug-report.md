@@ -27,7 +27,7 @@ If applicable, add screenshots to help explain your problem.
 Please also check the console by pressing `Ctrl + Shift + I` and send screenshots of errors (red messages)
 
 **Information (please complete the following information):**
- - OS: [e.g. Windows]
+ - OS: [e.g. Windows, MacOS, TempleOS]
  - Plugin Version: [e.g. 1.2.3]
  - Discord version: [PTB, Stable, Canary]
  - Compact Mode enabled? [yes or no]
