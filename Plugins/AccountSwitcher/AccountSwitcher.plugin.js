@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.4";}
+	getVersion(){return "1.0.5";}
 	getDescription(){return this.local.plugin.description;}
 	
 	
@@ -217,6 +217,7 @@ class AccountSwitcher {
 			this.alertText("Changelog", `<ul style="list-style-type:circle;padding-left:20px;">
 			<li>Added German and French language</li>
 			<li>Added a button to set the account you are currently using in the settings</li>
+			<li>NEW: Fixed settings</li>
 			</ul>`);
 		}
 		if(!this.settings.encrypted){
@@ -505,7 +506,7 @@ class AccountSwitcher {
 			nameInput.style.width = `calc(60% - ${txtWid + btnWid + 20}px)`;
 			nameInput.style.right = `calc(40% + ${btnWid + 10}px)`;
 		});
-		element.find("button").on("click", ()=>{
+		element.querySelector("button").on("click", ()=>{
 			nameInput.value = NeatoLib.Modules.get(["getCurrentUser"]).getCurrentUser().username;
 			passInput.value = this.UserInfoStore.getToken();
 			callback1({target:{value:nameInput.value}});
