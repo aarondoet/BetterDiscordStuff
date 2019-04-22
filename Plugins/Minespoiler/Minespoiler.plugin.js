@@ -288,9 +288,9 @@ class Minespoiler {
 			}
 			if(revealedAllFields) for(let spoiler of message.findAll(".hidden-HHr2R9")) spoiler.addClass("flaggedAsMine");
 			if(lost)
-				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you lost <img src="/assets/ef756c6ecfdc1cf509cb0175dd33c76d.svg" class="emoji" alt=":boom:" draggable="false">) <span class="minesweeper-retry">[Retry]</span>`;
+				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you lost <img src="/assets/ef756c6ecfdc1cf509cb0175dd33c76d.svg" class="emoji" alt=":boom:" draggable="false"> <span class="minesweeper-retry">retry</span>)`;
 			else if(revealedAllFields)
-				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you won <img src="/assets/612f3fc9dedfd368820b55c4cf259c07.svg" class="emoji" alt=":tada:" draggable="false">) <span class="minesweeper-retry">[Retry]</span>`;
+				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you won <img src="/assets/612f3fc9dedfd368820b55c4cf259c07.svg" class="emoji" alt=":tada:" draggable="false"> <span class="minesweeper-retry">retry</span>)`;
 			else
 				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${(parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length) < 0 ? 0 : (parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length)} remaining)`;
 			if(message.find(".minesweeper-retry")) message.find(".minesweeper-retry").on("click", ()=>{
