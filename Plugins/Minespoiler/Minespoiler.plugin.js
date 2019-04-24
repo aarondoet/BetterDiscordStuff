@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.2";}
+	getVersion () {return "1.0.3";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -151,7 +151,7 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				You can now change the settings to send the messages with clyde so only you can see it.
+				Should work properly again
 			`);
 		}
 	}
@@ -240,11 +240,11 @@ class Minespoiler {
 			}else{
 				if(e.target.innerHTML.includes(":boom:")){
 					for(let spoiler of message.findAll(".flaggedAsMine")){
-						spoiler.removeClass("flaggedAsMine");
+						spoiler.classList.remove("flaggedAsMine");
 					}
 					for(let spoiler of message.findAll(".hidden-HHr2R9")){
-						spoiler.removeClass("hidden-HHr2R9");
-						spoiler.removeClass("da-hidden");
+						spoiler.classList.remove("hidden-HHr2R9");
+						spoiler.classList.remove("da-hidden");
 					}
 					lost = true;
 				}else if(e.target.innerHTML.includes(":zero:")){
@@ -253,9 +253,9 @@ class Minespoiler {
 					let clickElement = function(element){
 						if(!element) return;
 						if(element.hasClass("checked") || element.hasClass("flaggedAsMine")) return;
-						element.addClass("checked");
-						element.removeClass("hidden-HHr2R9");
-						element.removeClass("da-hidden");
+						element.classList.add("checked");
+						element.classList.remove("hidden-HHr2R9");
+						element.classList.remove("da-hidden");
 						checkSurroundingFields(element);
 					}
 					let checkSurroundingFields = function(element){
@@ -286,7 +286,7 @@ class Minespoiler {
 			for(let spoiler of message.findAll(".hidden-HHr2R9")){
 				if(!spoiler.innerHTML.includes(":boom:")) revealedAllFields = false;
 			}
-			if(revealedAllFields) for(let spoiler of message.findAll(".hidden-HHr2R9")) spoiler.addClass("flaggedAsMine");
+			if(revealedAllFields) for(let spoiler of message.findAll(".hidden-HHr2R9")) spoiler.classList.add("flaggedAsMine");
 			if(lost)
 				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you lost <img src="/assets/ef756c6ecfdc1cf509cb0175dd33c76d.svg" class="emoji" alt=":boom:" draggable="false">) <span class="minesweeper-retry">[Retry]</span>`;
 			else if(revealedAllFields)
@@ -297,11 +297,11 @@ class Minespoiler {
 				let matches2 = message.innerHTML.match(/\((\d+x\d+ with \d+ bombs), (.*?)\)/);
 				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches2[1]})`;
 				for(let spoiler of message.querySelectorAll(".spoilerText-3p6IlD")){
-					if(!spoiler.hasClass("hidden-HHr2R9")) $(spoiler).one("click", ()=>{spoiler.removeClass("hidden-HHr2R9");});
-					spoiler.addClass("hidden-HHr2R9");
-					spoiler.addClass("da-hidden");
-					spoiler.removeClass("flaggedAsMine");
-					spoiler.removeClass("checked");
+					if(!spoiler.hasClass("hidden-HHr2R9")) $(spoiler).one("click", ()=>{spoiler.classList.remove("hidden-HHr2R9");});
+					spoiler.classList.add("hidden-HHr2R9");
+					spoiler.classList.add("da-hidden");
+					spoiler.classList.remove("flaggedAsMine");
+					spoiler.classList.remove("checked");
 				}
 			});
 		}
