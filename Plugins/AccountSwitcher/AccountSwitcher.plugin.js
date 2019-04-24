@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.6";}
+	getVersion(){return "1.0.7";}
 	getDescription(){return this.local.plugin.description;}
 	
 	
@@ -58,6 +58,7 @@ class AccountSwitcher {
 						"en": {"name":"English","translator":"l0c4lh057"},
 						"de": {"name":"German","translator":"l0c4lh057"},
 						"fr": {"name":"French","translator":"Dark Mood"},
+						"ru": {"name":"Russian","translator":"•MGC•Mr_ChAI#7272"},
 						"auto": {"name":"Detect automatically"}
 					},
 					"warning": "Do <strong>NOT</strong> share any of your tokens with someone else. Otherwise they can use your account with all actions that don't need a password. This can't be prevented by 2fa.<br>If you think someone has your token, enable 2fa and change your password. For both actions your account will get a new token. But don't forget to change the token in this settings!<br><br>PLEASE SET A PASSWORD BY ENABLING ENCRYPTION! If you don't do this, all your tokens will be saved in clear text. Every plugin and every program on your computer can access the file and all your tokens could get public at once. If you activate encryption all tokens will be encrypted with your password as key. You will need to enter your password every time you open the settings and every time you want to change your account.",
@@ -98,6 +99,7 @@ class AccountSwitcher {
 						"en": {"name":"Englisch","translator":"l0c4lh057"},
 						"de": {"name":"Deutsch","translator":"l0c4lh057"},
 						"fr": {"name":"Französisch","translator":"Dark Mood"},
+						"ru": {"name":"Russian","translator":"•MGC•Mr_ChAI#7272"},
 						"auto": {"name":"Automatisch erkennen"}
 					},
 					"warning": "Teil deine Account-Tokens <strong>NIEMALS</strong> mit jemand anderem! Dadurch könnten diese deinen Account mit allen Funktionen, die keine Bestätigung per Passwort benötigen, nutzen. Das kann auch nicht mit 2FA verhindert werden.<br>Wenn du denkst, dass jemand deinen Token hat, aktiviere 2FA und änder dein Passwort. Für beide Aktionen sollte dein Account einen neuen Token bekommen. Vergiss aber nicht, den Token in den Einstellungen dieses Plugins zu ändern.<br><br>BITTE SETZ EIN PASSWORT, INDEM DU VERSCHLÜSSELUNG AKTIVIERST! Wenn du das nicht tust, werden alle Tokens in Klartext gespeichert. Jedes Plugin und jedes Programm auf deinem Computer kann auf die Datei und damit auf alle Tokens zugreifen, wodurch diese alle mit einem Mal öffentlich geraten können. Wenn du Verschlüsselung aktivierst, werden alle Tokens mit dem eingegebenen Passwort verschlüsselt. Jedes Mal, wenn auf einen Token zugegriffen wird (Einstellungen öffnen/Account wechseln), musst du dieses Passwort wieder eingeben.",
@@ -138,6 +140,7 @@ class AccountSwitcher {
 						"en": {"name":"English","translator":"l0c4lh057"},
 						"de": {"name":"German","translator":"l0c4lh057"},
 						"fr": {"name":"French","translator":"Dark Mood"},
+						"ru": {"name":"Russian","translator":"•MGC•Mr_ChAI#7272"},
 						"auto": {"name":"Détection automatique"}
 					},
 					"warning": "Ne <strong>PAS</strong> partager vos tokens avec quelqu'un d'autre. Sinon, ils peuvent utiliser votre compte/vos tokens avec toutes les actions qui n'ont pas besoin d'un mot de passe. Ceci ne peut être évité par l'a2f.<br>Si vous pensez que quelqu'un a votre token, activez l'a2f et changez votre mot de passe. Pour les deux actions, votre compte recevra un nouveau jeton. Mais n'oubliez pas de changer le token dans les paramètres suivants!<br><br>VEUILLEZ DÉFINIR UN MOT DE PASSE POUR ACTIVER LE CRYPTAGE! Si vous ne le faites pas, tous vos tokens seront sauvegardés en texte clair. Chaque plugin et chaque programme sur votre ordinateur peut accéder au fichier et tous vos jetons peuvent être rendus publics en même temps. Si vous activez le cryptage, tous les jetons seront cryptés avec votre mot de passe comme clé. Vous devrez entrer votre mot de passe chaque fois que vous ouvrirez les paramètres et chaque fois que vous voudrez changer votre compte.",
@@ -166,6 +169,47 @@ class AccountSwitcher {
 				"passwordRequired": {
 					"title": "Mot de passe requis",
 					"description": "Pour changer de compte, vous devez saisir le mot de passe que vous avez défini une fois.<br>Si vous ne vous en souvenez pas, vous pouvez désactiver le cryptage des tokens dans les paramètres, mais tous vos tokens auront disparus.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Votre mot de passe ici'>"
+				}
+			},
+			"ru": {
+				"plugin": {
+					"description": "Переключайтесь между аккаунтами с помощью сочетаний клавиш от AltLeft+1 до AltLeft+0"
+				},
+				"settings": {
+					"language": "Язык",
+					"languages": {
+						"en": {"name":"Английский","translator":"l0c4lh057"},
+						"de": {"name":"Немецкий","translator":"l0c4lh057"},
+						"fr": {"name":"Французский","translator":"Dark Mood"},
+						"ru": {"name":"Русский","translator":"•MGC•Mr_ChAI#7272"},
+						"auto": {"name":"Detect automatically"}
+					},
+					"warning": "<strong>НЕ</strong> передавайте никому свой токен! Иначе он(а) получит полный доступ к вашему аккаунту. Это не может быть предотвращено с помощью 2FA.<br>Если вы считаете, что у кого-то есть ваш токен, включите/выключите 2FA или поменяйте пароль - каждое из этих действий меняет пароль. Но не забудьте поменять его в настройках!<br><br>ПОЖАЛУЙСТА, УСТАНОВИТЕ ПАРОЛЬ, ВКЛЮЧИВ ШИВРОВАНИЕ! Если этого не сделать, токены будут храниться в виде обычного текста, и любой плагин/программа сможет их прочесть, в результате все ваши токены могут быть переданы кому-то другому. Если вы включите шифрование, все токены будут зашифрованы с паролем в качестве ключа. Вам придется вводить пароль каждый раз, когда вы открываете настройки плагина или меняете аккаунт.",
+					"encryption": "Шифрование токенов",
+					"account": "Аккаунт {0}",
+					"password": {
+						"set": "Установите пароль",
+						"setDescription": "Пожалуйста, установите пароль. Если вы его забудете, вы не сможете восстановить токены.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Новый пароль'>",
+						"remove": "Удаление пароля",
+						"removeDescription": "Вы уверены, что хотите убрать пароль? Ваши токены будут храгиться в виде обычного текста!<br>Если вы все же решили рискнуть, нажмите кнопку OKAY, в противном случае кликните снаужи этого окошка."
+					},
+					"accountNamePlaceholder": "Имя аккаунта",
+					"accountTokenPlaceholder": "Токен аккаунта",
+					"copyToken": "Скопировать токен текущего аккаунта",
+					"copiedToken": "Токен скопирован",
+					"support": "Помощь",
+					"passwordRequired": {
+						"title": "Необходим пароль",
+						"description": "<input id='accountswitcher-passwordinput' type='password' placeholder='Пароль'>"
+					},
+					"useCurrent": "Использовать этот"
+				},
+				"couldNotDecrypt": "Не удалось расшифровать токен аккаунта {0}.",
+				"alreadyUsingAccount": "Вы уже используете этот аккаунт",
+				"invalidToken": "Неправильный токен",
+				"passwordRequired": {
+					"title": "Необходим пароль",
+					"description": "Чтобы сменить аккаунт, нужен установленный вами пароль.<br>Если вы его забыли, вы можете отключить шифрование, но тогда все токены пропадут.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Пароль'>"
 				}
 			}
 		}`);
@@ -215,9 +259,7 @@ class AccountSwitcher {
 		if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `<ul style="list-style-type:circle;padding-left:20px;">
-			<li>Added German and French language</li>
-			<li>Added a button to set the account you are currently using in the settings</li>
-			<li>NEW: Fixed settings again</li>
+			<li>Added Russian translation</li>
 			</ul>`);
 		}
 		if(!this.settings.encrypted){
