@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.7";}
+	getVersion(){return "1.0.8";}
 	getDescription(){return this.local.plugin.description;}
 	
 	
@@ -259,7 +259,7 @@ class AccountSwitcher {
 		if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `<ul style="list-style-type:circle;padding-left:20px;">
-			<li>Added Russian translation</li>
+			<li>Fixed the problem that you could not use the password input when opening the settings</li>
 			</ul>`);
 		}
 		if(!this.settings.encrypted){
@@ -478,7 +478,6 @@ class AccountSwitcher {
 		if(this.settings.encrypted){
 			this.alertText(this.local.settings.passwordRequired.title, this.local.settings.passwordRequired.description, e => {
 				password = document.getElementById("accountswitcher-passwordinput").value;
-				console.log(password);
 				for(let i = 1; i < 11; i++){
 					try{
 						document.getElementById("accountswitcher-account" + i).value = this.decrypt(this.settings["token" + i], password);
@@ -603,7 +602,7 @@ class AccountSwitcher {
 
 
 	alertText(e, t, callbackOk, callbackCancel) {
-		let a = $(`<div class="bd-modal-wrapper theme-dark" style="z-index:9999;">
+		let a = $(`<div class="bd-modal-wrapper theme-dark" style="z-index:9999;" data-no-focus-lock="true">
 						<div class="bd-backdrop backdrop-1wrmKB"></div>
 						<div class="bd-modal modal-1UGdnR">
 							<div class="bd-modal-inner inner-1JeGVc" style="width:auto;max-width:70%;max-height:100%;">
