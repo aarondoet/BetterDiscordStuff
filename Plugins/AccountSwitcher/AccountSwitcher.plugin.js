@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.0.8";}
+	getVersion(){return "1.1.0";}
 	getDescription(){return this.local.plugin.description;}
 	
 	
@@ -251,6 +251,10 @@ class AccountSwitcher {
 	}
 	onLibLoaded(){
 		NeatoLib.Updates.check(this, "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/AccountSwitcher/AccountSwitcher.plugin.js");
+		if(!NeatoLib.Modules.get(["getCurrentUser"]).getCurrentUser()){
+			window.setTimeout(()=>{onLibLoaded();}, 100);
+			return;
+		}
 		this.AccountManager = NeatoLib.Modules.get(["loginToken"]);
 		this.UserInfoStore = NeatoLib.Modules.get(["getToken"]);
 		this.settings = NeatoLib.Settings.load(this, this.defaultSettings);
@@ -259,7 +263,8 @@ class AccountSwitcher {
 		if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `<ul style="list-style-type:circle;padding-left:20px;">
-			<li>Fixed the problem that you could not use the password input when opening the settings</li>
+			<li>Fixed rare startup problem</li>
+			<li>Added remove button to the switch menu (translations needed)</li>
 			</ul>`);
 		}
 		if(!this.settings.encrypted){
@@ -273,10 +278,10 @@ class AccountSwitcher {
 		this.saveSettings();
 		$(document.body).on("auxclick.accountswitcher", e => {
 			if(!e.target.hasClass) return;
-			if(!e.target.hasClass("inner-1W0Bkn")) return;
+			if(!e.target.hasClass(NeatoLib.getClass(["animate", "avatarLarge", "avatarXXLarge", "inner", "status"], "inner"))) return;
 			if(e.which == 2) this.openSwitchMenu(e);
 		});
-		NeatoLib.injectCSS(`
+		this.css = NeatoLib.injectCSS(`
 			.accountswitcher-switchmenu {
 				position: fixed;
 				width: auto;
@@ -286,15 +291,33 @@ class AccountSwitcher {
 				overflow: hidden;
 				z-index: 9001;
 			}
+			.accountswitcher-accountwrapper {
+				position: relative;
+				display: inline-block;
+				margin: 10px;
+				width: 64px;
+				height: 64px;
+			}
 			.accountswitcher-menuavatar {
 				width: 64px;
 				height: 64px;
-				margin: 10px;
-				display: inline;
+			}
+			.accountswitcher-removeaccount {
+				position: absolute;
+				top: -4px;
+				right: -4px;
+				background-color: #111;
+				width: 1em;
+				height: 1em;
+				border-radius: 0.5em;
+				color: #ccc;
+				text-align: center;
+				border: 2px solid #444;
 			}
 		`);
 	}
 	stop(){
+		this.css.destroy();
 		this.unregisterKeybinds();
 		$(document.body).off("auxclick.accountswitcher");
 	}
@@ -321,18 +344,39 @@ class AccountSwitcher {
 		$(menu).css("bottom", (e.target.offset().bottom - e.target.offset().top + 27) + "px").css("left", (e.target.offset().left - 5) + "px");
 		for(let i = 1; i < 11; i++){
 			if(this.settings["name" + i] != ""){
-				let av = this.settings["avatar" + i] == "" ? $(`<img src="https://pixy.org/download/4764586/" class="accountswitcher-menuavatar accountswitcher-unknownavatar">`)[0] : $(`<img src="${this.settings["avatar" + i]}" class="accountswitcher-menuavatar">`)[0];
+				let wrapper = $(`<div class="accountswitcher-accountwrapper"></div>`)[0];
+				let av = this.settings["avatar" + i] == "" ? $(`<img src="https://pixy.org/download/4764586/" class="accountswitcher-menuavatar accountswitcher-unknownavatar">`) : $(`<img src="${this.settings["avatar" + i]}" class="accountswitcher-menuavatar">`);
 				av.on("click", ()=>{
 					this.login(i);
 				});
-				menu.appendChild(av);
-				NeatoLib.Tooltip.attach(this.settings["name" + i], av);
+				let rm = $(`<div class="accountswitcher-removeaccount">X</div>`);
+				rm.on("click", ()=>{
+					this.confirm("Removing account", "Do you really want to remove that account? If you accept this you can't get the accoount information back again.", ()=>{
+						this.settings["name" + i] = "";
+						this.settings["token" + i] = "";
+						this.saveSettings();
+						window.setTimeout(()=>{
+							$(".accountswitcher-switchmenu").remove();
+							this.openSwitchMenu(e);
+						}, 0);
+					}, ()=>{
+						window.setTimeout(()=>{
+							$(".accountswitcher-switchmenu").remove();
+							this.openSwitchMenu(e);
+						}, 0);
+					});
+				});
+				av.appendTo(wrapper);
+				rm.appendTo(wrapper);
+				menu.appendChild(wrapper);
+				NeatoLib.Tooltip.attach(this.settings["name" + i], av[0]);
+				NeatoLib.Tooltip.attach("Remove Account", rm[0]);
 			}
 		}
 		document.body.appendChild(menu);
 		$(document.body).on("click.accountswitchermenu", e2 => {
 			if(!e2.target.hasClass) return;
-			if(!e2.target.hasClass("accountswitcher-switchmenu")){
+			if(!e2.target.hasClass("accountswitcher-switchmenu") && !e2.target.hasClass("accountswitcher-removeaccount")){
 				$(".accountswitcher-switchmenu").remove();
 				$(document.body).off("click.accountswitchermenu");
 			}
@@ -640,6 +684,47 @@ class AccountSwitcher {
 			});
 			a.find("#accountswitcher-passwordinput").focus();
 		}
+		return a.find(".bd-modal-inner")[0];
+	}
+
+	confirm(e, t, callbackConfirm, callbackCancel){
+		let a = $(`<div class="bd-modal-wrapper theme-dark" style="z-index:9999;" data-no-focus-lock="true">
+						<div class="bd-backdrop backdrop-1wrmKB"></div>
+						<div class="bd-modal modal-1UGdnR">
+							<div class="bd-modal-inner inner-1JeGVc" style="width:auto;max-width:70%;max-height:100%;">
+								<div class="header header-1R_AjF">
+									<div class="title">${e}</div>
+								</div>
+								<div class="bd-modal-body">
+									<div class="scroller-wrap fade">
+										<div class="scroller">
+											${t}
+										</div>
+									</div>
+								</div>
+								<div class="footer footer-2yfCgX">
+									<button type="button" style="margin-right:10px;">Cancel</button>
+									<button type="button">Okay</button>
+								</div>
+							</div>
+						</div>
+					</div>`);
+		a.find(".footer button")[1].on("click", () => {
+			if(typeof callbackConfirm === "function") callbackConfirm();
+			a.addClass("closing"), setTimeout(() => {
+				a.remove()
+			}, 300)
+		}), a.find(".bd-backdrop").on("click", () => {
+			if(typeof callbackCancel === "function") callbackCancel();
+			a.addClass("closing"), setTimeout(() => {
+				a.remove()
+			}, 300)
+		}), a.find(".footer button")[0].on("click", () => {
+			if(typeof callbackCancel === "function") callbackCancel();
+			a.addClass("closing"), setTimeout(() => {
+				a.remove();
+			}, 300)
+		}), a.appendTo("#app-mount");
 		return a.find(".bd-modal-inner")[0];
 	}
 
