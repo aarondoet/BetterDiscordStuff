@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.0";}
+	getVersion(){return "2.0.1";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -322,6 +322,9 @@ class GuildData {
 			.guilddata-notviewable {
 				color: #f33;
 			}
+			.guilddata-channelicon {
+				margin-right: 3px;
+			}
 			.guilddata-permission {
 				margin-left: 10px;
 			}
@@ -403,6 +406,7 @@ class GuildData {
 		let friends = members.filter(m => relationships[m.userId] ? relationships[m.userId] == 1 : false);
 		let blocked = members.filter(m => relationships[m.userId] ? relationships[m.userId] == 2 : false);
 		if(!o){
+			ZLibrary.DiscordAPI.User.fromId(g.ownerId); //..........................................................................................................................................................
 			window.setTimeout(()=>{this.showPopup(gId);}, 100);
 			return;
 		}
@@ -557,6 +561,17 @@ class GuildData {
 				if(k == "role") members = members.filter(m => Object.values(g.roles).filter(r => m.roles.includes(r.id) && r.name.toLowerCase().includes(v.toLowerCase())).length > 0);
 				if(k == "roleid") members = members.filter(m => m.roles.filter(r => r.includes(v)).length > 0 || g.id.includes(v));
 				if(k == "bot") members = members.filter(m => UserStore.getUser(m.userId).bot == (v.toLowerCase() == "true"));
+
+
+				if(k == "nick!") members = members.filter(m => !(m.nick || UserStore.getUser(m.userId).username).toLowerCase().includes(v.toLowerCase()));
+				if(k == "name!") members = members.filter(m => !UserStore.getUser(m.userId).username.toLowerCase().includes(v.toLowerCase()));
+				if(k == "nicked!") members = members.filter(m => v.toLowerCase() == "true" ? !m.nick : m.nick);
+				if(k == "id!") members = members.filter(m => !m.userId.includes(v));
+				if(k == "discriminator!") members = members.filter(m => !UserStore.getUser(m.userId).discriminator.includes(v));
+				if(k == "status!") members = members.filter(m => !UserStatusStore.getStatus(m.userId).includes(v.toLowerCase()));
+				if(k == "role!") members = members.filter(m => !(Object.values(g.roles).filter(r => m.roles.includes(r.id) && r.name.toLowerCase().includes(v.toLowerCase())).length > 0));
+				if(k == "roleid!") members = members.filter(m => !(m.roles.filter(r => r.includes(v)).length > 0 || g.id.includes(v)));
+				if(k == "bot!") members = members.filter(m => UserStore.getUser(m.userId).bot != (v.toLowerCase() == "true"));
 			}
 		}else{
 			members = members.filter(m => UserStore.getUser(m.userId).username.toLowerCase().includes(query.toLowerCase()) || (m.nick || UserStore.getUser(m.userId).tag).toLowerCase().includes(query.toLowerCase()));
@@ -663,7 +678,7 @@ class GuildData {
 		let g = GuildStore.getGuild(gId);
 		let channels = Object.values(ChannelStore.getChannels()).filter(c => c.guild_id == g.id);
 		let categories = channels.filter(c => c.type == 4);
-		let textchannels = channels.filter(c => c.type == 0);
+		let textchannels = channels.filter(c => c.type == 0 || c.type == 5);
 		let voicechannels = channels.filter(c => c.type == 2);
 		let compare = function(c1, c2){
 			return c2.position - c1.position;
@@ -766,7 +781,7 @@ class GuildData {
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-channelsinfo").offsetHeight}px`);
 
-		if(c.type != 0){
+		if(c.type != 0 && c.type != 5){
 			panel.find("#guilddata-slowmode").outerHTML = "";
 			panel.find("#guilddata-nsfw").outerHTML = "";
 		}
@@ -776,6 +791,9 @@ class GuildData {
 		}
 		if(c.type != 0 && c.type != 2){
 			panel.find("#guilddata-topic").outerHTML = "";
+		}
+		if(c.type == 5){
+			panel.find("#guilddata-slowmode").outerHTML = "";
 		}
 
 		let list = panel.find("#guilddata-channelpermissionoverwrites");
@@ -793,9 +811,9 @@ class GuildData {
 
 		wrapper.appendChild(panel);
 
-		if(canSee && ((c.type == 0) || (c.type == 2))){
+		if(canSee && (c.type == 0 || c.type == 2 || c.type == 5)){
 			let openBtn;
-			if(c.type == 0){
+			if(c.type == 0 || c.type == 5){
 				openBtn = $(`<button class="guilddata-openchannel">Open Channel</button>`)[0];
 				openBtn.on("click", ()=>ChannelSelector.selectChannel(g.id, c.id));
 			}else{
@@ -1136,6 +1154,9 @@ class GuildData {
 			// category
 			if(collapsed) return `<svg style="display:inline;position:inherit;color:inherit;" class="iconCollapsed-3hFp_8 da-iconCollapsed iconTransition-2pOJ7l da-iconTransition directionRight-O8AY4M" width="20" height="12" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 10L12 15 17 10"></path></svg>`;
 			return `<svg style="display:inline;position:inherit;color:inherit;" class="iconDefault-3Gr8d2 da-iconDefault iconTransition-2pOJ7l da-iconTransition directionDown-26e7eE" width="20" height="12" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 10L12 15 17 10"></path></svg>`;
+		}else if(type==5){
+			// news channel
+			return `<svg style="display:inline;color:inherit;width:16px;height:16px;margin:0;" name="Newspaper" class="icon-1_QxNX da-icon" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M22 7H19V3C19 2.448 18.553 2 18 2H2C1.447 2 1 2.448 1 3V21C1 21.552 1.447 22 2 22H20C20.266 22 20.52 21.895 20.707 21.707L22.707 19.707C22.895 19.519 23 19.265 23 18.999V7.999C23 7.448 22.553 7 22 7ZM9 18.999H3V16.999H9V18.999ZM9 15.999H3V13.999H9V15.999ZM9 13H3V11H9V13ZM16 18.999H10V16.999H16V18.999ZM16 15.999H10V13.999H16V15.999ZM16 13H10V11H16V13ZM16 8H3V5H16V8ZM21 18.585L20.586 18.999H19V8.999H21V18.585Z"></path></svg>`;
 		}
 	}
 
@@ -1143,6 +1164,7 @@ class GuildData {
 		if(type==0) return "Text channel";
 		else if(type==2) return "Voice channel";
 		else if(type==4) return "Category";
+		else if(type==5) return "News Channel";
 	}
 	
 	getStatusColor(s){
@@ -1381,22 +1403,6 @@ class GuildData {
 
 	get changelog(){
 		return {
-			"1.2.9": [
-				{
-					"title": "Changed",
-					"type": "changed",
-					"items": [
-						"Started porting from PluginLibrary to ZLibrary"
-					]
-				},
-				{
-					"title": "Fixed",
-					"type": "fixed",
-					"items": [
-						"Copying data should work again"
-					]
-				}
-			],
 			"1.2.10": [
 				{
 					"title": "Fixed",
@@ -1413,6 +1419,16 @@ class GuildData {
 					"items": [
 						"Completely rewrote the plugin. The code is much better now. That also means, that there can be features missing because I forgot to add them. If you are missing something please write me.",
 						"Only uses ZLibrary now, no part of the old and outdated PluginLibrary is left."
+					]
+				}
+			],
+			"2.0.1": [
+				{
+					"title": "Added",
+					"type": "added",
+					"items": [
+						"Added support for news channels (text channels with a different icon)",
+						"Added a &quot;not&quot; operator &quot;!&quot; for user search"
 					]
 				}
 			]
