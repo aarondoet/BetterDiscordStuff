@@ -3,7 +3,7 @@
 class BackupContacts {
 	getName(){return "BackupContacts";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.1";}
+	getVersion(){return "0.0.2";}
 	getDescription(){return "Create a backup of all your contacts and blocked users"};
 	
 	load(){
@@ -71,7 +71,7 @@ class BackupContacts {
 		this.saveFile(data, "Discord Contacts.json");
 	}
 	
-	importContacts(data){
+	async importContacts(data){
 		let self = this;
 		let sendRequest = [];
 		let sendPending = [];
@@ -110,39 +110,47 @@ class BackupContacts {
 		let cbUnchecked = `<div class="flexChild-faoVW3 da-flexChild switch-3wwwcV da-switch value-2hFrkk sizeDefault-2YlOZr size-3rFEHg themeDefault-24hCdX" tabindex="0" style="flex: 0 0 auto;"><input id="1" class="checkbox-2tyjJg da-checkbox" type="checkbox" tabindex="-1" checked=""></div>`;
 		let htmlString = `<table><tr style="font-size:120%;font-weight:bold;"><td>Send Friend Request (Friends)</td></tr>`;
 		for(let uId of sendRequest){
-			let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
+			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts sendRequest id${uId}" checked></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Send Friend Request (Pending)</td></tr>`;
 		for(let uId of sendPending){
-			let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
+			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts sendRequest id${uId}" checked></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Unfriend Users</td></tr>`;
 		for(let uId of unfriend){
-			let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
+			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts endRelationship id${uId}"></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Block Users</td></tr>`;
 		for(let uId of block){
-			let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
+			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts block id${uId}"></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Unblock Users</td></tr>`;
 		for(let uId of unblock){
-			let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
+			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts endRelationship id${uId}"></td></tr>`;
 		}
 		
 		htmlString += `</table>`;
 		let alert = this.alertText("Import Contacts", htmlString, function(){
-			endRelationship = Array.filter(endRelationship, uId => alert.find(`.backupContacts.endRelationship.id${uId}`).checked);
-			sendFriendRequest = Array.filter(sendFriendRequest, uId => alert.find(`.backupContacts.sendRequest.id${uId}`).checked);
-			toBlock = Array.filter(toBlock, uId => alert.find(`.backupContacts.block.id${uId}`).checked);
+			endRelationship = endRelationship.filter(uId => alert.find(`.backupContacts.endRelationship.id${uId}`).checked);
+			sendFriendRequest = sendFriendRequest.filter(uId => alert.find(`.backupContacts.sendRequest.id${uId}`).checked);
+			toBlock = toBlock.filter(uId => alert.find(`.backupContacts.block.id${uId}`).checked);
 			self.removeRelationships(endRelationship);
 			self.addFriends(sendFriendRequest);
 			self.blockUsers(toBlock);
 		});
+	}
+
+	async getUserById(uId){
+		let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
+		if(user) return user;
+		let u = await ZLibrary.WebpackModules.getByProps("getAPIBaseURL").get(ZLibrary.WebpackModules.getByProps("Permissions", "ActivityTypes", "StatusTypes").Endpoints.USER(uId));
+		if(u) return JSON.parse(u.text);
+		return {"username": "Could not resolve user", "discriminator": "Could not resolve user"};
 	}
 	
 	/* 1 = friend
