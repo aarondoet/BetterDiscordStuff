@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.1";}
+	getVersion(){return "2.0.2";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -292,6 +292,13 @@ class GuildData {
 				background-color: #444;
 				color: #eee;
 			}
+			#guilddata-forceloadusers {
+				left: 5px;
+				bottom: 5px;
+				position: absolute;
+				background-color: #444;
+				color: #eee;
+			}
 			.guilddata-relationshipuser {
 				position: relative;
 			}
@@ -405,11 +412,6 @@ class GuildData {
 		let relationships = RelationshipStore.getRelationships();
 		let friends = members.filter(m => relationships[m.userId] ? relationships[m.userId] == 1 : false);
 		let blocked = members.filter(m => relationships[m.userId] ? relationships[m.userId] == 2 : false);
-		if(!o){
-			ZLibrary.DiscordAPI.User.fromId(g.ownerId); //..........................................................................................................................................................
-			window.setTimeout(()=>{this.showPopup(gId);}, 100);
-			return;
-		}
 		let popup = $(
 		   `<div id="guilddata-popup"><div class="guilddata-closebutton"></div><div id="guilddata-inner">
 				<div class="guilddata-wrapper" id="guilddata-guildwrapper">
@@ -420,7 +422,7 @@ class GuildData {
 						<table class="guilddata-table">
 							<tr class="guilddata-tr">
 								<td class="guilddata-td">Owner</td>
-								<td class="guilddata-td" id="guilddata-guildowner">${o.tag} (${o.id})</td>
+								<td class="guilddata-td" id="guilddata-guildowner">${o ? `${o.tag} (${o.id})` : `unknown`}</td>
 							</tr>
 							<tr class="guilddata-tr">
 								<td class="guilddata-td">Acronym</td>
@@ -519,6 +521,13 @@ class GuildData {
 			</div></div>
 		`)[0];
 		if(document.getElementById("guilddata-popup")) document.getElementById("guilddata-popup").outerHTML = "";
+		if(!o){
+			ZLibrary.DiscordModules.APIModule.get(ZLibrary.DiscordModules.DiscordConstants.Endpoints.USER(g.ownerId)).then((result)=>{
+				let u = JSON.parse(result.text);
+				o = {tag: u.username + "#" + u.discriminator, id: u.id, username: u.username, discriminator: u.discriminator};
+				popup.find("#guilddata-guildowner").innerText = `${o.tag} (${g.ownerId})`;
+			});
+		}
 		
 		popup.find("#guilddata-guildowner").on("click", ()=>{this.showUser(g.id, o.id);});
 		if(g.systemChannelId) popup.find("#guilddata-systemchannel").on("click", ()=>{this.showChannel(g.systemChannelId);});
@@ -599,7 +608,8 @@ class GuildData {
 				}
 			}
 		}
-		if(document.getElementById("guilddata-exportusers")) document.getElementById("guilddata-exportusers").outerHTML = "";
+		$("#guilddata-exportusers").remove();
+		$("#guilddata-forceloadusers").remove();
 		let btn = $(`<button id="guilddata-exportusers">Export Users</button>`)[0];
 		btn.on("click", ()=>{
 			this.alertText("Export users", "You are exporting all users that match the current search.<br>In which format do you want to export the users?<br><br>%name% - username<br>%nick% - nickname or username if no nick is set<br>%discriminator% - the discriminator of the user<br>%id% - the user id<br><input id='guilddata-exportusersformat' value='%name%#%discriminator% (%id%)' style='width:90%;'>", ()=>{
@@ -611,15 +621,26 @@ class GuildData {
 				this.downloadFile(members.map(m=>formatMember(m)).join("\r\n"), `users of ${g.name} - ${query}.txt`, `Export users of  ${g.name} that match ${query}`)
 			})
 		});
+		let btn2 = $(`<button id="guilddata-forceloadusers">Load All Users</button>`)[0];
+		btn2.on("click", ()=>{
+			ZLibrary.DiscordModules.GuildActions.requestMembers(gId, '', 0);
+		});
 		document.getElementById("guilddata-userwrapper").appendChild(btn);
+		document.getElementById("guilddata-userwrapper").appendChild(btn2);
 	}
 
-	showUser(gId, uId){
+	async showUser(gId, uId){
 		let { GuildStore, UserStore, UserStatusStore, GuildMemberStore, PrivateChannelActions } = ZLibrary.DiscordModules;
 		let g = GuildStore.getGuild(gId);
 		let u = UserStore.getUser(uId);
 		let m = GuildMemberStore.getMember(gId, uId);
 		let a = UserStatusStore.getPrimaryActivity(uId);
+		if(!u){
+			let us = await ZLibrary.DiscordModules.APIModule.get(ZLibrary.DiscordModules.DiscordConstants.Endpoints.GUILD_MEMBER(gId, uId));
+			us = JSON.parse(us.text);
+			u = {tag: us.user.username + "#" + us.user.discriminator, username: us.user.username, discriminator: us.user.discriminator, id: us.user.id, avatarURL: `https://cdn.discordapp.com/avatars/${us.user.id}/${us.user.avatar}.png?size=128`, nick: us.nick, roles: us.roles};
+			m = u;
+		}
 		let wrapper = document.getElementById("guilddata-userwrapper");
 		let panel = $(`<div class="guilddata-panel" id="guilddata-userinfo"><div class="guilddata-closebutton"></div>
 			<div class="guilddata-title guilddata-copy"><span class="guilddata-username">${this.escapeHtml(u.tag)}</span> (<span class="guilddata-userid">${u.id}</span>)</div>
@@ -1258,6 +1279,7 @@ class GuildData {
 	}
 	
 	formatDate(date, format){
+		if(date == null || date == undefined) return "unknown";
 		return format
 			.replace(/(?<!\\)SSS/g, date.getMilliseconds().pad(3))
 			.replace(/(?<!\\)ss/g, date.getSeconds().pad())
@@ -1403,15 +1425,6 @@ class GuildData {
 
 	get changelog(){
 		return {
-			"1.2.10": [
-				{
-					"title": "Fixed",
-					"type": "fixed",
-					"items": [
-						"The popup with the information shouldn't get deleted anymore"
-					]
-				}
-			],
 			"2.0.0": [
 				{
 					"title": "Changed",
@@ -1429,6 +1442,16 @@ class GuildData {
 					"items": [
 						"Added support for news channels (text channels with a different icon)",
 						"Added a &quot;not&quot; operator &quot;!&quot; for user search"
+					]
+				}
+			],
+			"2.0.2": [
+				{
+					"title": "Added",
+					"type": "added",
+					"items": [
+						"Added a button to force load all users",
+						"Now showing information about guilds the owner is not cached from"
 					]
 				}
 			]
