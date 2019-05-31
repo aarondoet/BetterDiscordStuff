@@ -3,7 +3,7 @@
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.1.0";}
+	getVersion(){return "1.1.1";}
 	getDescription(){return this.local.plugin.description;}
 	
 	
@@ -87,6 +87,11 @@ class AccountSwitcher {
 				"passwordRequired": {
 					"title": "Password required",
 					"description": "To change the account you need to type in the password you once set.<br>If you can't remember it you can disable token encryption in the settings but then all your tokens are gone.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Your password here'>"
+				},
+				"removeAccount": {
+					"title": "Removing account",
+					"description": "Do you really want to remove that account? If you accept this you can't get the account information back again.",
+					"tooltip": "Remove Account"
 				}
 			},
 			"de": {
@@ -128,6 +133,11 @@ class AccountSwitcher {
 				"passwordRequired": {
 					"title": "Passwort benötigt",
 					"description": "Um deinen Account zu wechseln muss du das Passwort eingeben, dass du gesetzt hast.<br>Wenn du dein Passwort vergessen hast, kannst du die Verschlüsselung in den Einstellungen deaktivieren, aber dann sind all deine Tokens nicht mehr zugreifbar.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Dein Passwort hier'>"
+				},
+				"removeAccount": {
+					"title": "Account entfernen",
+					"description": "Willst du den Account wirklich entfernen? Dann kannst du diesen nicht mehr nutzen, die Daten gehen verloren.",
+					"tooltip": "Account entfernen"
 				}
 			},
 			"fr": {
@@ -169,6 +179,11 @@ class AccountSwitcher {
 				"passwordRequired": {
 					"title": "Mot de passe requis",
 					"description": "Pour changer de compte, vous devez saisir le mot de passe que vous avez défini une fois.<br>Si vous ne vous en souvenez pas, vous pouvez désactiver le cryptage des tokens dans les paramètres, mais tous vos tokens auront disparus.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Votre mot de passe ici'>"
+				},
+				"removeAccount": {
+					"title": "Removing account",
+					"description": "Do you really want to remove that account? If you accept this you can't get the account information back again.",
+					"tooltip": "Remove Account"
 				}
 			},
 			"ru": {
@@ -212,7 +227,7 @@ class AccountSwitcher {
 					"description": "Чтобы сменить аккаунт, нужен установленный вами пароль.<br>Если вы его забыли, вы можете отключить шифрование, но тогда все токены пропадут.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Пароль'>"
 				},
 				"removeAccount": {
- 					"title": "Удаление аккаунта",
+					"title": "Удаление аккаунта",
 					"description": "Вы точно хотите удалить аккаунт? Если вы подтвердите, вы не сможете вернуть информацию об аккаунте.",
 					"tooltip": "Удалить аккаунт"
 				}
@@ -268,8 +283,8 @@ class AccountSwitcher {
 		if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `<ul style="list-style-type:circle;padding-left:20px;">
-			<li>Fixed rare startup problem</li>
-			<li>Added remove button to the switch menu (translations needed)</li>
+			<li>Added translation for the remove account option (French missing)</li>
+			<li>Fixed a typo</li>
 			</ul>`);
 		}
 		if(!this.settings.encrypted){
@@ -356,7 +371,7 @@ class AccountSwitcher {
 				});
 				let rm = $(`<div class="accountswitcher-removeaccount">X</div>`);
 				rm.on("click", ()=>{
-					this.confirm("Removing account", "Do you really want to remove that account? If you accept this you can't get the accoount information back again.", ()=>{
+					this.confirm(this.local.removeAccount.title, this.local.removeAccount.description, ()=>{
 						this.settings["name" + i] = "";
 						this.settings["token" + i] = "";
 						this.saveSettings();
@@ -375,7 +390,7 @@ class AccountSwitcher {
 				rm.appendTo(wrapper);
 				menu.appendChild(wrapper);
 				NeatoLib.Tooltip.attach(this.settings["name" + i], av[0]);
-				NeatoLib.Tooltip.attach("Remove Account", rm[0]);
+				NeatoLib.Tooltip.attach(this.local.removeAccount.tooltip, rm[0]);
 			}
 		}
 		document.body.appendChild(menu);
