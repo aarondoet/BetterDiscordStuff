@@ -212,8 +212,9 @@ class AccountSwitcher {
 					"description": "Чтобы сменить аккаунт, нужен установленный вами пароль.<br>Если вы его забыли, вы можете отключить шифрование, но тогда все токены пропадут.<br><input id='accountswitcher-passwordinput' type='password' placeholder='Пароль'>"
 				},
 				"removeAccount": {
- 					"title": "Removing account",
-					"description": "Do you really want to remove that account? If you accept this you can't get the account information back again."
+ 					"title": "Удаление аккаунта",
+					"description": "Вы точно хотите удалить аккаунт? Если вы подтвердите, вы не сможете вернуть информацию об аккаунте.",
+					"tooltip": "Удалить аккаунт"
 				}
 			}
 		}`);
