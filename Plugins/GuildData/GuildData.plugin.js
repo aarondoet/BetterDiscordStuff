@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.2";}
+	getVersion(){return "2.0.3";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -488,6 +488,10 @@ class GuildData {
 								<td class="guilddata-td">Role count</td>
 								<td class="guilddata-td guilddata-copy">${Object.values(g.roles).length} roles</td>
 							</tr>
+							<tr id="guilddata-serverboosting">
+								<td class="guilddata-td">Premium member count</td>
+								<td class="guilddata-td">${g.premiumSubscriberCount} members boosting (tier ${g.premiumTier})</td>
+							</tr>
 							<tr class="guilddata-tr">
 								<td class="guilddata-td">Friends</td>
 								<td class="guilddata-td" id="guilddata-guildfriends">${friends.length} friends</td>
@@ -537,6 +541,7 @@ class GuildData {
 		popup.find("#guilddata-guildblockedusers").on("click", ()=>{this.showRelationships(g.id, blocked, "blocked");});
 		popup.find("#guilddata-usersearchbutton").on("click", ()=>{this.showUsers(g.id, popup.find("#guilddata-usersearchinput").value);});
 		popup.find("#guilddata-usersearchinput").on("keydown", (e)=>{if(e.which == 13)this.showUsers(g.id, popup.find("#guilddata-usersearchinput").value);})
+		popup.find("#guilddata-serverboosting").on("click", ()=>{this.showUsers(g.id, "#boosting:true")});
 		
 		document.querySelector(".appMount-3lHmkl").appendChild(popup);
 		this.makeDraggable();
@@ -570,6 +575,7 @@ class GuildData {
 				if(k == "role") members = members.filter(m => Object.values(g.roles).filter(r => m.roles.includes(r.id) && r.name.toLowerCase().includes(v.toLowerCase())).length > 0);
 				if(k == "roleid") members = members.filter(m => m.roles.filter(r => r.includes(v)).length > 0 || g.id.includes(v));
 				if(k == "bot") members = members.filter(m => UserStore.getUser(m.userId).bot == (v.toLowerCase() == "true"));
+				if(k == "boosting") members = members.filter(m => !!m.premiumSince == (v.toLowerCase() == "true"));
 
 
 				if(k == "nick!") members = members.filter(m => !(m.nick || UserStore.getUser(m.userId).username).toLowerCase().includes(v.toLowerCase()));
@@ -581,6 +587,7 @@ class GuildData {
 				if(k == "role!") members = members.filter(m => !(Object.values(g.roles).filter(r => m.roles.includes(r.id) && r.name.toLowerCase().includes(v.toLowerCase())).length > 0));
 				if(k == "roleid!") members = members.filter(m => !(m.roles.filter(r => r.includes(v)).length > 0 || g.id.includes(v)));
 				if(k == "bot!") members = members.filter(m => UserStore.getUser(m.userId).bot != (v.toLowerCase() == "true"));
+				if(k == "boosting!") members = members.filter(m => !m.premiumSince == (v.toLowerCase() == "true"));
 			}
 		}else{
 			members = members.filter(m => UserStore.getUser(m.userId).username.toLowerCase().includes(query.toLowerCase()) || (m.nick || UserStore.getUser(m.userId).tag).toLowerCase().includes(query.toLowerCase()));
@@ -670,11 +677,16 @@ class GuildData {
 					<td class="guilddata-td">Is bot</td>
 					<td class="guilddata-td guilddata-copy">${u.bot}</td>
 				</tr>
+				<tr class="guilddata-tr" id="guilddata-boostingsince">
+					<td class="guilddata-td">Boosting since</td>
+					<td class="guilddata-td guilddata-copy">${this.formatDate(m.premiumSince, this.settings.dateFormat)}</td>
+				</tr>
 			</table>
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-channelsinfo").offsetHeight}px`);
 
 		if(!m.nick) panel.find("#guilddata-usernick").outerHTML = "";
+		if(!m.premiumSince) panel.find("#guilddata-boostingsince").outerHTML = "";
 		if(m.hoistRoleId) panel.find("#guilddata-hoistrole").on("click", ()=>{this.showRole(g.id, m.hoistRoleId);});
 
 		let chatBtn = $(`<button class="guilddata-openprivatechat">Open Chat</button>`)[0];
@@ -699,7 +711,7 @@ class GuildData {
 		let g = GuildStore.getGuild(gId);
 		let channels = Object.values(ChannelStore.getChannels()).filter(c => c.guild_id == g.id);
 		let categories = channels.filter(c => c.type == 4);
-		let textchannels = channels.filter(c => c.type == 0 || c.type == 5);
+		let textchannels = channels.filter(c => c.type == 0 || c.type == 5 || c.type == 6);
 		let voicechannels = channels.filter(c => c.type == 2);
 		let compare = function(c1, c2){
 			return c2.position - c1.position;
@@ -1178,6 +1190,8 @@ class GuildData {
 		}else if(type==5){
 			// news channel
 			return `<svg style="display:inline;color:inherit;width:16px;height:16px;margin:0;" name="Newspaper" class="icon-1_QxNX da-icon" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M22 7H19V3C19 2.448 18.553 2 18 2H2C1.447 2 1 2.448 1 3V21C1 21.552 1.447 22 2 22H20C20.266 22 20.52 21.895 20.707 21.707L22.707 19.707C22.895 19.519 23 19.265 23 18.999V7.999C23 7.448 22.553 7 22 7ZM9 18.999H3V16.999H9V18.999ZM9 15.999H3V13.999H9V15.999ZM9 13H3V11H9V13ZM16 18.999H10V16.999H16V18.999ZM16 15.999H10V13.999H16V15.999ZM16 13H10V11H16V13ZM16 8H3V5H16V8ZM21 18.585L20.586 18.999H19V8.999H21V18.585Z"></path></svg>`;
+		}else if(type==6){
+			return ``;
 		}
 	}
 
@@ -1186,6 +1200,7 @@ class GuildData {
 		else if(type==2) return "Voice channel";
 		else if(type==4) return "Category";
 		else if(type==5) return "News Channel";
+		else if(type==6) return "Guild Store";
 	}
 	
 	getStatusColor(s){
@@ -1279,7 +1294,8 @@ class GuildData {
 	}
 	
 	formatDate(date, format){
-		if(date == null || date == undefined) return "unknown";
+		if(typeof date === "string") date = new Date(date);
+		if(!date) return "unknown";
 		return format
 			.replace(/(?<!\\)SSS/g, date.getMilliseconds().pad(3))
 			.replace(/(?<!\\)ss/g, date.getSeconds().pad())
@@ -1425,16 +1441,6 @@ class GuildData {
 
 	get changelog(){
 		return {
-			"2.0.0": [
-				{
-					"title": "Changed",
-					"type": "changed",
-					"items": [
-						"Completely rewrote the plugin. The code is much better now. That also means, that there can be features missing because I forgot to add them. If you are missing something please write me.",
-						"Only uses ZLibrary now, no part of the old and outdated PluginLibrary is left."
-					]
-				}
-			],
 			"2.0.1": [
 				{
 					"title": "Added",
@@ -1452,6 +1458,15 @@ class GuildData {
 					"items": [
 						"Added a button to force load all users",
 						"Now showing information about guilds the owner is not cached from"
+					]
+				}
+			],
+			"2.0.3": [
+				{
+					"title": "Added",
+					"type": "added",
+					"items": [
+						"Added support for nitro boosting"
 					]
 				}
 			]
