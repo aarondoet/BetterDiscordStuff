@@ -29,7 +29,7 @@ class TypingIndicator {
         else libraryScript.addEventListener("load", () => {this.initialize();});
     }
     
-	initialize(){
+    initialize(){
         ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js");
         this.updateAnimations();
         this.startTimer();
