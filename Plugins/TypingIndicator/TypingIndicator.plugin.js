@@ -5,8 +5,8 @@ var TypingIndicator = (() => {
         info:{
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
-            description: "some description",
-            version: "0.1.0",
+            description: "Shows an indicator in the guild/channel list when someone is typing there",
+            version: "0.1.1",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -36,11 +36,7 @@ var TypingIndicator = (() => {
         changelog:[
             {
                 "title": "Changed",
-                "items": ["Switched to local version of ZLibrary", "Improved (I hope so)"]
-            },
-            {
-                "title": "Added",
-                "items": ["Plugin settings"]
+                "items": ["Added actual plugin description and not just the placeholder"]
             }
         ]
     };
