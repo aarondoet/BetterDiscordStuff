@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.1.1",
+            version: "0.1.2",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -36,7 +36,7 @@ var TypingIndicator = (() => {
         changelog:[
             {
                 "title": "Changed",
-                "items": ["Added actual plugin description and not just the placeholder"]
+                "items": ["Now checking if the guild itself is muted too before showing the indicator"]
             }
         ]
     };
@@ -74,9 +74,9 @@ var TypingIndicator = (() => {
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Api) => {
             const {DiscordSelectors, WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities, ReactTools, DiscordClasses} = Api;
+            const Flux = WebpackModules.getByProps("connectStores");
             const React = DiscordModules.React;
             const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
-            const Flux = WebpackModules.getByProps("connectStores");
             
             renderElement = ({cnt,opacity})=>{
                 return cnt < 1 ? null : React.createElement(WebpackModules.getByDisplayName("Spinner"), {
@@ -103,21 +103,14 @@ var TypingIndicator = (() => {
                             background-color: white;
                         }
                     `);
-                    /*this.settings = {
-                        channels: true,
-                        includeMuted: true,
-                        guilds: true
-                    }*/
                     this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
                     this.patchChannelList(this.promises.state);
                     this.patchGuildList(this.promises.state);
-                    DiscordModules.UserTypingStore.addChangeListener(this.changeListener);
                 }
                 onStop(){
                     PluginUtilities.removeStyle("typingindicator-css");
                     Patcher.unpatchAll();
                     this.promises.cancel();
-                    DiscordModules.UserTypingStore.removeChangeListener(this.changeListener);
                 }
                 
                 async patchChannelList(promiseState){
@@ -127,8 +120,11 @@ var TypingIndicator = (() => {
                         let channelData = thisObject.props;
                         if(channelData.selected) return;
                         if(channelData.muted && !this.settings.includeMuted) return;
-                        let typingUsers = Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id));
-                        returnValue.props.children.props.children.push(React.createElement(renderElement, {cnt: typingUsers.length}));
+                        const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id)).length}));
+                        const wrappedCount = fluxWrapper(({count}) => {
+                            return React.createElement(renderElement, {cnt: count});
+                        });
+                        returnValue.props.children.props.children.push(React.createElement(wrappedCount));
                     });
                     TextChannel.forceUpdateAll();
                 }
@@ -140,24 +136,19 @@ var TypingIndicator = (() => {
                         let guildData = thisObject.props;
                         if(guildData.selected) return;
                         if(!this.settings.guilds) return;
-                        let cnt = Object.values(DiscordModules.ChannelStore.getChannels())
+                        if(MutedStore.isMuted(guildData.guild.id) && !this.settings.includeMuted) return;
+                        const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
                                         .filter(c => c.guild_id == guildData.guild.id && c.type != 2)
                                         .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
                                         .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
-                                        .reduce((a,b) => a+b);
-                        returnValue.props.children.props.children.push(React.createElement(renderElement, {cnt,opacity:1}));
+                                        .reduce((a,b) => a+b)}));
+                        const wrappedCount = fluxWrapper(({count}) => {
+                            return React.createElement(renderElement, {cnt: count, opacity: 1});
+                        });
+                        returnValue.props.children.props.children.push(React.createElement(wrappedCount));
                     });
                     Guild.forceUpdateAll();
                     this.updateAll = Guild.forceUpdateAll;
-                }
-                
-                changeListener(){
-                    for(let el of document.getElementsByClassName("listItem-2P_4kh")){
-                        (ReactTools.getOwnerInstance(el) || {forceUpdate(){}}).forceUpdate();
-                    }
-                    for(let el of document.getElementsByClassName(DiscordClasses.ChannelList.containerDefault.value)){
-                        (ReactTools.getOwnerInstance(el) || {forceUpdate(){}}).forceUpdate();
-                    }
                 }
                 
                 getSettingsPanel(){
