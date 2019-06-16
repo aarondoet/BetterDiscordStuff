@@ -1,9 +1,9 @@
-//META{"name":"AccountSwitcher","displayName":"AccountSwitcher","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/AccountSwitcher/AccountSwitcher.plugin.js"}*//
+//META{"name":"AccountSwitcher","displayName":"AccountSwitcher","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/AccountSwitcher/blob/master/AccountSwitcher.plugin.js"}*//
 
 class AccountSwitcher {
 	getName(){return "AccountSwitcher";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "1.1.2";}
+	getVersion(){return "1.1.3";}
 	getDescription(){return this.local.plugin.description;}
 	
 	
@@ -270,7 +270,7 @@ class AccountSwitcher {
 		else lib.addEventListener("load", libLoadedEvent);
 	}
 	onLibLoaded(){
-		NeatoLib.Updates.check(this, "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/AccountSwitcher/AccountSwitcher.plugin.js");
+		NeatoLib.Updates.check(this, "https://raw.githubusercontent.com/l0c4lh057/AccountSwitcher/master/AccountSwitcher.plugin.js");
 		if(!NeatoLib.Modules.get(["getCurrentUser"]).getCurrentUser()){
 			window.setTimeout(()=>{this.onLibLoaded();}, 100);
 			return;
@@ -283,7 +283,7 @@ class AccountSwitcher {
 		if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.alertText("Changelog", `<ul style="list-style-type:circle;padding-left:20px;">
-			<li>Optimized for EnhancedDiscord (but still far from being perfect)</li>
+			<li>No change but you will get a new update again, plase update, I am required to change the repository.</li>
 			</ul>`);
 		}
 		if(!this.settings.encrypted){
