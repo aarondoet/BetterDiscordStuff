@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.1.2",
+            version: "0.1.3",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -35,8 +35,8 @@ var TypingIndicator = (() => {
         ],
         changelog:[
             {
-                "title": "Changed",
-                "items": ["Now checking if the guild itself is muted too before showing the indicator"]
+                "title": "Added",
+                "items": ["Support for theming with classes 'typingindicator-guild' and 'typingindicator-channel'"]
             }
         ]
     };
@@ -78,12 +78,13 @@ var TypingIndicator = (() => {
             const React = DiscordModules.React;
             const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
             
-            renderElement = ({cnt,opacity})=>{
+            renderElement = ({cnt,opacity,type})=>{
                 return cnt < 1 ? null : React.createElement(WebpackModules.getByDisplayName("Spinner"), {
                     type: "pulsingEllipsis",
+                    className: "typingindicator-" + type,
                     style: {
                         marginLeft: 5,
-                        opacity: opacity || 0.7
+                        opacity: opacity
                     }
                 });
             }
@@ -91,7 +92,7 @@ var TypingIndicator = (() => {
             return class TypingIndicator extends Plugin {
                 onStart(){
                     PluginUtilities.addStyle("typingindicator-css", `
-                        .listItem-2P_4kh .spinner-2enMB9 {
+                        .typingindicator-guild {
                             position: absolute;
                             bottom: 0;
                             border-radius: 1vh;
@@ -99,7 +100,7 @@ var TypingIndicator = (() => {
                             box-shadow: 0px 0px 8px 4px #888;
                             pointer-events: none;
                         }
-                        .listItem-2P_4kh .spinner-2enMB9 .pulsingEllipsisItem-32hhWL {
+                        .typingindicator-guild [class*=pulsingEllipsisItem] {
                             background-color: white;
                         }
                     `);
@@ -122,7 +123,7 @@ var TypingIndicator = (() => {
                         if(channelData.muted && !this.settings.includeMuted) return;
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id)).length}));
                         const wrappedCount = fluxWrapper(({count}) => {
-                            return React.createElement(renderElement, {cnt: count});
+                            return React.createElement(renderElement, {cnt: count, opacity: 0.7, type: "channel"});
                         });
                         returnValue.props.children.props.children.push(React.createElement(wrappedCount));
                     });
@@ -130,7 +131,7 @@ var TypingIndicator = (() => {
                 }
                 
                 async patchGuildList(promiseState){
-                    const Guild = await ReactComponents.getComponentByName("Guild", ".listItem-2P_4kh");
+                    const Guild = await ReactComponents.getComponentByName("Guild", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "friendsOnline", "guildSeparator", "listItem", "selected").listItem.replace(" ", "."));
                     if(promiseState.cancelled) return;
                     Patcher.after(Guild.component.prototype, "render", (thisObject, _, returnValue) => {
                         let guildData = thisObject.props;
@@ -143,7 +144,7 @@ var TypingIndicator = (() => {
                                         .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
                                         .reduce((a,b) => a+b)}));
                         const wrappedCount = fluxWrapper(({count}) => {
-                            return React.createElement(renderElement, {cnt: count, opacity: 1});
+                            return React.createElement(renderElement, {cnt: count, opacity: 1, type: "guild"});
                         });
                         returnValue.props.children.props.children.push(React.createElement(wrappedCount));
                     });
