@@ -28,3 +28,6 @@ There are some tweaks for playing minesweeper, but they are only possible for pe
 
 ## Preview
 ![Minespoiler preview](https://l0c4lh057.github.io/BetterDiscord/Plugins/Minespoiler/minespoiler-preview.gif)
+
+## Download
+[Click here to download](https://betterdiscord.net/ghdl/?url=https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/Minespoiler/Minespoiler.plugin.js)
