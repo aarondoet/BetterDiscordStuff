@@ -11,3 +11,6 @@ Just enable the options you want in the plugin settings and watch the indicators
 - Shows the indicator in the channel list for muted channels.
 ### Show on guilds
 - Shows the indicator in the guild list when someone is typing in any of the channels. Muted channels are only checked when `Include muted channels` is enabled.
+
+## Download
+[Click here to download](https://betterdiscord.net/ghdl/?url=https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js)
