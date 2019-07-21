@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.3";}
+	getVersion () {return "1.0.4";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -101,29 +101,33 @@ class Minespoiler {
 							}
 						}
 						messages.push(current);
-						let send = ()=>{
-							let message = messages[0];
-							if(!message) return;
-							// discord is retarded and even cuts off messages that exceed a character limit that are from clyde
-							if(this.settings.sendAsClyde){
-								ZLibrary.DiscordModules.MessageActions.sendBotMessage(cId, message);
-								messages.shift();
-								send();
-							}else{
-								ZLibrary.DiscordModules.MessageActions.sendMessage(cId, {content:message}).then((result)=>{
-									if(result.status == 429){
-										let wait = result.body.retry_after;
-										if(!wait) wait = 1000;
-										console.log("Rate limitted, retrying in " + wait + "ms");
-										window.setTimeout(()=>{send();},wait);
-									}else{
-										messages.shift();
-										send();
-									}
-								});
+						if(messages.length > 7){
+							ZLibrary.DiscordModules.MessageActions.sendBotMessage(cId, "Please use a smaller field size.")
+						}else{
+							let send = ()=>{
+								let message = messages[0];
+								if(!message) return;
+								// discord is retarded and even cuts off messages that exceed a character limit that are from clyde
+								if(this.settings.sendAsClyde){
+									ZLibrary.DiscordModules.MessageActions.sendBotMessage(cId, message);
+									messages.shift();
+									send();
+								}else{
+									ZLibrary.DiscordModules.MessageActions.sendMessage(cId, {content:message}).then((result)=>{
+										if(result.status == 429){
+											let wait = result.body.retry_after;
+											if(!wait) wait = 1000;
+											console.log("Rate limitted, retrying in " + wait + "ms");
+											window.setTimeout(()=>{send();},wait);
+										}else{
+											messages.shift();
+											send();
+										}
+									});
+								}
 							}
+							send();
 						}
-						send();
 						toSend = "";
 						
 						chatbox.select();
@@ -151,7 +155,7 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				Should work properly again
+				Added a restriction on 7 messages per game at most
 			`);
 		}
 	}
