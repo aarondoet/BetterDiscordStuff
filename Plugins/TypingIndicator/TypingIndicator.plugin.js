@@ -1,4 +1,4 @@
-//META{"name":"TypingIndicator","displayName":"TypingIndicator","website":"https://twitter.com/l0c4lh057/"}*//
+//META{"name":"TypingIndicator","displayName":"TypingIndicator","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"}*//
 
 var TypingIndicator = (() => {
     const config = {
@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.1.4",
+            version: "0.2.0",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -21,7 +21,7 @@ var TypingIndicator = (() => {
             {
                 type: "switch",
                 id: "includeMuted",
-                name: "Include muted channels",
+                name: "Include muted channels/guilds",
                 note: "With this option enabled even muted channels have the typing indicator (default: false)",
                 value: false
             },
@@ -29,7 +29,14 @@ var TypingIndicator = (() => {
                 type: "switch",
                 id: "guilds",
                 name: "Show on guilds",
-                note: "With this option enabled the the indicator is shown on guild icons when someone is typing in any of the channels of it (default: false)",
+                note: "With this option enabled the indicator is shown on guild icons when someone is typing in any of the channels of it (default: false)",
+                value: false
+            },
+            {
+                type: "switch",
+                id: "folders",
+                name: "Show on folders",
+                note: "With this option enabled the indicator is shown on discord native guild folders when someone is typing in any of the guilds (default: false)",
                 value: false
             },
             {
@@ -43,7 +50,7 @@ var TypingIndicator = (() => {
         changelog:[
             {
                 "title": "Added",
-                "items": ["Indicator on the home icon"]
+                "items": ["Added compatibility with discord native server folders. This feature is disabled by default, you need to enable it in the settings to use it."]
             }
         ]
     };
@@ -99,15 +106,16 @@ var TypingIndicator = (() => {
             return class TypingIndicator extends Plugin {
                 onStart(){
                     PluginUtilities.addStyle("typingindicator-css", `
-                        .typingindicator-guild, .typingindicator-dms {
+                        .typingindicator-guild, .typingindicator-dms, .typingindicator-folder {
                             position: absolute;
                             bottom: 0;
                             border-radius: 1vh;
                             background-color: #888;
                             box-shadow: 0px 0px 8px 4px #888;
                             pointer-events: none;
+                            right: 14px;
                         }
-                        .typingindicator-guild [class*=pulsingEllipsisItem], .typingindicator-dms [class*=pulsingEllipsisItem] {
+                        .typingindicator-guild [class*=pulsingEllipsisItem], .typingindicator-dms [class*=pulsingEllipsisItem], .typingindicator-folder [class*=pulsingEllipsisItem] {
                             background-color: white;
                         }
                     `);
@@ -115,6 +123,7 @@ var TypingIndicator = (() => {
                     this.patchChannelList(this.promises.state);
                     this.patchGuildList(this.promises.state);
                     this.patchHomeIcon(this.promises.state);
+                    this.patchFolders(this.promises.state);
                 }
                 onStop(){
                     PluginUtilities.removeStyle("typingindicator-css");
@@ -147,10 +156,11 @@ var TypingIndicator = (() => {
                         if(!this.settings.guilds) return;
                         if(MutedStore.isMuted(guildData.guild.id) && !this.settings.includeMuted) return;
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
-                                        .filter(c => c.guild_id == guildData.guild.id && c.type != 2)
-                                        .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
-                                        .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
-                                        .reduce((a,b) => a+b)}));
+                                .filter(c => c.guild_id == guildData.guild.id && c.type != 2)
+                                .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
+                                .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
+                                .reduce((a,b) => a+b)
+                        }));
                         const wrappedCount = fluxWrapper(({count}) => {
                             return React.createElement(renderElement, {cnt: count, opacity: 1, type: "guild"});
                         });
@@ -160,13 +170,14 @@ var TypingIndicator = (() => {
                 }
                 
                 async patchHomeIcon(promiseState){
-                    const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "friendsOnline", "guildSeparator", "listItem", "selected").listItem.replace(" ", "."));
+                    const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "friendsOnline", "guildSeparator", "listItem", "selected").listItem.replace(/ /g, "."));
                     if(promiseState.cancelled) return;
                     Patcher.after(Home.component.prototype, "render", (thisObject, _, returnValue) => {
                         if(!returnValue.props.children) return;
+                        if(!returnValue.props.children.props) return;
+                        if(!returnValue.props.children.props.children) return;
                         if(!this.settings.dms) return;
                         if(!DiscordModules.SelectedGuildStore.getGuildId()) return;
-                        if(!returnValue.props.children.props.children) return;
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
                             .filter(c => !c.guild_id)
                             .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
@@ -180,6 +191,29 @@ var TypingIndicator = (() => {
                             returnValue.props.children.props.children.push(React.createElement(wrappedCount));
                     });
                     Home.forceUpdateAll();
+                }
+                
+                async patchFolders(promiseState){
+                    const Folder = await ReactComponents.getComponentByName("GuildFolder", "." + ZLibrary.WebpackModules.getByProps("animationDuration", "folder", "guildIcon", "wrapper").wrapper.replace(/ /g, "."));
+                    if(promiseState.cancelled) return;
+                    Patcher.after(Folder.component.prototype, "render", (thisObject, _, returnValue) => {
+                        if(thisObject.props.expanded) return;
+                        if(!this.settings.folders) return;
+                        const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
+                                .filter(c => thisObject.props.guildIds.includes(c.guild_id))
+                                .filter(c => c.type != 2)
+                                .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
+                                .filter(c => this.settings.includeMuted || !DiscordModules.MutedStore.isMuted(c.guild_id))
+                                .filter(c => DiscordModules.SelectedGuildStore.getGuildId() != c.guild_id)
+                                .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
+                                .reduce((a,b) => a+b)
+                        }));
+                        const wrappedCount = fluxWrapper(({count}) => {
+                            return React.createElement(renderElement, {cnt: count, opacity: 1, type: "folder"});
+                        });
+                        returnValue.props.children.push(React.createElement(wrappedCount));
+                    });
+                    Folder.forceUpdateAll();
                 }
                 
                 getSettingsPanel(){
