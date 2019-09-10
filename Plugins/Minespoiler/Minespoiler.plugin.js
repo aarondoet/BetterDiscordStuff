@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.4";}
+	getVersion () {return "1.0.5";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -155,7 +155,7 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				Added a restriction on 7 messages per game at most
+				Should work again
 			`);
 		}
 	}
@@ -227,7 +227,7 @@ class Minespoiler {
 	revealField(e){
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD")){
-			let message = e.target.parentsUntil(".message-1PNnaP").reverse()[0];
+			let message = e.target.parentsUntil(".content-3dzVd8").reverse()[0];
 			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
 			let isEmoji = false;
 			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
@@ -235,13 +235,14 @@ class Minespoiler {
 			}
 			if(!isEmoji) return;
 			
-			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, \d+ remaining)?\)/);
+			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, -?\d+ remaining)?\)/);
 			if(!matches) return;
 			let lost = false;
 			// check if it is flagged -> add hidden-HHr2R9 and da-hidden again
 			if(false /* is flagged */){
 				// prevent spoiler from being shown
 			}else{
+				e.target.classList.remove("flaggedAsMine");
 				if(e.target.innerHTML.includes(":boom:")){
 					for(let spoiler of message.findAll(".flaggedAsMine")){
 						spoiler.classList.remove("flaggedAsMine");
@@ -296,7 +297,7 @@ class Minespoiler {
 			else if(revealedAllFields)
 				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, you won <img src="/assets/612f3fc9dedfd368820b55c4cf259c07.svg" class="emoji" alt=":tada:" draggable="false">) <span class="minesweeper-retry">[Retry]</span>`;
 			else
-				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${(parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length) < 0 ? 0 : (parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length)} remaining)`;
+				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length} remaining)`;
 			if(message.find(".minesweeper-retry")) message.find(".minesweeper-retry").on("click", ()=>{
 				let matches2 = message.innerHTML.match(/\((\d+x\d+ with \d+ bombs), (.*?)\)/);
 				message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches2[1]})`;
@@ -314,7 +315,7 @@ class Minespoiler {
 	flagMine(e){
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD") && e.target.hasClass("hidden-HHr2R9")){
-			let message = e.target.parentsUntil(".message-1PNnaP").reverse()[0];
+			let message = e.target.parentsUntil(".content-3dzVd8").reverse()[0];
 			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
 			let isEmoji = false;
 			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
@@ -323,8 +324,8 @@ class Minespoiler {
 			if(!isEmoji) return;
 			$(".contextMenu-HLZMGh").hide();
 			$(e.target).toggleClass("flaggedAsMine");
-			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, \d+ remaining)?\)/);
-			message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${(parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length) < 0 ? 0 : (parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length)} remaining)`;
+			let matches = message.innerHTML.match(/\((\d+)x(\d+) with (\d+) bombs(, -?\d+ remaining)?\)/);
+			message.find(".markup-2BOw-j").find("em").innerHTML = `(${matches[1]}x${matches[2]} with ${matches[3]} bombs, ${parseInt(matches[3]) - message.querySelectorAll(".flaggedAsMine").length} remaining)`;
 		}
 	}
 
