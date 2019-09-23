@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.2.1",
+            version: "0.2.2",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -49,13 +49,9 @@ var TypingIndicator = (() => {
         ],
         changelog:[
             {
-                "title": "Added",
-                "items": ["Added compatibility with discord native server folders. This feature is disabled by default, you need to enable it in the settings to use it."]
-            },
-            {
                 "title": "Fixed",
                 "type": "fixed",
-                "items": ["An error in the code, idk if that was causing crashes (I don't think it should, but someone always crashed)"]
+                "items": ["Should show on guilds and the home icon again)"]
             }
         ]
     };
@@ -153,7 +149,7 @@ var TypingIndicator = (() => {
                 }
                 
                 async patchGuildList(promiseState){
-                    const Guild = await ReactComponents.getComponentByName("Guild", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "friendsOnline", "guildSeparator", "listItem", "selected").listItem.replace(" ", "."));
+                    const Guild = await ReactComponents.getComponentByName("Guild", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(" ", "."));
                     if(promiseState.cancelled) return;
                     Patcher.after(Guild.component.prototype, "render", (thisObject, _, returnValue) => {
                         let guildData = thisObject.props;
@@ -175,7 +171,7 @@ var TypingIndicator = (() => {
                 }
                 
                 async patchHomeIcon(promiseState){
-                    const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "friendsOnline", "guildSeparator", "listItem", "selected").listItem.replace(/ /g, "."));
+                    const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(/ /g, "."));
                     if(promiseState.cancelled) return;
                     Patcher.after(Home.component.prototype, "render", (thisObject, _, returnValue) => {
                         if(!returnValue.props.children) return;
@@ -211,7 +207,7 @@ var TypingIndicator = (() => {
                                 .filter(c => this.settings.includeMuted || !MutedStore.isMuted(c.guild_id))
                                 .filter(c => DiscordModules.SelectedGuildStore.getGuildId() != c.guild_id)
                                 .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
-                                .reduce((a,b) => a+b)
+                                .reduce((a,b) => a+b, 0)
                         }));
                         const wrappedCount = fluxWrapper(({count}) => {
                             return React.createElement(renderElement, {cnt: count, opacity: 1, type: "folder"});
