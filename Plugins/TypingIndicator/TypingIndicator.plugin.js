@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.2.2",
+            version: "0.2.3",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -51,7 +51,7 @@ var TypingIndicator = (() => {
             {
                 "title": "Fixed",
                 "type": "fixed",
-                "items": ["Should show on guilds and the home icon again)"]
+                "items": ["Should show on guilds and the home icon again)", "Some error should not happen anymore (only in the code, you won't notice any change)"]
             }
         ]
     };
@@ -160,7 +160,7 @@ var TypingIndicator = (() => {
                                 .filter(c => c.guild_id == guildData.guild.id && c.type != 2)
                                 .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
                                 .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
-                                .reduce((a,b) => a+b)
+                                .reduce((a,b) => a+b, 0)
                         }));
                         const wrappedCount = fluxWrapper(({count}) => {
                             return React.createElement(renderElement, {cnt: count, opacity: 1, type: "guild"});
@@ -183,7 +183,8 @@ var TypingIndicator = (() => {
                             .filter(c => !c.guild_id)
                             .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
                             .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
-                            .reduce((a,b) => a+b)}));
+                            .reduce((a,b) => a+b, 0)
+                        }));
                         const wrappedCount = fluxWrapper(({count}) => {
                             return React.createElement(renderElement, {cnt: count, opacity: 1, type: "dms"});
                         });
