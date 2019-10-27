@@ -349,7 +349,7 @@ class GuildData {
 			process.nextTick(()=>{
 				let contextmenu = document.querySelector(".contextMenu-HLZMGh");
 				if(!contextmenu) return;
-				let subMenu = $(`<div class="itemGroup-1tL0uz da-itemGroup"><div tabindex="0" class="item-1Yvehc da-item" role="button"><span>Show Guild Data</span><div class="hint-22uc-R da-hint"></div></div></div>`)[0];
+				let subMenu = $(`<div class="itemGroup-1tL0uz da-itemGroup"><div tabindex="0" class="item-1Yvehc itemBase-tz5SeC da-item da-itemBase clickable-11uBi- da-clickable" role="button"><div class="label-JWQiNe da-label">Show Guild Data</div><div class="hint-22uc-R da-hint"></div></div></div>`)[0];
 				subMenu.querySelector(".item-1Yvehc").on("click", ()=>{
 					$(contextmenu).hide();
 					this.showPopup(gId);
@@ -382,7 +382,7 @@ class GuildData {
 				if(!menu) return;
 				let separator = $(`<div class="separator-2zcjq8 da-separator"></div>`)[0];
 				menu.appendChild(separator);
-				let el = $(`<div class="item-1GzJrl da-item"><div class="icon-2doZ3q da-icon" style="background-image:url('/assets/50f8ef2cdb4e7697a4202fb9c6d0e1fc.svg');"></div><div class="label-1Y-LW5 da-label">Show Guild Data</div></div>`)[0];
+				let el = $(`<div class="item-1GzJrl da-item itemBase-1Qj4z6 da-itemBase"><div class="label-1Y-LW5 da-label">Show Guild Data</div><div class="iconContainer-2ZxvJk da-iconContainer"><div class="icon-2doZ3q da-icon" style="background-image:url('/assets/50f8ef2cdb4e7697a4202fb9c6d0e1fc.svg');"></div></div>`)[0];
 				el.on("click", (e)=>{
 					this.showPopup(ZLibrary.DiscordModules.SelectedGuildStore.getGuildId());
 					$(".header-2o-2hj").click()
