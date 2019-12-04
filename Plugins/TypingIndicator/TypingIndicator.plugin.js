@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.2.3",
+            version: "0.2.4",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -51,7 +51,7 @@ var TypingIndicator = (() => {
             {
                 "title": "Fixed",
                 "type": "fixed",
-                "items": ["Should show on guilds and the home icon again)", "Some error should not happen anymore (only in the code, you won't notice any change)"]
+                "items": ["Not spamming errors in the console anymore when a guild is unavailable"]
             }
         ]
     };
@@ -96,7 +96,7 @@ var TypingIndicator = (() => {
             renderElement = ({cnt,opacity,type})=>{
                 return cnt < 1 ? null : React.createElement(WebpackModules.getByDisplayName("Spinner"), {
                     type: "pulsingEllipsis",
-                    className: "typingindicator-" + type,
+                    className: "ti-indicator typingindicator-" + type,
                     style: {
                         marginLeft: 5,
                         opacity: opacity
@@ -155,9 +155,10 @@ var TypingIndicator = (() => {
                         let guildData = thisObject.props;
                         if(guildData.selected) return;
                         if(!this.settings.guilds) return;
-                        if(MutedStore.isMuted(guildData.guild.id) && !this.settings.includeMuted) return;
+                        if(!guildData.guild) return;
+                        if(MutedStore.isMuted(guildData.guildId) && !this.settings.includeMuted) return;
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
-                                .filter(c => c.guild_id == guildData.guild.id && c.type != 2)
+                                .filter(c => c.guild_id == guildData.guildId && c.type != 2)
                                 .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
                                 .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
                                 .reduce((a,b) => a+b, 0)
