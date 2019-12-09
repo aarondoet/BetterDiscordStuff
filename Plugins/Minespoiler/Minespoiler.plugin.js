@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.5";}
+	getVersion () {return "1.0.6";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -58,9 +58,9 @@ class Minespoiler {
 		this.prefix = "minesweeper:";
 		this.intToEmoji = {"-1":":boom:","0":":zero:","1":":one:","2":":two:","3":":three:","4":":four:","5":":five:","6":":six:","7":":seven:","8":":eight:"};
 		this.onChatInput = e => {
-			const chatbox = e.target;
-			if(e.which == 13 && !e.shiftKey && !e.ctrlKey && chatbox.value){
-				let chatboxValue = chatbox.value.trim();
+			const chatbox = ZLibrary.ReactTools.getOwnerInstance(this.getChatbox());
+			if(e.which == 13 && !e.shiftKey && !e.ctrlKey && chatbox.props.textValue){
+				let chatboxValue = chatbox.props.textValue.trim();
 				if(chatboxValue.toLowerCase().startsWith(self.prefix)){
 					chatboxValue = chatboxValue.substr(self.prefix.length).trim();
 					let cbA = chatboxValue.split(" ");
@@ -117,7 +117,7 @@ class Minespoiler {
 										if(result.status == 429){
 											let wait = result.body.retry_after;
 											if(!wait) wait = 1000;
-											console.log("Rate limitted, retrying in " + wait + "ms");
+											console.log("Rate limited, retrying in " + wait + "ms");
 											window.setTimeout(()=>{send();},wait);
 										}else{
 											messages.shift();
@@ -131,7 +131,8 @@ class Minespoiler {
 						toSend = "";
 						
 						chatbox.select();
-						document.execCommand("insertText", false, toSend);
+						// doesnt seem to clear the chatbox to not send the message anymore
+						chatbox._editorRef.setValue(ZLibrary.WebpackModules.getByProps("deserialize").deserialize(""))
 					}catch(ex){}
 				}
 			}
@@ -155,7 +156,7 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				Should work again
+				Temporary fix: The fields now get created properly, but the message you use to send the message gets sent too. I will fix this later, but I'm too lazy rn. Just delete that message again and everything will be ok.
 			`);
 		}
 	}
@@ -174,8 +175,7 @@ class Minespoiler {
 	}
 	
 	getChatbox(){
-		let chat = document.getElementsByClassName("chat-3bRxxu")[0];
-		return chat ? chat.getElementsByTagName("textarea")[0] : null;
+		return document.querySelector(".channelTextArea-1LDbYG");
 	}
 	
 	
