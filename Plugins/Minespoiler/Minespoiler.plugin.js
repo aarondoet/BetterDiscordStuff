@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.6";}
+	getVersion () {return "1.0.7";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -58,9 +58,9 @@ class Minespoiler {
 		this.prefix = "minesweeper:";
 		this.intToEmoji = {"-1":":boom:","0":":zero:","1":":one:","2":":two:","3":":three:","4":":four:","5":":five:","6":":six:","7":":seven:","8":":eight:"};
 		this.onChatInput = e => {
-			const chatbox = ZLibrary.ReactTools.getOwnerInstance(this.getChatbox());
-			if(e.which == 13 && !e.shiftKey && !e.ctrlKey && chatbox.props.textValue){
-				let chatboxValue = chatbox.props.textValue.trim();
+			const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
+			if(e.which == 13 && !e.shiftKey && !e.ctrlKey && chatbox.innerText){
+				let chatboxValue = chatbox.innerText;
 				if(chatboxValue.toLowerCase().startsWith(self.prefix)){
 					chatboxValue = chatboxValue.substr(self.prefix.length).trim();
 					let cbA = chatboxValue.split(" ");
@@ -130,9 +130,8 @@ class Minespoiler {
 						}
 						toSend = "";
 						
-						chatbox.select();
-						// doesnt seem to clear the chatbox to not send the message anymore
-						chatbox._editorRef.setValue(ZLibrary.WebpackModules.getByProps("deserialize").deserialize(""))
+						e.stopPropagation()
+
 					}catch(ex){}
 				}
 			}
@@ -156,27 +155,25 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				Temporary fix: The fields now get created properly, but the message you use to send the message gets sent too. I will fix this later, but I'm too lazy rn. Just delete that message again and everything will be ok.
+				Temporary fix: The fields now get created properly, but the message you use to send the message gets sent too. I will fix this later, but I'm too lazy rn. Just clear the textbox and everything will be ok.
 			`);
 		}
 	}
 	
 	onSwitch(){
-		const chatbox = this.getChatbox();
+		const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
 		if(chatbox) chatbox.addEventListener("keydown", this.onChatInput);
 	}
 	
 	stop(){
-		const chatbox = this.getChatbox();
+		const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
 		if(chatbox) chatbox.removeEventListener("keydown", this.onChatInput);
 		$(document).off("click.minespoiler");
 		$(document).off("contextmenu.minespoiler");
 		ZLibrary.PluginUtilities.removeStyle("minespoiler-css");
 	}
 	
-	getChatbox(){
-		return document.querySelector(".channelTextArea-1LDbYG");
-	}
+	
 	
 	
 	generate(width, height, bombs){
