@@ -160,12 +160,12 @@ class Minespoiler {
 	}
 
 	onSwitch() {
-		const chatbox = this.getChatbox();
+		const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
 		if (chatbox) chatbox.addEventListener("keydown", this.onChatInput);
 	}
 
 	stop() {
-		const chatbox = this.getChatbox();
+		const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
 		if (chatbox) chatbox.removeEventListener("keydown", this.onChatInput);
 		$(document).off("click.minespoiler");
 		$(document).off("contextmenu.minespoiler");
