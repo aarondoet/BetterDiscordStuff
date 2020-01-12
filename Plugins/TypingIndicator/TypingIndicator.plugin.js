@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.2.4",
+            version: "0.3.0",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -23,6 +23,13 @@ var TypingIndicator = (() => {
                 id: "includeMuted",
                 name: "Include muted channels/guilds",
                 note: "With this option enabled even muted channels have the typing indicator (default: false)",
+                value: false
+            },
+            {
+                type: "switch",
+                id: "includeBlocked",
+                name: "Include blocked users",
+                note: "With this option enabled the indicator will also show for users you have blocked",
                 value: false
             },
             {
@@ -49,9 +56,9 @@ var TypingIndicator = (() => {
         ],
         changelog:[
             {
-                "title": "Fixed",
-                "type": "fixed",
-                "items": ["Not spamming errors in the console anymore when a guild is unavailable"]
+                "title": "Added",
+                "type": "added",
+                "items": ["There now is an option to select whether blocked users should trigger the indicator or not. Blocked users DO NOT trigger the indicator by default. Go to the settings to enable it. (I hope it works, I don't have people blocked who are constantly typing to test it.)"]
             }
         ]
     };
@@ -139,7 +146,10 @@ var TypingIndicator = (() => {
                         let channelData = thisObject.props;
                         if(channelData.selected) return;
                         if(channelData.muted && !this.settings.includeMuted) return;
-                        const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id)).length}));
+                        const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id))
+                            .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+                            .length
+                        }));
                         const wrappedCount = fluxWrapper(({count}) => {
                             return React.createElement(renderElement, {cnt: count, opacity: 0.7, type: "channel"});
                         });
@@ -160,7 +170,10 @@ var TypingIndicator = (() => {
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
                                 .filter(c => c.guild_id == guildData.guildId && c.type != 2)
                                 .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
-                                .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
+                                .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+                                        .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+                                        .length
+                                )
                                 .reduce((a,b) => a+b, 0)
                         }));
                         const wrappedCount = fluxWrapper(({count}) => {
@@ -183,7 +196,10 @@ var TypingIndicator = (() => {
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
                             .filter(c => !c.guild_id)
                             .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
-                            .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
+                            .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+                                    .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+                                    .length
+                            )
                             .reduce((a,b) => a+b, 0)
                         }));
                         const wrappedCount = fluxWrapper(({count}) => {
@@ -208,7 +224,10 @@ var TypingIndicator = (() => {
                                 .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
                                 .filter(c => this.settings.includeMuted || !MutedStore.isMuted(c.guild_id))
                                 .filter(c => DiscordModules.SelectedGuildStore.getGuildId() != c.guild_id)
-                                .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id)).length)
+                                .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+                                        .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+                                        .length
+                                )
                                 .reduce((a,b) => a+b, 0)
                         }));
                         const wrappedCount = fluxWrapper(({count}) => {
