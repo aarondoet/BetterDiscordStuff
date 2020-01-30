@@ -3,7 +3,7 @@
 class BackupContacts {
 	getName(){return "BackupContacts";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.2";}
+	getVersion(){return "0.0.3";}
 	getDescription(){return "Create a backup of all your contacts and blocked users"};
 	
 	load(){
@@ -17,7 +17,6 @@ class BackupContacts {
 	}
 
 	start(){
-		var self = this;
 		var libraryScript = document.getElementById("ZLibraryScript");
 		if (!libraryScript || !window.ZLibrary) {
 			libraryScript = document.createElement("script");
@@ -27,27 +26,22 @@ class BackupContacts {
 			document.head.appendChild(libraryScript);
 		}
 		if (window.ZLibrary) this.initialize();
-		else libraryScript.addEventListener("load", () => {self.initialize();});
+		else libraryScript.addEventListener("load", () => {this.initialize();});
 	}
 	initialize(){
 		ZLibrary.PluginUpdater.checkForUpdate(this.getName(), "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BackupContacts/BackupContacts.plugin.js");
 		this.onSwitch();
 	}
 	onSwitch(){
-		if(document.getElementsByClassName("friendsTable-133bsv").length > 0 && document.getElementsByClassName("backupContacts backupBtn").length == 0){
-			let self  = this;
-			let friendsHeader = $(".friendsTable-133bsv")[0].previousSibling;
-			let buttons = friendsHeader.find(".tabBar-1E2ExX");
-			let button1 = $(`<div class="backupContacts backupBtn iconMargin-2YXk4F tabBar-1E2ExX primary-3j8BhM item-3HpYcP topPill-30KHOu item-PXvHYJ da-headerBar da-tabBar da-itemDefault" id="backupContacts exportBtn">Export</div>`)[0];
-			let button2 = $(`<div class="backupContacts backupBtn iconMargin-2YXk4F tabBar-1E2ExX primary-3j8BhM item-3HpYcP topPill-30KHOu item-PXvHYJ da-headerBar da-tabBar da-itemDefault" id="backupContacts importBtn">Import</div>`)[0];
+		if(document.getElementsByClassName("container-1r6BKw").length > 0 && document.getElementsByClassName("backupContacts backupBtn").length == 0){
+			let friendsHeader = $(".container-1r6BKw")[0];
+			let buttons = friendsHeader.find(".children-19S4PO .tabBar-ZmDY9v");
+			let button1 = $(`<div class="backupContacts backupBtn item-3HknzM da-item item-PXvHYJ da-item" id="backupContacts-exportBtn" role="button" style="background-color: rgb(67, 181, 129); color: rgb(255, 255, 255);"><span aria-hidden="true">Export</span></div>`)[0];
+			let button2 = $(`<div class="backupContacts backupBtn item-3HknzM da-item item-PXvHYJ da-item" id="backupContacts-importBtn" role="button" style="background-color: rgb(67, 181, 129); color: rgb(255, 255, 255);"><span aria-hidden="true">Import</span></div>`)[0];
 			buttons.append(button1);
 			buttons.append(button2);
-			button1.on("click", function(){
-				self.exportContacts();
-			});
-			button2.on("click", function(){
-				self.openFile();
-			});
+			button1.on("click", this.exportContacts.bind(this));
+			button2.on("click", this.openFile.bind(this));
 		}
 	}
 	stop(){
@@ -72,7 +66,6 @@ class BackupContacts {
 	}
 	
 	async importContacts(data){
-		let self = this;
 		let sendRequest = [];
 		let sendPending = [];
 		let unfriend = [];
@@ -135,20 +128,20 @@ class BackupContacts {
 		}
 		
 		htmlString += `</table>`;
-		let alert = this.alertText("Import Contacts", htmlString, function(){
+		let alert = this.alertText("Import Contacts", htmlString, ()=>{
 			endRelationship = endRelationship.filter(uId => alert.find(`.backupContacts.endRelationship.id${uId}`).checked);
 			sendFriendRequest = sendFriendRequest.filter(uId => alert.find(`.backupContacts.sendRequest.id${uId}`).checked);
 			toBlock = toBlock.filter(uId => alert.find(`.backupContacts.block.id${uId}`).checked);
-			self.removeRelationships(endRelationship);
-			self.addFriends(sendFriendRequest);
-			self.blockUsers(toBlock);
+			this.removeRelationships(endRelationship);
+			this.addFriends(sendFriendRequest);
+			this.blockUsers(toBlock);
 		});
 	}
 
 	async getUserById(uId){
 		let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
 		if(user) return user;
-		let u = await ZLibrary.WebpackModules.getByProps("getAPIBaseURL").get(ZLibrary.WebpackModules.getByProps("Permissions", "ActivityTypes", "StatusTypes").Endpoints.USER(uId));
+		let u = await ZLibrary.DiscordModules.APIModule.get(ZLibrary.DiscordModules.DiscordConstants.Endpoints.USER(uId));
 		if(u) return JSON.parse(u.text);
 		return {"username": "Could not resolve user", "discriminator": "Could not resolve user"};
 	}
@@ -211,7 +204,7 @@ class BackupContacts {
 			if(!uId) return;
 			// does not return anything, idk if it is rate limited but just to make sure i added a delay
 			ZLibrary.DiscordModules.RelationshipManager.removeRelationship(uId);
-			window.setTimeout(()=>{sendReq();}, 2000);
+			window.setTimeout(()=>{sendReq();}, 5000);
 		};
 		sendReq();
 	}
@@ -247,16 +240,15 @@ class BackupContacts {
 	}
 	
 	openFile(){
-		let self = this;
 		let dialog = require("electron").remote.dialog;
-		dialog.showOpenDialog({title:"Open backup",filters:[{name:"JSON Files",extensions:["json"]},{name:"All Files",extensions:"*"}]}, function(sel){
+		dialog.showOpenDialog({title:"Open backup",filters:[{name:"JSON Files",extensions:["json"]},{name:"All Files",extensions:"*"}]}, (sel)=>{
 			if(!sel) return;
 			let fs = require("fs");
 			fs.readFile(sel[0], (err, content) => {
 				if(err){
 					BdApi.alert("Could not load contacts from the file " + err.message);
 				}else{
-					self.importContacts(JSON.parse(content.toString()));
+					this.importContacts(JSON.parse(content.toString()));
 				}
 			});
 		});
@@ -268,36 +260,43 @@ class BackupContacts {
 	
 	
 	alertText(e, t, callback) {
-		let a = $(`<div class="bd-modal-wrapper theme-dark" style="z-index:9999;">
-						<div class="bd-backdrop backdrop-1wrmKB"></div>
-						<div class="bd-modal modal-1UGdnR">
-							<div class="bd-modal-inner inner-1JeGVc" style="width:auto;max-width:70%;max-height:100%;">
-								<div class="header header-1R_AjF">
-									<div class="title">${e}</div>
-								</div>
-								<div class="bd-modal-body">
-									<div class="scroller-wrap fade">
-										<div class="scroller">
+		let backdrop = $(`<div class="backdrop-1wrmKB da-backdrop" style="opacity: 0.85; background-color: rgb(0, 0, 0); z-index: 1000; transform: translateZ(0px);"></div>`);
+		let a =  $(`<div class="modal-3c3bKg da-modal" style="opacity: 1; transform: scale(1) translateZ(0px); z-index: 9999999">
+						<div data-focus-guard="true" tabindex="0" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
+						<div data-focus-guard="true" tabindex="1" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
+						<div data-focus-lock-disabled="false" class="inner-1ilYF7 da-inner">
+							<div class="modal-yWgWj- da-modal container-14fypd da-container sizeSmall-1jtLQy">
+								<div class="scrollerWrap-2lJEkd firefoxFixScrollFlex-cnI2ix da-scrollerWrap da-firefoxFixScrollFlex content-1EtbQh da-content scrollerThemed-2oenus da-scrollerThemed themeGhostHairline-DBD-2d">
+									<div class="scroller-2FKFPG firefoxFixScrollFlex-cnI2ix da-scroller da-firefoxFixScrollFlex systemPad-3UxEGl da-systemPad inner-ZyuQk0 da-inner content-dfabe7 da-content">
+										<h2 class="h2-2gWE-o title-3sZWYQ size16-14cGz5 height20-mO2eIN weightSemiBold-NJexzi da-h2 da-title da-size16 da-height20 da-weightSemiBold defaultColor-1_ajX0 da-defaultColor title-18-Ds0 marginBottom20-32qID7 marginTop8-1DLZ1n da-title da-marginBottom20 da-marginTop8">
+											${e}
+										</h2>
+										<div class="body-Mj9Oxz da-body medium-zmzTW- size16-14cGz5 height20-mO2eIN primary-jw0I4K">
 											${t}
 										</div>
 									</div>
 								</div>
-								<div class="footer footer-2yfCgX">
-									<button type="button" class="backupContacts okButton">Okay</button>
+								<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex horizontalReverse-2eTKWD horizontalReverse-3tRjY7 flex-1O1GKY directionRowReverse-m8IjIq justifyBetween-2tTqYu alignStretch-DpGPf3 wrap-ZIn9Iy footer-3rDWdC da-footer" style="flex: 0 0 auto;">
+									<button class="primaryButton-2BsGPp da-primaryButton button-38aScr da-button lookFilled-1Gx00P colorBrand-3pXr91 sizeXlarge-2yFAlZ grow-q77ONN da-grow">
+										<div class="contents-18-Yxp da-contents">Okay</div>
+									</button>
 								</div>
 							</div>
 						</div>
+						<div data-focus-guard="true" tabindex="0" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
 					</div>`);
-		a.find(".footer button").on("click", () => {
-			callback();
-			a.addClass("closing"), setTimeout(() => {
-				a.remove()
-			}, 300)
-		}), a.find(".bd-backdrop").on("click", () => {
-			a.addClass("closing"), setTimeout(() => {
-				a.remove()
-			}, 300)
-		}), a.appendTo("#app-mount");
-		return a.find(".bd-modal-inner")[0];
+		a.find(".da-footer button").on("click", () => {
+			if(typeof callback === "function") callback();
+            a.remove();
+            backdrop.remove();
+		});
+		backdrop.on("click", () => {
+            a.remove();
+            backdrop.remove();
+		});
+		let modalRoot = document.querySelector("#app-mount > div[data-no-focus-lock='true'] > div:not([class])");
+		backdrop.appendTo(modalRoot);
+		a.appendTo(modalRoot);
+		return a.find("div.da-modal")[0];
 	}
 }
