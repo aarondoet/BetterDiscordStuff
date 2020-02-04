@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.7";}
+	getVersion () {return "1.0.8";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -38,7 +38,6 @@ class Minespoiler {
 	}
 	
 	start(){
-		var self = this;
 		var libraryScript = document.getElementById("ZLibraryScript");
 		if (!libraryScript || !window.ZLibrary) {
 			libraryScript = document.createElement("script");
@@ -48,21 +47,20 @@ class Minespoiler {
 			document.head.appendChild(libraryScript);
 		}
 		if (window.ZLibrary) this.initialize();
-		else libraryScript.addEventListener("load", () => {self.initialize();});
+		else libraryScript.addEventListener("load", this.initialize);
 	}
 	
 	initialize(){
 		this.loadSettings();
 		ZLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/Minespoiler/Minespoiler.plugin.js");
-		var self = this;
 		this.prefix = "minesweeper:";
 		this.intToEmoji = {"-1":":boom:","0":":zero:","1":":one:","2":":two:","3":":three:","4":":four:","5":":five:","6":":six:","7":":seven:","8":":eight:"};
 		this.onChatInput = e => {
-			const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
+			const chatbox = document.querySelector(".slateTextArea-1Mkdgw");
 			if(e.which == 13 && !e.shiftKey && !e.ctrlKey && chatbox.innerText){
 				let chatboxValue = chatbox.innerText;
-				if(chatboxValue.toLowerCase().startsWith(self.prefix)){
-					chatboxValue = chatboxValue.substr(self.prefix.length).trim();
+				if(chatboxValue.toLowerCase().startsWith(this.prefix)){
+					chatboxValue = chatboxValue.substr(this.prefix.length).trim();
 					let cbA = chatboxValue.split(" ");
 					try{
 						let wid = parseInt(cbA[0]);
@@ -77,7 +75,7 @@ class Minespoiler {
 						
 						for(let y = 1; y < hei + 1; y++){
 							for(let x = 1; x < wid + 1; x++){
-								fieldText += "||" + self.intToEmoji[field[y][x]] + "||";
+								fieldText += "||" + this.intToEmoji[field[y][x]] + "||";
 							}
 							if(y < hei) fieldText += "\n";
 						}
@@ -155,7 +153,9 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				Temporary fix: The fields now get created properly, but the message you use to send the message gets sent too. I will fix this later, but I'm too lazy rn. Just clear the textbox and everything will be ok.
+				Fixed: clicking on a :zero: should now reveal all nearby :zero:s too, right clicking a field should flag it as mine again.
+				
+				Blame Lighty#7285 for not telling me how to clear the chatbox, if he told me this would have been fixed too.
 			`);
 		}
 	}
@@ -224,7 +224,7 @@ class Minespoiler {
 	revealField(e){
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD")){
-			let message = e.target.parentsUntil(".content-3dzVd8").reverse()[0];
+			let message = e.target.parentsUntil(".scroller-2FKFPG").reverse()[0];
 			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
 			let isEmoji = false;
 			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
@@ -312,7 +312,7 @@ class Minespoiler {
 	flagMine(e){
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD") && e.target.hasClass("hidden-HHr2R9")){
-			let message = e.target.parentsUntil(".content-3dzVd8").reverse()[0];
+			let message = e.target.parentsUntil(".scroller-2FKFPG").reverse()[0];
 			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
 			let isEmoji = false;
 			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
