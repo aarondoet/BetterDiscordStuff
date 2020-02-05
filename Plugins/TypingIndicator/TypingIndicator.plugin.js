@@ -6,7 +6,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.3.0",
+            version: "0.3.1",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -56,9 +56,9 @@ var TypingIndicator = (() => {
         ],
         changelog:[
             {
-                "title": "Added",
-                "type": "added",
-                "items": ["There now is an option to select whether blocked users should trigger the indicator or not. Blocked users DO NOT trigger the indicator by default. Go to the settings to enable it. (I hope it works, I don't have people blocked who are constantly typing to test it.)"]
+                "title": "Fixed",
+                "type": "fixed",
+                "items": ["Not crashing discord anymore when ZeresPluginLibrary is not installed"]
             }
         ]
     };
@@ -78,7 +78,7 @@ var TypingIndicator = (() => {
             ModalStack.push(function(props) {
                 return BdApi.React.createElement(ConfirmationModal, Object.assign({
                     header: title,
-                    children: [TextElement({color: TextElement.Colors.PRIMARY, children: [`The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`]})],
+                    children: [BdApi.React.createElement(TextElement, {color: TextElement.Colors.PRIMARY, children: [`The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`]})],
                     red: false,
                     confirmText: "Download Now",
                     cancelText: "Cancel",
