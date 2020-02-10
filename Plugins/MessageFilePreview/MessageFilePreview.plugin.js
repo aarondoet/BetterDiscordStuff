@@ -24,19 +24,36 @@
 @else@*/
 
 var MessageFilePreview = (() => {
-    const config = {"info":{"name":"MessageFilePreview","authors":[{"name":"l0c4lh057","discord_id":"226677096091484160","github_username":"l0c4lh057","twitter_username":"l0c4lh057"}],"version":"0.0.1","description":"Preview message.txt files in chat","github":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/MessageFilePreview/MessageFilePreview.plugin.js","github_raw":"https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/MessageFilePreview/MessageFilePreview.plugin.js"},"defaultConfig":[
-        {
-            "type": "slider",
-            "value": 20000,
-            "max": 100000,
-            "min": 4000,
-            "id": "maxCharCount",
-            "name": "Max characters to load",
-            "note": "This setting sets how large the files can be to still get downloaded and previewed by this plugin",
-            "markers": Array.from(new Array(20),(x,i)=>(i+1)*5000),
-            "stickToMarkers": true
-        }
-    ]};
+    const config = {
+        info: {
+            name: "MessageFilePreview",
+            authors: [{name: "l0c4lh057", discord_id: "226677096091484160", github_username: "l0c4lh057", twitter_username: "l0c4lh057"}],
+            version: "0.0.2",
+            description: "Preview message.txt files in chat",
+            github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/MessageFilePreview/MessageFilePreview.plugin.js",
+            github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/MessageFilePreview/MessageFilePreview.plugin.js"
+        },
+        defaultConfig:[
+            {
+                type: "slider",
+                value: 20000,
+                max: 100000,
+                min: 4000,
+                id: "maxCharCount",
+                name: "Max characters to load",
+                note: "This setting sets how large the files can be to still get downloaded and previewed by this plugin",
+                markers: Array.from(new Array(20), (_, i)=>(i + 1) * 5000),
+                stickToMarkers: true
+            }
+        ],
+        changelog:[
+            {
+                title: "Changed",
+                type: "improved",
+                items: ["Modifying content before displaying it, not afterwards, apparently that caused some bugs for other people."]
+            }
+        ]
+    };
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -74,6 +91,14 @@ var MessageFilePreview = (() => {
             const {WebpackModules, Patcher} = Api;
             const request = require("request");
             
+            if(!document.getElementById("0b53rv3r5cr1p7")){
+                let observerScript = document.createElement("script");
+                observerScript.id = "0b53rv3r5cr1p7";
+                observerScript.type = "text/javascript";
+                observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
+                document.head.appendChild(observerScript);
+            }
+            
             return class MessageFilePreview extends Plugin {
                 constructor(){
                     super();
@@ -90,8 +115,6 @@ var MessageFilePreview = (() => {
                     this.promises.cancel();
                 }
                 
-                load(){}
-                
                 async patchMessages(promiseState){
                     const MemoMessage = WebpackModules.find(m => m.type && m.type.toString().search(/\w.useContextMenuMessage\)\(\w,\w,\w\),\w=\(0,\w.useClickMessage\)\(/) !== -1);
                     if(promiseState.cancelled) return;
@@ -101,7 +124,7 @@ var MessageFilePreview = (() => {
                         if(!props.message.content.endsWith(content)) props.message.content += (props.message.content ? "\n\n" : "") + "**[Extracted from message.txt]**\n" + content;
                     }
                     
-                    Patcher.after(MemoMessage, "type", (_, [props], retVal) => {
+                    Patcher.before(MemoMessage, "type", (_, [props]) => {
                         // filter out messages that have a message.txt with less than 2k characters or more than 10k to not cache/render 10MB files
                         let messageTxt = props.message.attachments.find(a => a.filename == "message.txt" && !a.spoiler && a.size < this.settings.maxCharCount && a.size > 2000);
                         if(!messageTxt) return;
@@ -116,8 +139,7 @@ var MessageFilePreview = (() => {
                 }
                 
                 getSettingsPanel(){
-                    const panel = this.buildSettingsPanel();
-                    return panel.getElement();
+                    return this.buildSettingsPanel().getElement();
                 }
             }
             
