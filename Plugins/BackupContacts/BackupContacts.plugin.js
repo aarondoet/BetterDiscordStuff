@@ -3,7 +3,7 @@
 class BackupContacts {
 	getName(){return "BackupContacts";}
 	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.3";}
+	getVersion(){return "0.0.4";}
 	getDescription(){return "Create a backup of all your contacts and blocked users"};
 	
 	load(){
@@ -33,8 +33,8 @@ class BackupContacts {
 		this.onSwitch();
 	}
 	onSwitch(){
-		if(document.getElementsByClassName("container-1r6BKw").length > 0 && document.getElementsByClassName("backupContacts backupBtn").length == 0){
-			let friendsHeader = $(".container-1r6BKw")[0];
+		let friendsHeader = $(".container-1r6BKw")[0];
+		if (friendsHeader && !document.querySelector(".backupContacts .backupBtn") && friendsHeader.find(".children-19S4PO .tabBar-ZmDY9v")) {
 			let buttons = friendsHeader.find(".children-19S4PO .tabBar-ZmDY9v");
 			let button1 = $(`<div class="backupContacts backupBtn item-3HknzM da-item item-PXvHYJ da-item" id="backupContacts-exportBtn" role="button" style="background-color: rgb(67, 181, 129); color: rgb(255, 255, 255);"><span aria-hidden="true">Export</span></div>`)[0];
 			let button2 = $(`<div class="backupContacts backupBtn item-3HknzM da-item item-PXvHYJ da-item" id="backupContacts-importBtn" role="button" style="background-color: rgb(67, 181, 129); color: rgb(255, 255, 255);"><span aria-hidden="true">Import</span></div>`)[0];
