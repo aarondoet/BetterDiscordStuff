@@ -1,13 +1,13 @@
-//META{"name":"BackupContacts","displayName":"BackupContacts","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BackupContacts/BackupContacts.plugin.js"}*//
-
+//META{"name":"BackupContacts","displayName":"BackupContacts","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BackupContacts/BackupContacts.plugin.js", "authorId":"226677096091484160"}*//
+const fs = require("fs");
 class BackupContacts {
-	getName(){return "BackupContacts";}
-	getAuthor(){return "l0c4lh057";}
-	getVersion(){return "0.0.4";}
-	getDescription(){return "Create a backup of all your contacts and blocked users"};
-	
-	load(){
-		if(!document.getElementById("0b53rv3r5cr1p7")){
+	getName() { return "BackupContacts"; }
+	getAuthor() { return "l0c4lh057"; }
+	getVersion() { return "0.0.4"; }
+	getDescription() { return "Create a backup of all your contacts and blocked users" };
+
+	load() {
+		if (!document.getElementById("0b53rv3r5cr1p7")) {
 			let observerScript = document.createElement("script");
 			observerScript.id = "0b53rv3r5cr1p7";
 			observerScript.type = "text/javascript";
@@ -16,7 +16,7 @@ class BackupContacts {
 		}
 	}
 
-	start(){
+	start() {
 		var libraryScript = document.getElementById("ZLibraryScript");
 		if (!libraryScript || !window.ZLibrary) {
 			libraryScript = document.createElement("script");
@@ -26,13 +26,13 @@ class BackupContacts {
 			document.head.appendChild(libraryScript);
 		}
 		if (window.ZLibrary) this.initialize();
-		else libraryScript.addEventListener("load", () => {this.initialize();});
+		else libraryScript.addEventListener("load", () => { this.initialize(); });
 	}
-	initialize(){
+	initialize() {
 		ZLibrary.PluginUpdater.checkForUpdate(this.getName(), "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BackupContacts/BackupContacts.plugin.js");
 		this.onSwitch();
 	}
-	onSwitch(){
+	onSwitch() {
 		let friendsHeader = $(".container-1r6BKw")[0];
 		if (friendsHeader && !document.querySelector(".backupContacts .backupBtn") && friendsHeader.find(".children-19S4PO .tabBar-ZmDY9v")) {
 			let buttons = friendsHeader.find(".children-19S4PO .tabBar-ZmDY9v");
@@ -44,19 +44,19 @@ class BackupContacts {
 			button2.on("click", this.openFile.bind(this));
 		}
 	}
-	stop(){
+	stop() {
 		$(".backupContacts.backupBtn").remove();
 	}
-	
-	exportContacts(){
+
+	exportContacts() {
 		let relationships = ZLibrary.DiscordModules.RelationshipStore.getRelationships();
 		let friends = [];
 		let pending = [];
 		let blocked = [];
-		for(let r in relationships){
-			if(relationships[r] === 1) friends.push(r);
-			else if(relationships[r] === 2) blocked.push(r);
-			else if(relationships[r] === 4) pending.push(r);
+		for (let r in relationships) {
+			if (relationships[r] === 1) friends.push(r);
+			else if (relationships[r] === 2) blocked.push(r);
+			else if (relationships[r] === 4) pending.push(r);
 		}
 		let friendsString = friends.join('","');
 		let pendingString = pending.join('","');
@@ -64,8 +64,8 @@ class BackupContacts {
 		let data = `{"friends":[${friendsString.length > 0 ? `"${friendsString}"` : ""}],"pending":[${pendingString.length > 0 ? `"${pendingString}"` : ""}],"blocked":[${blockedString.length > 0 ? `"${blockedString}"` : ""}]}`;
 		this.saveFile(data, "Discord Contacts.json");
 	}
-	
-	async importContacts(data){
+
+	async importContacts(data) {
 		let sendRequest = [];
 		let sendPending = [];
 		let unfriend = [];
@@ -73,62 +73,62 @@ class BackupContacts {
 		let block = [];
 		let relationships = ZLibrary.DiscordModules.RelationshipStore.getRelationships();
 		let relationshipUsers = Object.keys(relationships);
-		for(let blocked of data["blocked"]){
-			if(relationshipUsers.includes(blocked)){
-				if(relationships[blocked] !== 2) block.push(blocked);
-			}else
+		for (let blocked of data["blocked"]) {
+			if (relationshipUsers.includes(blocked)) {
+				if (relationships[blocked] !== 2) block.push(blocked);
+			} else
 				block.push(blocked);
 		}
-		for(let friend of data["friends"]){
-			if(relationshipUsers.includes(friend)){
-				if(relationships[friend] !== 1) sendRequest.push(friend);
-			}else
+		for (let friend of data["friends"]) {
+			if (relationshipUsers.includes(friend)) {
+				if (relationships[friend] !== 1) sendRequest.push(friend);
+			} else
 				sendRequest.push(friend);
 		}
-		for(let pending of data["pending"]){
-			if(relationshipUsers.includes(pending)){
-				if(relationships[pending] !== 1 && relationships[pending] !== 4) sendPending.push(pending);
-			}else
+		for (let pending of data["pending"]) {
+			if (relationshipUsers.includes(pending)) {
+				if (relationships[pending] !== 1 && relationships[pending] !== 4) sendPending.push(pending);
+			} else
 				sendPending.push(pending);
 		}
-		for(let uId of relationshipUsers){
-			if((relationships[uId] === 1 || relationships[uId] === 4) && !data["friends"].includes(uId) && !data["pending"].includes(uId)) unfriend.push(uId);
-			if(relationships[uId] === 2 && !data["blocked"].includes(uId)) unblock.push(uId);
+		for (let uId of relationshipUsers) {
+			if ((relationships[uId] === 1 || relationships[uId] === 4) && !data["friends"].includes(uId) && !data["pending"].includes(uId)) unfriend.push(uId);
+			if (relationships[uId] === 2 && !data["blocked"].includes(uId)) unblock.push(uId);
 		}
 		let sendFriendRequest = sendRequest.concat(sendPending);
 		let endRelationship = unfriend.concat(unblock);
 		let toBlock = block;
-		
-		
+
+
 		let cbUnchecked = `<div class="flexChild-faoVW3 da-flexChild switch-3wwwcV da-switch value-2hFrkk sizeDefault-2YlOZr size-3rFEHg themeDefault-24hCdX" tabindex="0" style="flex: 0 0 auto;"><input id="1" class="checkbox-2tyjJg da-checkbox" type="checkbox" tabindex="-1" checked=""></div>`;
 		let htmlString = `<table><tr style="font-size:120%;font-weight:bold;"><td>Send Friend Request (Friends)</td></tr>`;
-		for(let uId of sendRequest){
+		for (let uId of sendRequest) {
 			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts sendRequest id${uId}" checked></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Send Friend Request (Pending)</td></tr>`;
-		for(let uId of sendPending){
+		for (let uId of sendPending) {
 			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts sendRequest id${uId}" checked></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Unfriend Users</td></tr>`;
-		for(let uId of unfriend){
+		for (let uId of unfriend) {
 			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts endRelationship id${uId}"></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Block Users</td></tr>`;
-		for(let uId of block){
+		for (let uId of block) {
 			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts block id${uId}"></td></tr>`;
 		}
 		htmlString += `<tr style="font-size:120%;font-weight:bold;"><td>Unblock Users</td></tr>`;
-		for(let uId of unblock){
+		for (let uId of unblock) {
 			let user = await this.getUserById(uId)
 			htmlString += `<tr><td>${user.username}#${user.discriminator} (${uId})</td><td><input type="checkbox" class="backupContacts endRelationship id${uId}"></td></tr>`;
 		}
-		
+
 		htmlString += `</table>`;
-		let alert = this.alertText("Import Contacts", htmlString, ()=>{
+		let alert = this.alertText("Import Contacts", htmlString, () => {
 			endRelationship = endRelationship.filter(uId => alert.find(`.backupContacts.endRelationship.id${uId}`).checked);
 			sendFriendRequest = sendFriendRequest.filter(uId => alert.find(`.backupContacts.sendRequest.id${uId}`).checked);
 			toBlock = toBlock.filter(uId => alert.find(`.backupContacts.block.id${uId}`).checked);
@@ -138,130 +138,131 @@ class BackupContacts {
 		});
 	}
 
-	async getUserById(uId){
+	async getUserById(uId) {
 		let user = ZLibrary.DiscordModules.UserStore.getUser(uId);
-		if(user) return user;
+		if (user) return user;
 		let u = await ZLibrary.DiscordModules.APIModule.get(ZLibrary.DiscordModules.DiscordConstants.Endpoints.USER(uId));
-		if(u) return JSON.parse(u.text);
-		return {"username": "Could not resolve user", "discriminator": "Could not resolve user"};
+		if (u) return JSON.parse(u.text);
+		return { "username": "Could not resolve user", "discriminator": "Could not resolve user" };
 	}
-	
+
 	/* 1 = friend
 	 * 2 = blocked
 	 * 3 = incoming
 	 * 4 = outgoing */
-	getBlockedUsers(){
+	getBlockedUsers() {
 		let blocked = [];
-		for(let uId in ZLibrary.DiscordModules.RelationshipStore.getRelationships()){
+		for (let uId in ZLibrary.DiscordModules.RelationshipStore.getRelationships()) {
 			let status = ZLibrary.DiscordModules.RelationshipStore.getRelationships()[uId];
-			if(status === 2){
+			if (status === 2) {
 				blocked.push(uId);
 			}
 		}
 		return blocked;
 	}
-	getFriends(){
+	getFriends() {
 		let friends = [];
-		for(let uId in ZLibrary.DiscordModules.RelationshipStore.getRelationships()){
+		for (let uId in ZLibrary.DiscordModules.RelationshipStore.getRelationships()) {
 			let status = ZLibrary.DiscordModules.RelationshipStore.getRelationships()[uId];
-			if(status === 1){
+			if (status === 1) {
 				friends.push(uId);
 			}
 		}
 		return friends;
 	}
-	getPendingFriends(){
+	getPendingFriends() {
 		let pending = [];
-		for(let uId in ZLibrary.DiscordModules.RelationshipStore.getRelationships()){
+		for (let uId in ZLibrary.DiscordModules.RelationshipStore.getRelationships()) {
 			let status = ZLibrary.DiscordModules.RelationshipStore.getRelationships()[uId];
-			if(status === 4){
+			if (status === 4) {
 				pending.push(uId);
 			}
 		}
 		return pending;
 	}
-	
-	
-	addFriends(userIds){
-		let sendReq = ()=>{
+
+
+	addFriends(userIds) {
+		let sendReq = () => {
 			let uId = userIds[0];
-			if(!uId) return;
-			ZLibrary.DiscordModules.RelationshipManager.addRelationship(uId, 0, 4).then((res)=>{
-				if(res.status >= 200 && res.status < 300){
+			if (!uId) return;
+			ZLibrary.DiscordModules.RelationshipManager.addRelationship(uId, 0, 4).then((res) => {
+				if (res.status >= 200 && res.status < 300) {
 					userIds.shift();
 					sendReq();
-				}else{
+				} else {
 					let wait = (res.body ? res.body.retry_after + 500 : 1000) || 1000;
-					window.setTimeout(()=>{sendReq();}, wait);
+					window.setTimeout(() => { sendReq(); }, wait);
 				}
 			})
 		};
 		sendReq();
 	}
-	removeRelationships(userIds){
-		let sendReq = ()=>{
+	removeRelationships(userIds) {
+		let sendReq = () => {
 			let uId = userIds[0];
-			if(!uId) return;
+			if (!uId) return;
 			// does not return anything, idk if it is rate limited but just to make sure i added a delay
 			ZLibrary.DiscordModules.RelationshipManager.removeRelationship(uId);
-			window.setTimeout(()=>{sendReq();}, 5000);
+			window.setTimeout(() => { sendReq(); }, 5000);
 		};
 		sendReq();
 	}
-	blockUsers(userIds){
-		let sendReq = ()=>{
+	blockUsers(userIds) {
+		let sendReq = () => {
 			let uId = userIds[0];
-			if(!uId) return;
-			ZLibrary.DiscordModules.RelationshipManager.addRelationship(uId, 0, 2).then((res)=>{
-				if(res.status >= 200 && res.status < 300){
+			if (!uId) return;
+			ZLibrary.DiscordModules.RelationshipManager.addRelationship(uId, 0, 2).then((res) => {
+				if (res.status >= 200 && res.status < 300) {
 					userIds.shift();
 					sendReq();
-				}else{
+				} else {
 					let wait = (res.body ? res.body.retry_after + 500 : 1000) || 1000;
-					window.setTimeout(()=>{sendReq();}, wait);
+					window.setTimeout(() => { sendReq(); }, wait);
 				}
 			})
 		};
 		sendReq();
 	}
-	
-	
-	saveFile(content, filename){
-		let dialog = require("electron").remote.dialog;
-		dialog.showSaveDialog({defaultPath: filename, title: "Save Discord Contacts"}, function(sel){
-			if(!sel) return;
-			let fs = require("fs");
-			fs.writeFile(sel, content, (err) => {
-				if(err){
+
+
+	saveFile(content, filename) {
+		require("electron").remote.dialog.showSaveDialog({ defaultPath: filename, title: "Save Discord Contacts" }).then(sel => {
+			if (!sel['filePath']) return;
+			fs.writeFile(sel['filePath'], content, (err) => {
+				if (err) {
 					BdApi.alert("Could not save contacts in the file " + err.message);
+				} else {
+					BdApi.showToast("Successfull saved contacts in the file.", { type: "success" });
 				}
 			});
 		});
 	}
-	
-	openFile(){
-		let dialog = require("electron").remote.dialog;
-		dialog.showOpenDialog({title:"Open backup",filters:[{name:"JSON Files",extensions:["json"]},{name:"All Files",extensions:"*"}]}, (sel)=>{
-			if(!sel) return;
-			let fs = require("fs");
-			fs.readFile(sel[0], (err, content) => {
-				if(err){
+
+	openFile() {
+		require("electron").remote.dialog.showOpenDialog({ title: "Open backup", filters: [{ name: "JSON Files", extensions: ["json"] }, { name: "All Files", extensions: "*" }] }).then(({ filePaths }) => {
+			console.log(filePaths[0])
+			if (!filePaths[0]) return;
+			fs.readFile(filePaths[0], (err, content) => {
+				if (err) {
 					BdApi.alert("Could not load contacts from the file " + err.message);
-				}else{
+				} else {
 					this.importContacts(JSON.parse(content.toString()));
+
 				}
 			});
 		});
+
 	}
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	alertText(e, t, callback) {
 		let backdrop = $(`<div class="backdrop-1wrmKB da-backdrop" style="opacity: 0.85; background-color: rgb(0, 0, 0); z-index: 1000; transform: translateZ(0px);"></div>`);
-		let a =  $(`<div class="modal-3c3bKg da-modal" style="opacity: 1; transform: scale(1) translateZ(0px); z-index: 9999999">
+		let a = $(`<div class="modal-3c3bKg da-modal" style="opacity: 1; transform: scale(1) translateZ(0px); z-index: 9999999">
 						<div data-focus-guard="true" tabindex="0" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
 						<div data-focus-guard="true" tabindex="1" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
 						<div data-focus-lock-disabled="false" class="inner-1ilYF7 da-inner">
@@ -286,13 +287,13 @@ class BackupContacts {
 						<div data-focus-guard="true" tabindex="0" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
 					</div>`);
 		a.find(".da-footer button").on("click", () => {
-			if(typeof callback === "function") callback();
-            a.remove();
-            backdrop.remove();
+			if (typeof callback === "function") callback();
+			a.remove();
+			backdrop.remove();
 		});
 		backdrop.on("click", () => {
-            a.remove();
-            backdrop.remove();
+			a.remove();
+			backdrop.remove();
 		});
 		let modalRoot = document.querySelector("#app-mount > div[data-no-focus-lock='true'] > div:not([class])");
 		backdrop.appendTo(modalRoot);
