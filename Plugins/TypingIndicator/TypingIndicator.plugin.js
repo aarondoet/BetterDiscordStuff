@@ -1,4 +1,12 @@
-//META{"name":"TypingIndicator","displayName":"TypingIndicator","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"}*//
+/**
+ * @name TypingIndicator
+ * @displayName TypingIndicator
+ * @website https://twitter.com/l0c4lh057/
+ * @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js
+ * @patreon https://www.patreon.com/l0c4lh057
+ * @invite acQjXZD
+ * @authorId 226677096091484160
+ */
 
 var TypingIndicator = (() => {
     const config = {
@@ -6,7 +14,7 @@ var TypingIndicator = (() => {
             name: "TypingIndicator",
             authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
             description: "Shows an indicator in the guild/channel list when someone is typing there",
-            version: "0.3.1",
+            version: "0.3.2",
             github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
             github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
         },
@@ -56,9 +64,9 @@ var TypingIndicator = (() => {
         ],
         changelog:[
             {
-                "title": "Fixed",
-                "type": "fixed",
-                "items": ["Not crashing discord anymore when ZeresPluginLibrary is not installed"]
+                "title": "Changed",
+                "type": "changed",
+                "items": ["The indicator only shows up when a user that is not you is typing now","Removed usage of the ContentManager global variable","Switched to new META style"]
             }
         ]
     };
@@ -85,7 +93,7 @@ var TypingIndicator = (() => {
                     onConfirm: () => {
                         require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
                             if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
-                            await new Promise(r => require("fs").writeFile(require("path").join(ContentManager.pluginsFolder, "0PluginLibrary.plugin.js"), body, r));
+                            await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
                         });
                     }
                 }, props));
@@ -99,6 +107,14 @@ var TypingIndicator = (() => {
             const Flux = WebpackModules.getByProps("connectStores");
             const React = DiscordModules.React;
             const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
+            
+            if(!document.getElementById("0b53rv3r5cr1p7")){
+                let observerScript = document.createElement("script");
+                observerScript.id = "0b53rv3r5cr1p7";
+                observerScript.type = "text/javascript";
+                observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
+                document.head.appendChild(observerScript);
+            }
             
             renderElement = ({cnt,opacity,type})=>{
                 return cnt < 1 ? null : React.createElement(WebpackModules.getByDisplayName("Spinner"), {
@@ -142,11 +158,13 @@ var TypingIndicator = (() => {
                 async patchChannelList(promiseState){
                     const TextChannel = await ReactComponents.getComponentByName("TextChannel", DiscordSelectors.ChannelList.containerDefault);
                     if(promiseState.cancelled) return;
+                    const selfId = DiscordModules.UserStore.getCurrentUser().id;
                     Patcher.after(TextChannel.component.prototype, "render", (thisObject, _, returnValue) => {
                         let channelData = thisObject.props;
                         if(channelData.selected) return;
                         if(channelData.muted && !this.settings.includeMuted) return;
                         const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id))
+                            .filter(uId => uId !== selfId)
                             .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
                             .length
                         }));
@@ -161,6 +179,7 @@ var TypingIndicator = (() => {
                 async patchGuildList(promiseState){
                     const Guild = await ReactComponents.getComponentByName("Guild", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(" ", "."));
                     if(promiseState.cancelled) return;
+                    const selfId = DiscordModules.UserStore.getCurrentUser().id;
                     Patcher.after(Guild.component.prototype, "render", (thisObject, _, returnValue) => {
                         let guildData = thisObject.props;
                         if(guildData.selected) return;
@@ -171,6 +190,7 @@ var TypingIndicator = (() => {
                                 .filter(c => c.guild_id == guildData.guildId && c.type != 2)
                                 .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
                                 .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+                                        .filter(uId => uId !== selfId)
                                         .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
                                         .length
                                 )
@@ -187,6 +207,7 @@ var TypingIndicator = (() => {
                 async patchHomeIcon(promiseState){
                     const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + ZLibrary.WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(/ /g, "."));
                     if(promiseState.cancelled) return;
+                    const selfId = DiscordModules.UserStore.getCurrentUser().id;
                     Patcher.after(Home.component.prototype, "render", (thisObject, _, returnValue) => {
                         if(!returnValue.props.children) return;
                         if(!returnValue.props.children.props) return;
@@ -197,6 +218,7 @@ var TypingIndicator = (() => {
                             .filter(c => !c.guild_id)
                             .filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
                             .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+                                    .filter(uId => uId !== selfId)
                                     .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
                                     .length
                             )
@@ -215,6 +237,7 @@ var TypingIndicator = (() => {
                 async patchFolders(promiseState){
                     const Folder = await ReactComponents.getComponentByName("GuildFolder", "." + ZLibrary.WebpackModules.getByProps("animationDuration", "folder", "guildIcon", "wrapper").wrapper.replace(/ /g, "."));
                     if(promiseState.cancelled) return;
+                    const selfId = DiscordModules.UserStore.getCurrentUser().id;
                     Patcher.after(Folder.component.prototype, "render", (thisObject, _, returnValue) => {
                         if(thisObject.props.expanded) return;
                         if(!this.settings.folders) return;
@@ -225,6 +248,7 @@ var TypingIndicator = (() => {
                                 .filter(c => this.settings.includeMuted || !MutedStore.isMuted(c.guild_id))
                                 .filter(c => DiscordModules.SelectedGuildStore.getGuildId() != c.guild_id)
                                 .map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+                                        .filter(uId => uId !== selfId)
                                         .filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
                                         .length
                                 )
