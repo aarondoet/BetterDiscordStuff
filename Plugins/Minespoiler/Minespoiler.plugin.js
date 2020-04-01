@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.8";}
+	getVersion () {return "1.0.9";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -47,7 +47,7 @@ class Minespoiler {
 			document.head.appendChild(libraryScript);
 		}
 		if (window.ZLibrary) this.initialize();
-		else libraryScript.addEventListener("load", this.initialize);
+		else libraryScript.addEventListener("load", this.initialize.bind(this));
 	}
 	
 	initialize(){
@@ -153,20 +153,18 @@ class Minespoiler {
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
 			BdApi.alert("Minespoiler - Changelog", `
-				Fixed: clicking on a :zero: should now reveal all nearby :zero:s too, right clicking a field should flag it as mine again.
-				
-				Blame Lighty#7285 for not telling me how to clear the chatbox, if he told me this would have been fixed too.
+				Fixed: should also work if you don't have the local version of ZeresPluginLibrary now
 			`);
 		}
 	}
 	
 	onSwitch(){
-		const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
+		const chatbox = document.querySelector(".slateTextArea-1Mkdgw");
 		if(chatbox) chatbox.addEventListener("keydown", this.onChatInput);
 	}
 	
 	stop(){
-		const chatbox = document.querySelectorAll(".slateTextArea-1Mkdgw")[0];
+		const chatbox = document.querySelector(".slateTextArea-1Mkdgw");
 		if(chatbox) chatbox.removeEventListener("keydown", this.onChatInput);
 		$(document).off("click.minespoiler");
 		$(document).off("contextmenu.minespoiler");
