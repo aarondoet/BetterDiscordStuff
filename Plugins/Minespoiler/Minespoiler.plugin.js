@@ -5,7 +5,7 @@ class Minespoiler {
 	initConstructor(){}
 	getName () {return "Minespoiler";}
 	getDescription () {return "Send a game of minesweeper using spoilers. Write a message in the format: 'minesweeper:width height bombCount'. You can also write 'minesweeper:width height bombCount and here some text, %GAME% will put the field in the text.'";}
-	getVersion () {return "1.0.9";}
+	getVersion () {return "1.0.10";}
 	getAuthor () {return "l0c4lh057";}
 	
 	getSettingsPanel(){
@@ -152,9 +152,7 @@ class Minespoiler {
 		if(this.settings.lastUsedVersion != this.getVersion()){
 			this.settings.lastUsedVersion = this.getVersion();
 			this.saveSettings();
-			BdApi.alert("Minespoiler - Changelog", `
-				Fixed: should also work if you don't have the local version of ZeresPluginLibrary now
-			`);
+			BdApi.alert("Minespoiler - Changelog", `Fixed revealing fields / flagging mines`);
 		}
 	}
 	
@@ -222,7 +220,7 @@ class Minespoiler {
 	revealField(e){
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD")){
-			let message = e.target.parentsUntil(".scroller-2FKFPG").reverse()[0];
+			let message = e.target.parentsUntil(".scrollerInner-2ircaP").reverse()[0];
 			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
 			let isEmoji = false;
 			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
@@ -310,7 +308,7 @@ class Minespoiler {
 	flagMine(e){
 		if(!e.target.hasClass) return;
 		if(e.target.hasClass("spoilerText-3p6IlD") && e.target.hasClass("hidden-HHr2R9")){
-			let message = e.target.parentsUntil(".scroller-2FKFPG").reverse()[0];
+			let message = e.target.parentsUntil(".scrollerInner-2ircaP").reverse()[0];
 			if(!message.find(".markup-2BOw-j").innerHTML.includes("Minesweeper")) return;
 			let isEmoji = false;
 			for(let emoji of [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":boom:"]){
