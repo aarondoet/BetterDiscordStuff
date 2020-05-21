@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.6";}
+	getVersion(){return "2.0.7";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -349,7 +349,7 @@ class GuildData {
 			process.nextTick(()=>{
 				let contextmenu = document.querySelector(".menu-3sdvDG");
 				if(!contextmenu) return;
-				let subMenu = $(`<div><div role="separator" class="separator-2I32lJ"></div><div role="group"><div role="menuitem" class="item-1tOPte labelContainer-1BLJti colorDefault-2K3EoJ" id="show-guild-data" tabindex="-1"><div class="label-22pbtT"></div></div></div></div>`)[0];
+				let subMenu = $(`<div><div role="separator" class="separator-2I32lJ"></div><div role="group"><div role="menuitem" class="item-1tOPte labelContainer-1BLJti colorDefault-2K3EoJ" id="show-guild-data" tabindex="-1"><div class="label-22pbtT">Show Guild Data</div></div></div></div>`)[0];
 				subMenu.querySelector(".item-1tOPte").on("click", ()=>{
 					$(contextmenu).hide();
 					this.showPopup(gId);
@@ -1470,12 +1470,19 @@ class GuildData {
 					]
 				}
 			],
-			"2.0.6": [
+			"2.0.7": [
 				{
 					"title": "Fixed",
 					"type": "fixed",
 					"items": [
 						"ContextMenu\'s should work again."
+					]
+				},
+				{
+					"title": "Changed",
+					"type": "changed",
+					"items": [
+						"After needing 5 commits to change 4 lines of code, Strencher now realized that he is dumb."
 					]
 				}
 			]
