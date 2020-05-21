@@ -1470,7 +1470,7 @@ class GuildData {
 					]
 				}
 			],
-			"2.0.4": [
+			"2.0.5": [
 				{
 					"title": "Fixed",
 					"type": "fixed",
