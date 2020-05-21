@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.3";}
+	getVersion(){return "2.0.4";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -1467,6 +1467,15 @@ class GuildData {
 					"type": "added",
 					"items": [
 						"Added support for nitro boosting"
+					]
+				}
+			],
+			"2.0.4": [
+				{
+					"title": "Fixed",
+					"type": "fixed",
+					"items": [
+						"ContextMenu\'s should work again."
 					]
 				}
 			]
