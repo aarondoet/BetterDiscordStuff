@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.4";}
+	getVersion(){return "2.0.5";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -347,14 +347,14 @@ class GuildData {
 			let gId = (el.href.match(/\d+/) || [])[0];
 			if(!gId) return;
 			process.nextTick(()=>{
-				let contextmenu = document.querySelector(".contextMenu-HLZMGh");
+				let contextmenu = document.querySelector(".menu-3sdvDG");
 				if(!contextmenu) return;
-				let subMenu = $(`<div class="itemGroup-1tL0uz da-itemGroup"><div tabindex="0" class="item-1Yvehc itemBase-tz5SeC da-item da-itemBase clickable-11uBi- da-clickable" role="button"><div class="label-JWQiNe da-label">Show Guild Data</div><div class="hint-22uc-R da-hint"></div></div></div>`)[0];
-				subMenu.querySelector(".item-1Yvehc").on("click", ()=>{
+				let subMenu = $(`<div role="separator" class="separator-2I32lJ"></div><div role="group"><div role="menuitem" class="item-1tOPte labelContainer-1BLJti colorDefault-2K3EoJ" id="show-guild-data" tabindex="-1"><div class="label-22pbtT"></div></div></div>`)[0];
+				subMenu.querySelector(".item-1tOPte").on("click", ()=>{
 					$(contextmenu).hide();
 					this.showPopup(gId);
 				});
-				contextmenu.appendChild(subMenu);
+				contextmenu.querySelector(".scroller-2FKFPG").appendChild(subMenu);
 			});
 		});
 		$(document.body).on("click.guilddata", (e)=>{
@@ -378,16 +378,16 @@ class GuildData {
 				if((e.target.parentsUntil(".container-2Rl01u").reverse()[0] || {nodeName:"HTML"}).nodeName == "HTML")
 					return;
 			window.setTimeout(()=>{
-				let menu = $(".menu-Sp6bN1")[0];
+				let menu = $(".menu-3sdvDG")[0];
 				if(!menu) return;
-				let separator = $(`<div class="separator-2zcjq8 da-separator"></div>`)[0];
-				menu.appendChild(separator);
-				let el = $(`<div class="item-1GzJrl da-item itemBase-1Qj4z6 da-itemBase"><div class="label-1Y-LW5 da-label">Show Guild Data</div><div class="iconContainer-2ZxvJk da-iconContainer"><div class="icon-2doZ3q da-icon" style="background-image:url('/assets/50f8ef2cdb4e7697a4202fb9c6d0e1fc.svg');"></div></div>`)[0];
+				let separator = $(`<div role="separator" class="separator-2I32lJ da-separator"></div>`)[0];
+				menu.querySelector(".scroller-2FKFPG").appendChild(separator);
+				let el = $(`<div role="group"><div class="item-1tOPte labelContainer-1BLJti colorDefault-2K3EoJ" role="menuitem" id="show-guild-data" tabindex="-1"><div class="label-22pbtT">Show Guild Data</div><div class="iconContainer-2-XQPY"><div class="icon-LYJorE" style="background-image:url('/assets/50f8ef2cdb4e7697a4202fb9c6d0e1fc.svg');"></div></div></div>`)[0];
 				el.on("click", (e)=>{
 					this.showPopup(ZLibrary.DiscordModules.SelectedGuildStore.getGuildId());
 					$(".header-2o-2hj").click()
 				});
-				menu.appendChild(el);
+				menu.querySelector(".scroller-2FKFPG").appendChild(el);
 				menu.parentNode.css("height", `${menu.parentNode.clientHeight + separator.offsetHeight + el.offsetHeight}px`);
 			}, 350);
 		});
