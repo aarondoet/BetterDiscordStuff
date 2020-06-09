@@ -38,7 +38,7 @@ class Minespoiler {
 	}
 	
 	start(){
-		var libraryScript = document.getElementById("ZLibraryScript");
+		/*var libraryScript = document.getElementById("ZLibraryScript");
 		if (!libraryScript || !window.ZLibrary) {
 			libraryScript = document.createElement("script");
 			libraryScript.setAttribute("type", "text/javascript");
@@ -47,7 +47,12 @@ class Minespoiler {
 			document.head.appendChild(libraryScript);
 		}
 		if (window.ZLibrary) this.initialize();
-		else libraryScript.addEventListener("load", this.initialize.bind(this));
+		else libraryScript.addEventListener("load", this.initialize.bind(this));*/
+		if(global.ZeresPluginLibrary) this.initialize();
+		else {
+			BdApi.alert("Local version of ZeresPluginLibrary required", "For this plugin to work you need to have the ZeresPluginLibrary plugin installed. " +
+					"Please download it from [here](https://betterdiscord.net/ghdl?id=2252) and then disable and reenable this plugin.");
+		}
 	}
 	
 	initialize(){
