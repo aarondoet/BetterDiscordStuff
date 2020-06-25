@@ -4,7 +4,7 @@ class GuildData {
 	getName(){return "GuildData";}
 	getAuthor(){return "l0c4lh057";}
 	getDescription(){return "Shows information about guilds, channels and roles by right clicking the guild's icon in the guild list.";};
-	getVersion(){return "2.0.7";}
+	getVersion(){return "2.0.8";}
 	
 	load(){
 		if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -17,7 +17,7 @@ class GuildData {
 	}
 
 	start(){
-		var libraryScript = document.getElementById("ZLibraryScript");
+		/*var libraryScript = document.getElementById("ZLibraryScript");
 		if (!libraryScript || !window.ZLibrary) {
 			libraryScript = document.createElement("script");
 			libraryScript.setAttribute("type", "text/javascript");
@@ -26,7 +26,12 @@ class GuildData {
 			document.head.appendChild(libraryScript);
 		}
 		if (window.ZLibrary) this.initialize();
-		else libraryScript.addEventListener("load", () => {this.initialize();});
+		else libraryScript.addEventListener("load", this.initialize.bind(this));*/
+		if(global.ZeresPluginLibrary) this.initialize();
+		else {
+			BdApi.alert("Local version of ZeresPluginLibrary required", "For this plugin to work you need to have the ZeresPluginLibrary plugin installed. " +
+					"Please download it from [here](https://betterdiscord.net/ghdl?id=2252) and then disable and reenable this plugin.");
+		}
 	}
 	stop(){
 		$(document.body).off("contextmenu.guilddata");
@@ -350,40 +355,39 @@ class GuildData {
 				let contextmenu = document.querySelector(".menu-3sdvDG");
 				if(!contextmenu) return;
 				let subMenu = $(`<div><div role="separator" class="separator-2I32lJ"></div><div role="group"><div role="menuitem" class="item-1tOPte labelContainer-1BLJti colorDefault-2K3EoJ" id="show-guild-data" tabindex="-1"><div class="label-22pbtT">Show Guild Data</div></div></div></div>`)[0];
-				subMenu.querySelector(".item-1tOPte").on("click", ()=>{
+				subMenu.querySelector(".item-1tOPte").addEventListener("click", ()=>{
 					$(contextmenu).hide();
 					this.showPopup(gId);
 				});
-				contextmenu.querySelector(".scroller-2FKFPG").appendChild(subMenu);
+				contextmenu.querySelector(".scroller-3BxosC").appendChild(subMenu);
 			});
 		});
 		$(document.body).on("click.guilddata", (e)=>{
-			if(e.target.hasClass)
-				if(e.target.hasClass("guilddata-closebutton"))
+			if(e.target.classList)
+				if(e.target.classList.contains("guilddata-closebutton"))
 					e.target.parentElement.outerHTML = "";
 		});
 		$(document.body).on("click.guilddata", (e)=>{
-			if(!e.target.hasClass) return;
-			if(e.target.parents(".guilddata-copy").length == 0 && !e.target.hasClass("guilddata-copy")) return;
+			if(!e.target.classList) return;
+			if(!e.target.closest(".guilddata-copy") && !e.target.classList.contains("guilddata-copy")) return;
 			let toCopy = e.target.getAttribute("copyText");
-			if(e.target.hasClass("guilddata-image") && !toCopy) toCopy = e.target.src;
+			if(e.target.classList.contains("guilddata-image") && !toCopy) toCopy = e.target.src;
 			if(!toCopy) toCopy = e.target.innerText;
 			DiscordNative.clipboard.copy(toCopy);
 			ZLibrary.Toasts.success(`Copied "${this.escapeHtml(toCopy)}"`);
 		});
 		$(document.body).on("click.guilddata", (e)=>{
-			if(!e.target.hasClass || !e.target.parentNode) return;
-			if(!e.target.parentNode.hasClass) return;
-			if(!e.target.hasClass("container-2Rl01u") && !e.target.parentNode.hasClass("container-2Rl01u"))
-				if((e.target.parentsUntil(".container-2Rl01u").reverse()[0] || {nodeName:"HTML"}).nodeName == "HTML")
-					return;
+			if(!e.target.classList || !e.target.parentNode) return;
+			if(!e.target.parentNode.classList) return;
+			if(!e.target.classList.contains("container-2Rl01u") && !e.target.parentNode.classList.contains("container-2Rl01u"))
+				if(!e.target.closest(".container-2Rl01u")) return;
 			window.setTimeout(()=>{
 				let menu = $(".menu-3sdvDG")[0];
 				if(!menu) return;
 				let separator = $(`<div role="separator" class="separator-2I32lJ da-separator"></div>`)[0];
 				menu.querySelector(".scroller-2FKFPG").appendChild(separator);
 				let el = $(`<div role="group"><div class="item-1tOPte labelContainer-1BLJti colorDefault-2K3EoJ" role="menuitem" id="show-guild-data" tabindex="-1"><div class="label-22pbtT">Show Guild Data</div><div class="iconContainer-2-XQPY"><div class="icon-LYJorE" style="background-image:url('/assets/50f8ef2cdb4e7697a4202fb9c6d0e1fc.svg');"></div></div></div>`)[0];
-				el.on("click", (e)=>{
+				el.addEventListener("click", (e)=>{
 					this.showPopup(ZLibrary.DiscordModules.SelectedGuildStore.getGuildId());
 					$(".header-2o-2hj").click()
 				});
@@ -529,25 +533,25 @@ class GuildData {
 			ZLibrary.DiscordModules.APIModule.get(ZLibrary.DiscordModules.DiscordConstants.Endpoints.USER(g.ownerId)).then((result)=>{
 				let u = JSON.parse(result.text);
 				o = {tag: u.username + "#" + u.discriminator, id: u.id, username: u.username, discriminator: u.discriminator};
-				popup.find("#guilddata-guildowner").innerText = `${o.tag} (${g.ownerId})`;
+				popup.querySelector("#guilddata-guildowner").innerText = `${o.tag} (${g.ownerId})`;
 			});
 		}
 		
-		popup.find("#guilddata-guildowner").on("click", ()=>{this.showUser(g.id, o.id);});
-		if(g.systemChannelId) popup.find("#guilddata-systemchannel").on("click", ()=>{this.showChannel(g.systemChannelId);});
-		if(g.afkChannelId) popup.find("#guilddata-afkchannel").on("click", ()=>{this.showChannel(g.afkChannelId);});
-		popup.find("#guilddata-guildemojis").on("click", ()=>{this.showEmojis(g.id);});
-		popup.find("#guilddata-guildfriends").on("click", ()=>{this.showRelationships(g.id, friends, "friends");});
-		popup.find("#guilddata-guildblockedusers").on("click", ()=>{this.showRelationships(g.id, blocked, "blocked");});
-		popup.find("#guilddata-usersearchbutton").on("click", ()=>{this.showUsers(g.id, popup.find("#guilddata-usersearchinput").value);});
-		popup.find("#guilddata-usersearchinput").on("keydown", (e)=>{if(e.which == 13)this.showUsers(g.id, popup.find("#guilddata-usersearchinput").value);})
-		popup.find("#guilddata-serverboosting").on("click", ()=>{this.showUsers(g.id, "#boosting:true")});
+		popup.querySelector("#guilddata-guildowner").addEventListener("click", ()=>{this.showUser(g.id, o.id);});
+		if(g.systemChannelId) popup.querySelector("#guilddata-systemchannel").addEventListener("click", ()=>{this.showChannel(g.systemChannelId);});
+		if(g.afkChannelId) popup.querySelector("#guilddata-afkchannel").addEventListener("click", ()=>{this.showChannel(g.afkChannelId);});
+		popup.querySelector("#guilddata-guildemojis").addEventListener("click", ()=>{this.showEmojis(g.id);});
+		popup.querySelector("#guilddata-guildfriends").addEventListener("click", ()=>{this.showRelationships(g.id, friends, "friends");});
+		popup.querySelector("#guilddata-guildblockedusers").addEventListener("click", ()=>{this.showRelationships(g.id, blocked, "blocked");});
+		popup.querySelector("#guilddata-usersearchbutton").addEventListener("click", ()=>{this.showUsers(g.id, popup.querySelector("#guilddata-usersearchinput").value);});
+		popup.querySelector("#guilddata-usersearchinput").addEventListener("keydown", (e)=>{if(e.which == 13)this.showUsers(g.id, popup.querySelector("#guilddata-usersearchinput").value);})
+		popup.querySelector("#guilddata-serverboosting").addEventListener("click", ()=>{this.showUsers(g.id, "#boosting:true")});
 		
 		document.querySelector(".appMount-3lHmkl").appendChild(popup);
 		this.makeDraggable();
 		
-		if(!g.icon) popup.find("#guilddata-guildicon").outerHTML = "";
-		if(!g.vanityURLCode) popup.find("#guilddata-vanityurl").outerHTML = "";
+		if(!g.icon) popup.querySelector("#guilddata-guildicon").outerHTML = "";
+		if(!g.vanityURLCode) popup.querySelector("#guilddata-vanityurl").outerHTML = "";
 		$(".guilddata-panel").css("height", `calc(100% - ${document.querySelector(".guilddata-panel").offsetTop}px)`);
 		this.showUsers(g.id, "");
 		this.showChannels(g.id);
@@ -600,7 +604,7 @@ class GuildData {
 			if(this.settings.showUsernamesInMemberlist){
 				for(let m of members){
 					let el = $(`<div class="guilddata-usersearchresult" id="guilddata-usersearchresult u${m.userId}">${this.escapeHtml(UserStore.getUser(m.userId).tag)}</div>`)[0];
-					el.on("click", ()=>{
+					el.addEventListener("click", ()=>{
 						this.showUser(g.id, m.userId);
 					});
 					list.appendChild(el);
@@ -608,7 +612,7 @@ class GuildData {
 			}else{
 				for(let m of members){
 					let el = $(`<div class="guilddata-usersearchresult" id="guilddata-usersearchresult u${m.userId}">${this.escapeHtml(m.nick || UserStore.getUser(m.userId).name)}#${UserStore.getUser(m.userId).discriminator}</div>`)[0];
-					el.on("click", ()=>{
+					el.addEventListener("click", ()=>{
 						this.showUser(g.id, m.userId);
 					});
 					list.appendChild(el);
@@ -618,7 +622,7 @@ class GuildData {
 		$("#guilddata-exportusers").remove();
 		$("#guilddata-forceloadusers").remove();
 		let btn = $(`<button id="guilddata-exportusers">Export Users</button>`)[0];
-		btn.on("click", ()=>{
+		btn.addEventListener("click", ()=>{
 			this.alertText("Export users", "You are exporting all users that match the current search.<br>In which format do you want to export the users?<br><br>%name% - username<br>%nick% - nickname or username if no nick is set<br>%discriminator% - the discriminator of the user<br>%id% - the user id<br><input id='guilddata-exportusersformat' value='%name%#%discriminator% (%id%)' style='width:90%;'>", ()=>{
 				let format = document.getElementById("guilddata-exportusersformat").value;
 				let formatMember = (m)=>{
@@ -629,7 +633,7 @@ class GuildData {
 			})
 		});
 		let btn2 = $(`<button id="guilddata-forceloadusers">Load All Users</button>`)[0];
-		btn2.on("click", ()=>{
+		btn2.addEventListener("click", ()=>{
 			ZLibrary.DiscordModules.GuildActions.requestMembers(gId, '', 0);
 		});
 		document.getElementById("guilddata-userwrapper").appendChild(btn);
@@ -685,22 +689,22 @@ class GuildData {
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-channelsinfo").offsetHeight}px`);
 
-		if(!m.nick) panel.find("#guilddata-usernick").outerHTML = "";
-		if(!m.premiumSince) panel.find("#guilddata-boostingsince").outerHTML = "";
-		if(m.hoistRoleId) panel.find("#guilddata-hoistrole").on("click", ()=>{this.showRole(g.id, m.hoistRoleId);});
+		if(!m.nick) panel.querySelector("#guilddata-usernick").outerHTML = "";
+		if(!m.premiumSince) panel.querySelector("#guilddata-boostingsince").outerHTML = "";
+		if(m.hoistRoleId) panel.querySelector("#guilddata-hoistrole").addEventListener("click", ()=>{this.showRole(g.id, m.hoistRoleId);});
 
 		let chatBtn = $(`<button class="guilddata-openprivatechat">Open Chat</button>`)[0];
-		chatBtn.on("click", ()=>{
+		chatBtn.addEventListener("click", ()=>{
 			PrivateChannelActions.ensurePrivateChannel(UserStore.getCurrentUser().id, u.id).then(()=>{
 				PrivateChannelActions.openPrivateChannel(UserStore.getCurrentUser().id, u.id);
 			});
 		});
 
 		for(let rId of m.roles){
-			panel.find(`.guilddata-memberrole.r${rId}`).on("click", ()=>{this.showRole(g.id, rId)});
+			panel.querySelector(`.guilddata-memberrole.r${rId}`).addEventListener("click", ()=>{this.showRole(g.id, rId)});
 		}
-		panel.find(`.guilddata-memberrole.r${g.id}`).on("click", ()=>{this.showRole(g.id, g.id)});
-		panel.find(".guilddata-closebutton").on("click", ()=>{chatBtn.outerHTML = ""});
+		panel.querySelector(`.guilddata-memberrole.r${g.id}`).addEventListener("click", ()=>{this.showRole(g.id, g.id)});
+		panel.querySelector(".guilddata-closebutton").addEventListener("click", ()=>{chatBtn.outerHTML = ""});
 
 		wrapper.appendChild(panel);
 		wrapper.appendChild(chatBtn);
@@ -725,7 +729,7 @@ class GuildData {
 			let c = textchannels[i];
 			if(!c.parent_id){
 				let el = $(`<div class="guilddata-channel guilddata-textchannel guilddata-noparentchannel ${GuildPermissions.can(DiscordPermissions.VIEW_CHANNEL, {channelId:c.id}) ? "guilddata-viewable" : "guilddata-notviewable"}"><span class="guilddata-channelicon">${this.getChannelIcon(c.type, c.nsfw, false, c.id)}</span><span class="guilddata-channelname">${this.escapeHtml(c.name)}</span></div>`)[0];
-				el.find(".guilddata-channelname").on("click", ()=>{this.showChannel(c.id);});
+				el.querySelector(".guilddata-channelname").addEventListener("click", ()=>{this.showChannel(c.id);});
 				list.appendChild(el);
 				textchannels.splice(i, 1);
 			}
@@ -734,7 +738,7 @@ class GuildData {
 			let c = voicechannels[i];
 			if(!c.parent_id){
 				let el = $(`<div class="guilddata-channel guilddata-voicechannel guilddata-noparentchannel ${GuildPermissions.can(DiscordPermissions.VIEW_CHANNEL, {channelId:c.id}) ? "guilddata-viewable" : "guilddata-notviewable"}"><span class="guilddata-channelicon">${this.getChannelIcon(c.type, c.nsfw, false, c.id)}</span><span class="guilddata-channelname">${this.escapeHtml(c.name)}</span></div>`)[0];
-				el.find(".guilddata-channelname").on("click", ()=>{this.showChannel(c.id);});
+				el.querySelector(".guilddata-channelname").addEventListener("click", ()=>{this.showChannel(c.id);});
 				list.appendChild(el);
 				voicechannels.splice(i, 1);
 			}
@@ -742,23 +746,23 @@ class GuildData {
 		for(let i = categories.length - 1; i >= 0; i--){
 			let c = categories[i];
 			let el = $(`<div class="guilddata-channelcollection guilddata-category"><div class="guilddata-channel guilddata-category ${GuildPermissions.can(DiscordPermissions.VIEW_CHANNEL, {channelId:c.id}) ? "guilddata-viewable" : "guilddata-notviewable"}"><span class="guilddata-channelicon">${this.getChannelIcon(c.type, c.nsfw, false, c.id)}</span><span class="guilddata-channelname">${this.escapeHtml(c.name)}</span></div><div class="guilddata-categorychannels"></div></div>`)[0];
-			el.find(".guilddata-channelname").on("click", ()=>{this.showChannel(c.id);});
-			el.find(".guilddata-channelicon").on("click", ()=>{
-				let el2 = el.find(".guilddata-categorychannels");
+			el.querySelector(".guilddata-channelname").addEventListener("click", ()=>{this.showChannel(c.id);});
+			el.querySelector(".guilddata-channelicon").addEventListener("click", ()=>{
+				let el2 = el.querySelector(".guilddata-categorychannels");
 				if(el2.style.display == "none"){
 					el2.style.display = "block";
-					el.find(".guilddata-channelicon").innerHTML = this.getChannelIcon(c.type, c.nsfw, false, c.id);
+					el.querySelector(".guilddata-channelicon").innerHTML = this.getChannelIcon(c.type, c.nsfw, false, c.id);
 				}else{
 					el2.style.display = "none";
-					el.find(".guilddata-channelicon").innerHTML = this.getChannelIcon(c.type, c.nsfw, true, c.id);
+					el.querySelector(".guilddata-channelicon").innerHTML = this.getChannelIcon(c.type, c.nsfw, true, c.id);
 				}
 			});
 			for(let j = textchannels.length - 1; j >= 0; j--){
 				let c2 = textchannels[j];
 				if(c2.parent_id == c.id){
 					let el2 = $(`<div class="guilddata-channel guilddata-textchannel guilddata-parentchannel ${GuildPermissions.can(DiscordPermissions.VIEW_CHANNEL, {channelId:c2.id}) ? "guilddata-viewable" : "guilddata-notviewable"}"><span class="guilddata-channelicon">${this.getChannelIcon(c2.type, c2.nsfw, false, c2.id)}</span><span class="guilddata-channelname">${this.escapeHtml(c2.name)}</span></div>`)[0];
-					el2.find(".guilddata-channelname").on("click", ()=>{this.showChannel(c2.id);});
-					el.find(".guilddata-categorychannels").appendChild(el2);;
+					el2.querySelector(".guilddata-channelname").addEventListener("click", ()=>{this.showChannel(c2.id);});
+					el.querySelector(".guilddata-categorychannels").appendChild(el2);;
 					textchannels.splice(j, 1);
 				}
 			}
@@ -766,8 +770,8 @@ class GuildData {
 				let c2 = voicechannels[j];
 				if(c2.parent_id == c.id){
 					let el2 = $(`<div class="guilddata-channel guilddata-textchannel guilddata-parentchannel ${GuildPermissions.can(DiscordPermissions.VIEW_CHANNEL, {channelId:c2.id}) ? "guilddata-viewable" : "guilddata-notviewable"}"><span class="guilddata-channelicon">${this.getChannelIcon(c2.type, c2.nsfw, false, c2.id)}</span><span class="guilddata-channelname">${this.escapeHtml(c2.name)}</span></div>`)[0];
-					el2.find(".guilddata-channelname").on("click", ()=>{this.showChannel(c2.id);});
-					el.find(".guilddata-categorychannels").appendChild(el2);;
+					el2.querySelector(".guilddata-channelname").addEventListener("click", ()=>{this.showChannel(c2.id);});
+					el.querySelector(".guilddata-categorychannels").appendChild(el2);;
 					voicechannels.splice(j, 1);
 				}
 			}
@@ -815,29 +819,29 @@ class GuildData {
 		$(panel).css("height", `${document.getElementById("guilddata-channelsinfo").offsetHeight}px`);
 
 		if(c.type != 0 && c.type != 5){
-			panel.find("#guilddata-slowmode").outerHTML = "";
-			panel.find("#guilddata-nsfw").outerHTML = "";
+			panel.querySelector("#guilddata-slowmode").outerHTML = "";
+			panel.querySelector("#guilddata-nsfw").outerHTML = "";
 		}
 		if(c.type != 2){
-			panel.find("#guilddata-userlimit").outerHTML = "";
-			panel.find("#guilddata-bitrate").outerHTML = "";
+			panel.querySelector("#guilddata-userlimit").outerHTML = "";
+			panel.querySelector("#guilddata-bitrate").outerHTML = "";
 		}
 		if(c.type != 0 && c.type != 2){
-			panel.find("#guilddata-topic").outerHTML = "";
+			panel.querySelector("#guilddata-topic").outerHTML = "";
 		}
 		if(c.type == 5){
-			panel.find("#guilddata-slowmode").outerHTML = "";
+			panel.querySelector("#guilddata-slowmode").outerHTML = "";
 		}
 
-		let list = panel.find("#guilddata-channelpermissionoverwrites");
+		let list = panel.querySelector("#guilddata-channelpermissionoverwrites");
 		for(let po of Object.values(c.permissionOverwrites)){
 			if(po.type == "member"){
 				let el = $(`<div>Member: ${this.escapeHtml(UserStore.getUser(po.id).tag)} (${po.id})</div>`)[0];
-				el.on("click", ()=>{this.showPermissionOverwrite(c.id, po.id, po.type);});
+				el.addEventListener("click", ()=>{this.showPermissionOverwrite(c.id, po.id, po.type);});
 				list.appendChild(el);
 			}else if(po.type == "role"){
 				let el = $(`<div>Role: ${this.escapeHtml(g.roles[po.id].name)} (${po.id})</div>`)[0];
-				el.on("click", ()=>{this.showPermissionOverwrite(c.id, po.id, po.type);});
+				el.addEventListener("click", ()=>{this.showPermissionOverwrite(c.id, po.id, po.type);});
 				list.appendChild(el);
 			}
 		}
@@ -848,12 +852,12 @@ class GuildData {
 			let openBtn;
 			if(c.type == 0 || c.type == 5){
 				openBtn = $(`<button class="guilddata-openchannel">Open Channel</button>`)[0];
-				openBtn.on("click", ()=>ChannelSelector.selectChannel(g.id, c.id));
+				openBtn.addEventListener("click", ()=>ChannelSelector.selectChannel(g.id, c.id));
 			}else{
 				openBtn = $(`<button class="guilddata-openchannel">Connect</button>`)[0];
-				openBtn.on("click", ()=>ChannelActions.selectVoiceChannel(g.id, c.id));
+				openBtn.addEventListener("click", ()=>ChannelActions.selectVoiceChannel(g.id, c.id));
 			}
-			panel.find(".guilddata-closebutton").on("click", ()=>openBtn.outerHTML = "");
+			panel.querySelector(".guilddata-closebutton").addEventListener("click", ()=>openBtn.outerHTML = "");
 			wrapper.appendChild(openBtn);
 		}
 	}
@@ -894,7 +898,7 @@ class GuildData {
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-channelsinfo").offsetHeight}px`);
 
-		panel.find(".guilddata-permissionoverwrite").on("click", ()=>{if(type == "member") this.showUser(g.id, pId); else this.showRole(g.id, pId);});
+		panel.querySelector(".guilddata-permissionoverwrite").addEventListener("click", ()=>{if(type == "member") this.showUser(g.id, pId); else this.showRole(g.id, pId);});
 
 		wrapper.appendChild(panel);
 	}
@@ -911,12 +915,12 @@ class GuildData {
 		list.innerHTML = "";
 		for(let r of roles){
 			let el = $(`<div class="guilddata-role">${this.escapeHtml(r.name)} (${r.id})</div>`)[0];
-			el.on("click", ()=>{this.showRole(g.id, r.id);});
+			el.addEventListener("click", ()=>{this.showRole(g.id, r.id);});
 			list.appendChild(el);
 		}
 		if(document.getElementById("guilddata-exportroles")) document.getElementById("guilddata-exportroles").outerHTML = "";
 		let btn = $(`<button id="guilddata-exportroles">Export Roles</button>`)[0];
-		btn.on("click", ()=>{
+		btn.addEventListener("click", ()=>{
 			this.alertText("Export roles", "You are exporting all rolles of this server.<br>In which format do you want to export the roles?<br><br>%name% - name of the role<br>%id% - the role id<br>%userscount% - the count of users with that role<br><input id='guilddata-exportrolesformat' value='%name% (%id%)' style='width:90%;'>", ()=>{
 				let members = GuildMemberStore.getMembers(g.id);
 				let format = document.getElementById("guilddata-exportrolesformat").value;
@@ -988,11 +992,11 @@ class GuildData {
 		// planned feature
 		/*for(let r2 of Object.values(g.roles).filter(role => role.id != r.id)){
 			let el = $(`<div class="guilddata-comparerolesitem">${this.escapeHtml(r2.name)} (${r2.id})</div>`)[0];
-			el.on("click", ()=>{this.compareRoles(g.id, r.id, r2.id);});
-			panel.find(".guilddata-compareroleslist").appendChild(el);
+			el.addEventListener("click", ()=>{this.compareRoles(g.id, r.id, r2.id);});
+			panel.querySelector(".guilddata-compareroleslist").appendChild(el);
 		}*/
 
-		panel.find("#guilddata-rolemembers").on("click", ()=>{this.showUsers(g.id, `#roleid:${r.id}`);});
+		panel.querySelector("#guilddata-rolemembers").addEventListener("click", ()=>{this.showUsers(g.id, `#roleid:${r.id}`);});
 
 		wrapper.appendChild(panel);
 	}
@@ -1051,21 +1055,21 @@ class GuildData {
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-guildinfo").offsetHeight}px`);
 
-		let list = panel.find(".guilddata-emojis");
+		let list = panel.querySelector(".guilddata-emojis");
 		let colCnt = this.settings.emojiColCount;
 		for(let e of emojis){
-			let el = $(`<div class="guilddata-emojiwrapper"><img src="${e.url}" class="guilddata-emojiimg">${colCnt < 10 ? `<div class="guilddata-emojiname">${this.escapeHtml(e.name)}</div></div>` : ""}`)[0];
+			let el = $(`<div class="guilddata-emojiwrapper"><img src="${e.url}" class="guilddata-emojiimg">${colCnt < 10 ? `<div class="guilddata-emojiname">${this.escapeHtml(e.name)}</div></div>` : ""}`);
 			el.on("click", ()=>this.showEmoji(gId, e.id))
 			el.css("width", `calc(${100 / colCnt}% - 5px)`);
-			list.appendChild(el);
+			list.appendChild(el[0]);
 		}
 		if(emojis.length == 0){
 			let el = $(`<div class="guilddata-noelement">This guild has no emojis.</div>`)[0];
 		}
 
 		let btn = $(`<button class="guilddata-exportemojis">Save Emojis</button>`)[0];
-		btn.on("click", ()=>this.downloadEmojis(emojis));
-		panel.find(".guilddata-closebutton").on("click", ()=>btn.outerHTML = "");
+		btn.addEventListener("click", ()=>this.downloadEmojis(emojis));
+		panel.querySelector(".guilddata-closebutton").addEventListener("click", ()=>btn.outerHTML = "");
 
 		wrapper.appendChild(panel);
 		wrapper.appendChild(btn);
@@ -1098,14 +1102,14 @@ class GuildData {
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-guildinfo").offsetHeight}px`);
 
-		let list = panel.find(".guilddata-emojiroles");
+		let list = panel.querySelector(".guilddata-emojiroles");
 		if(e.roles.length > 0){
 			list.appendChild($(`<div class="guilddata-emojirolesheader">Whitelisted Roles</div>`)[0]);
 		}
 		for(let rId of e.roles){
 			let r = g.roles[rId];
 			let el = $(`<div class="guilddata-emojirole">${this.escapeHtml(r.name)} (${r.id})</div>`)[0];
-			el.on("click", ()=>this.showRole(g.id, r.id))
+			el.addEventListener("click", ()=>this.showRole(g.id, r.id))
 			list.appendChild(el);
 		}
 
@@ -1122,11 +1126,11 @@ class GuildData {
 		</div>`)[0];
 		$(panel).css("height", `${document.getElementById("guilddata-guildinfo").offsetHeight}px`);
 
-		let userList = panel.find("#guilddata-relationships");
+		let userList = panel.querySelector("#guilddata-relationships");
 		for(let m of members){
 			let u = UserStore.getUser(m.userId);
 			let el = $(`<div class="guilddata-relationshipuser"><img src="${u.avatarURL}" class="guilddata-relationshippfp"> <span class="guilddata-relationshipname">${this.escapeHtml(u.tag)}</span></div>`)[0];
-			el.on("click", ()=>this.showUser(gId, m.userId))
+			el.addEventListener("click", ()=>this.showUser(gId, m.userId))
 			userList.appendChild(el);
 		}
 
@@ -1271,16 +1275,16 @@ class GuildData {
 			e.preventDefault();
 			posX = e.clientX;
 			posY = e.clientY;
-			document.body.on("mousemove.guilddatadrag", (e2)=>{
+			$(document.body).on("mousemove.guilddatadrag", (e2)=>{
 				e2.preventDefault();
 				$("#guilddata-popup").css("top", ($("#guilddata-popup").offset().top - posY + e2.clientY) + "px");
 				$("#guilddata-popup").css("left", ($("#guilddata-popup").offset().left - posX + e2.clientX) + "px");
 				posX = e2.clientX;
 				posY = e2.clientY;
 			});
-			document.body.on("mouseup.guilddatadrag", (e2)=>{
-				document.body.off("mousemove.guilddatadrag");
-				document.body.off("mouseup.guilddatadrag");
+			$(document.body).on("mouseup.guilddatadrag", (e2)=>{
+				$(document.body).off("mousemove.guilddatadrag");
+				$(document.body).off("mouseup.guilddatadrag");
 			});
 		});
 	}
@@ -1351,25 +1355,74 @@ class GuildData {
 							</div>
 						</div>
 					</div>`);
-		a.find(".footer button").on("click", () => {
+		a.querySelector(".footer button").addEventListener("click", () => {
 			if(typeof callbackOk === "function") callbackOk();
 			a.addClass("closing"), setTimeout(() => {
 				a.remove()
 			}, 300)
-		}), a.find(".bd-backdrop").on("click", () => {
+		}), a.querySelector(".bd-backdrop").addEventListener("click", () => {
 			if(typeof callbackCancel === "function") callbackCancel();
 			a.addClass("closing"), setTimeout(() => {
 				a.remove()
 			}, 300)
 		}), a.appendTo("#app-mount");
-		if(a.find("input")){
-			a.find("input").on("keydown", e => {
-				if(e.which == 13) a.find(".footer button").click();
-				else if(e.which == 27) a.find(".bd-backdrop").click();
+		if(a.querySelector("input")){
+			a.querySelector("input").addEventListener("keydown", e => {
+				if(e.which == 13) a.querySelector(".footer button").click();
+				else if(e.which == 27) a.querySelector(".bd-backdrop").click();
 			});
-			a.find("input").focus();
+			a.querySelector("input").focus();
 		}
-		return a.find(".bd-modal-inner")[0];
+		return a.querySelector(".bd-modal-inner")[0];
+	}
+	
+	alertText(e, t, callbackOk, callbackCancel) {
+		let backdrop = $(`<div class="backdrop-1wrmKB da-backdrop" style="opacity: 0.85; background-color: rgb(0, 0, 0); z-index: 1000; transform: translateZ(0px);"></div>`);
+		let a =  $(`<div class="modal-3c3bKg da-modal" style="opacity: 1; transform: scale(1) translateZ(0px);">
+				<div class="inner-1ilYF7 da-inner" role="dialog" aria-modal="true">
+					<div data-focus-guard="true" tabindex="0" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
+					<div data-focus-guard="true" tabindex="1" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
+					<div data-focus-lock-disabled="false">
+						<div class="modal-yWgWj- da-modal container-1HKDLE da-container sizeSmall-1jtLQy fullscreenOnMobile-1aglG_ da-fullscreenOnMobile" aria-label="title">
+							<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex horizontal-1ae9ci horizontal-2EEEnY flex-1O1GKY directionRow-3v3tfG justifyStart-2NDFzi alignCenter-1dQNNs noWrap-3jynv6 header-2tA9Os da-header" style="flex: 0 0 auto;">
+								<h4 class="colorStandard-2KCXvj size14-e6ZScH h4-AQvcAz title-3sZWYQ da-h4 da-title defaultColor-1_ajX0 da-defaultColor header-2kr4wt da-header">
+									${e}
+								</h4>
+							</div>
+							<div class="scrollerWrap-2lJEkd da-scrollerWrap content-1EtbQh da-content scrollerThemed-2oenus da-scrollerThemed themeGhostHairline-DBD-2d">
+								<div class="scroller-2FKFPG da-scroller systemPad-3UxEGl da-systemPad inner-ZyuQk0 da-inner content-2oypg3 da-content">
+									<div class="markdown-11q6EU da-markdown">
+										<div class="paragraph-3Ejjt0 da-paragraph">
+											${t.includes("<input") ? `Inputting passwords might not be working at the moment. Open the console (CTRL+SHIFT+I) and execute <b>BdApi.Plugins.get("AccountSwitcher").setPassword("<i style='opacity:0.9;'>your password here</i>")</b> to set the password. Enabling encryption should not work this way.<br><br>` : ""}
+											${t}
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex horizontalReverse-2eTKWD horizontalReverse-3tRjY7 flex-1O1GKY directionRowReverse-m8IjIq justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 footer-3rDWdC da-footer" style="flex: 0 0 auto;">
+								<button type="submit" class="button-38aScr da-button lookFilled-1Gx00P colorBrand-3pXr91 sizeMedium-1AC_Sl grow-q77ONN da-grow">
+									<div class="contents-18-Yxp da-contents">Okay</div>
+								</button>
+							</div>
+						</div>
+					</div>
+					<div data-focus-guard="true" tabindex="0" style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"></div>
+				</div>
+			</div>`);
+		a.find(".da-footer button").on("click", () => {
+			if(typeof callbackOk === "function") callbackOk();
+			a.remove();
+			backdrop.remove();
+		});
+		backdrop.on("click", () => {
+			if(typeof callbackCancel === "function") callbackCancel();
+			a.remove();
+			backdrop.remove();
+		});
+		let modalRoot = document.querySelector("#app-mount > div:not([class]):not([style])");
+		backdrop.appendTo(modalRoot);
+		a.appendTo(modalRoot);
+		return a.find("div.da-modal")[0];
 	}
 
 	downloadFile(content, filename, title){
@@ -1441,26 +1494,6 @@ class GuildData {
 
 	get changelog(){
 		return {
-			"2.0.1": [
-				{
-					"title": "Added",
-					"type": "added",
-					"items": [
-						"Added support for news channels (text channels with a different icon)",
-						"Added a &quot;not&quot; operator &quot;!&quot; for user search"
-					]
-				}
-			],
-			"2.0.2": [
-				{
-					"title": "Added",
-					"type": "added",
-					"items": [
-						"Added a button to force load all users",
-						"Now showing information about guilds the owner is not cached from"
-					]
-				}
-			],
 			"2.0.3": [
 				{
 					"title": "Added",
@@ -1485,6 +1518,13 @@ class GuildData {
 						"After needing 5 commits to change 4 lines of code, Strencher now realized that he is dumb."
 					]
 				}
+			],
+			"2.0.8": [
+				{
+					"title": "Changed",
+					"type": "changed",
+					"items": ["Removed usage of deprecated ZLibrary functions"]
+				}
 			]
 		};
 	}
@@ -1501,7 +1541,7 @@ class GuildData {
 		let popup = this.alertText('Welcome', `<p>GuildData is a plugin that displays the Guild Information such as the owner, when the server was created, when you joined, their verification level, etc. As well as user, channel, and role information which is very detailed.</p>
 		<p>To use this plugin, rigth click a guild in the guild list and click on the item "Show Guild Data" in the context menu. You can also click on the name of a guild above the channel list and click the button with the text "Show Guild Data" there.</p>
 		<button class="guilddata-welcome guilddata-openchangelog" style="position:absolute;bottom:5px;right:5px;background-color:#677bc4;color:#fff">Show Changelog</button>`);
-		$(popup.find("button.guilddata-welcome.guilddata-openchangelog")).on("click", ()=>this.showChangelog());
+		$(popup.querySelector("button.guilddata-welcome.guilddata-openchangelog")).addEventListener("click", ()=>this.showChangelog());
 	}
 	// probably have to rewrite it since it is just copied from the old version of this plugin, but i'm too lazy rn
 	showChangelog(oldVersion, newVersion){
