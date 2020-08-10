@@ -39,7 +39,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "0.0.1",
+			version: "0.1.0",
 			description: "Allows you to open multiple tabs",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -49,6 +49,16 @@ module.exports = (() => {
 				title: "Release",
 				type: "added",
 				items: ["Initial release"]
+			},
+			{
+				title: "Added",
+				type: "progress",
+				items: ["Right clicking guild channels, user DMs and group DMs has a `Open in new tab` context menu item"]
+			},
+			{
+				title: "Fixes",
+				type: "fixed",
+				items: ["Closing tabs now works properly"]
 			}
 		]
 	};
@@ -156,6 +166,7 @@ module.exports = (() => {
 					PluginUtilities.removeStyle("channelTabs-style");
 					Patcher.unpatchAll();
 					this.promises.cancel();
+					this.rerenderAppView();
 				}
 				
 				onSwitch(){
@@ -172,7 +183,6 @@ module.exports = (() => {
 					this.AppView = await ZLibrary.ReactComponents.getComponent("Shakeable", ".app-2rEoOp");
 					if(promiseState.cancelled) return;
 					Patcher.after(this.AppView.component.prototype, "render", (thisObject, _, returnValue) => {
-						console.log(returnValue)
 						returnValue.props.children = [this.renderTabs(this.tabs), returnValue.props.children].flat();
 					});
 					this.rerenderAppView();
@@ -186,8 +196,8 @@ module.exports = (() => {
 					const [, , TextChannelContextMenu] = WebpackModules.getModules(m => m.default && m.default.displayName == "ChannelListTextChannelContextMenu");
 					Patcher.after(TextChannelContextMenu, "default", (thisObject, [props], returnValue) => {
 						returnValue.props.children.push(DCM.buildMenuItem({
-							label: "Open as tab",
-							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, "#" + props.channel.name)
+							label: "Open in new tab",
+							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, props.channel.name)
 						}))
 					});
 				}
@@ -198,7 +208,7 @@ module.exports = (() => {
 						if(!returnValue) return;
 						returnValue.props.children.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.tag))
+							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, props.channel.name || props.user.username)
 						}))
 					});
 				}
@@ -209,7 +219,7 @@ module.exports = (() => {
 						if(!returnValue) return;
 						returnValue.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")))
+							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", "))
 						}))
 					});
 				}
@@ -258,10 +268,7 @@ module.exports = (() => {
 							"div",
 							{
 								className: "channelTabs-close",
-								onClick: ()=>{
-									this.tabs.splice(tabIndex, 1)
-									this.rerenderAppView();
-								}
+								onClick: ()=>this.closeTab(tabIndex)
 							},
 							"X"
 						)
@@ -270,13 +277,12 @@ module.exports = (() => {
 				
 				saveChannel(guildId, channelId, channelName){
 					if(!this.tabs.some(tab=>tab.channelId===channelId)){
-						this.tabs.push({guildId, channelId, channelName});
+						this.tabs.push({
+							url: `/channels/${guildId || "@me"}/${channelId}`,
+							name: channelName
+						});
 						this.rerenderAppView();
 					}
-				}
-				
-				convertToTab(channel){
-					
 				}
 				
 				switchToTab(tabIndex){
@@ -286,6 +292,18 @@ module.exports = (() => {
 					this.switching = true;
 					DiscordModules.NavigationUtils.transitionTo(this.tabs[this.selectedTab].url);
 					this.switching = false;
+				}
+				
+				closeTab(tabIndex){
+					if(this.tabs.length == 1) return;
+					this.tabs.splice(tabIndex, 1);
+					if(this.selectedTab == tabIndex){
+						if(tabIndex > 0) this.selectedTab--;
+						this.switchToTab(tabIndex == 0 ? 0 : tabIndex - 1);
+					}else if(this.selectedTab > tabIndex){
+						this.selectedTab--;
+					}
+					this.rerenderAppView();
 				}
 				
 				getCurrentName(){
