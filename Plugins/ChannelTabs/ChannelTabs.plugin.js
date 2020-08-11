@@ -1,5 +1,8 @@
 /**
 * @name ChannelTabs
+* @displayName ChannelTabs
+* @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/ChannelTabs.plugin.js
+* @patreon https://www.patreon.com/l0c4lh057
 * @authorId 226677096091484160
 * @invite acQjXZD
 */
@@ -39,26 +42,21 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "0.1.0",
+			version: "1.0.0",
 			description: "Allows you to open multiple tabs",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "Release",
+				title: "Proper styling",
 				type: "added",
-				items: ["Initial release"]
+				items: ["Thanks to 11pixels#2004 for creating a way better style than I would be able to make!"]
 			},
 			{
-				title: "Added",
+				title: "Actual release",
 				type: "progress",
-				items: ["Right clicking guild channels, user DMs and group DMs has a `Open in new tab` context menu item"]
-			},
-			{
-				title: "Fixes",
-				type: "fixed",
-				items: ["Closing tabs now works properly"]
+				items: ["This plugin is now officially released."]
 			}
 		]
 	};
@@ -103,50 +101,76 @@ module.exports = (() => {
 				
 				onStart(){
 					PluginUtilities.addStyle("channelTabs-style", `
-						.channelTabs-tabContainer {
-							z-index: 1;
-							height: 30px;
+						.channelTabs-name {
+							width: 132px;
+							display: inline-block;
+							overflow: hidden;
+							white-space: nowrap;
+							text-overflow: ellipsis;
 						}
 						.channelTabs-tab {
 							display: inline-block;
 							margin: 2px 0;
 							margin-left: 4px;
-							padding: 3px;
 							font-size: 18px;
-							border: 1px solid black;
-							border-radius: 6px;
-							width: 110px;
+							width: 150px;
 							position: relative;
+							background: none;
+							border:none;
+							padding:6px;
+							border-radius:5px;
+							color:var(--interactive-normal);
+						}
+						.channelTabs-tabContainer {
+							height: 36px;
+							background: var(--background-secondary-alt);
+							z-index: 1;
+						}
+						.channelTabs-tab:not(.channelTabs-selected):hover {
+							background: var(--background-modifier-hover);
+							cursor: pointer;
+							color: var(--interactive-hover);
 						}
 						.channelTabs-selected {
-							background-color: rgba(0, 0, 0, 0.2);
-						}
-						.channelTabs-name {
-							width: 90px;
-							display: inline-block;
-							overflow: hidden;
-							white-space: nowrap;
-							text-overflow: ellipsis;
+							background: var(--background-modifier-selected);
+							color: var(--interactive-active);
 						}
 						.channelTabs-close {
 							display: inline-block;
 							position: absolute;
 							right: 4px;
 							top: 5px;
-							font-size: 14px;
-							background-color: #b00;
-							color: white;
 							width: 14px;
 							height: 14px;
 							border-radius: 7px;
 							text-align: center;
+							line-height:11px;
+							font-size: 15px;
+							background: var(--interactive-muted);
+							color: var(--background-secondary-alt);
+							cursor: pointer;
+						}
+						.channelTabs-selected .channelTabs-close {
+							background: var(--interactive-normal);
+						}
+						.channelTabs-selected .channelTabs-close:hover {
+							background: var(--interactive-hover);
 						}
 						.channelTabs-newTab {
 							display: inline-block;
 							margin-left: 5px;
-							border: 1px solid black;
 							padding: 3px;
-							border-radius: 6px;
+							border-radius:50%;
+							width: 15px;
+							height: 15px;
+							text-align:center;
+							background:var(--interactive-muted);
+							font-weight: 600;
+							cursor: pointer;
+							color: var(--background-secondary-alt)
+						}
+						.channelTabs-newTab:hover {
+							background: var(--interactive-normal);
 						}
 					`);
 					this.tabs = [{
@@ -254,13 +278,13 @@ module.exports = (() => {
 					return React.createElement(
 						"div",
 						{
-							className: "channelTabs-tab" + (tab.selected ? " channelTabs-selected" : "")
+							className: "channelTabs-tab" + (tab.selected ? " channelTabs-selected" : ""),
+							onClick: ()=>this.switchToTab(tabIndex)
 						},
 						React.createElement(
 							"span",
 							{
-								className: "channelTabs-name",
-								onClick: ()=>this.switchToTab(tabIndex)
+								className: "channelTabs-name"
 							},
 							tab.name
 						),
@@ -268,9 +292,12 @@ module.exports = (() => {
 							"div",
 							{
 								className: "channelTabs-close",
-								onClick: ()=>this.closeTab(tabIndex)
+								onClick: e=>{
+									e.stopPropagation();
+									this.closeTab(tabIndex);
+								}
 							},
-							"X"
+							"⨯"
 						)
 					);
 				}
@@ -319,6 +346,23 @@ module.exports = (() => {
 						else if(pathname.match(/^\/[a-z]+$/)) return pathname.substr(1, 1).toUpperCase() + pathname.substr(2);
 						else return pathname;
 					}
+				}
+				
+				// COMING SOON
+				registerKeybinds(){
+					
+				}
+				
+				unregisterKeybinds(){
+					
+				}
+				
+				nextTab(){
+					this.switchToTab((this.selectedTab + 1) % this.tabs.length);
+				}
+				
+				previousTab(){
+					this.switchToTab((this.selectedTab + this.tabs.length - 1) % this.tabs.length);
 				}
 			}
 		};
