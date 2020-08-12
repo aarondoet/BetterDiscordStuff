@@ -102,6 +102,8 @@ module.exports = (() => {
 				onStart(){
 					PluginUtilities.addStyle("channelTabs-style", `
 						.channelTabs-name {
+							margin-left: 6px;
+							margin-top: 2px;
 							width: 132px;
 							display: inline-block;
 							overflow: hidden;
@@ -111,18 +113,19 @@ module.exports = (() => {
 						.channelTabs-tab {
 							display: inline-block;
 							margin: 2px 0;
-							margin-left: 4px;
-							font-size: 18px;
+							margin-left: 2px;
+							font-size: 16px;
 							width: 150px;
 							position: relative;
 							background: none;
 							border:none;
-							padding:6px;
+							padding:5px 5px 3px;
 							border-radius:5px;
 							color:var(--interactive-normal);
 						}
 						.channelTabs-tabContainer {
-							height: 36px;
+							margin-left: 72px;
+							height: 32px;
 							background: var(--background-secondary-alt);
 							z-index: 1;
 						}
@@ -138,13 +141,13 @@ module.exports = (() => {
 						.channelTabs-close {
 							display: inline-block;
 							position: absolute;
-							right: 4px;
-							top: 5px;
+							right: 7px;
+							top: 7px;
 							width: 14px;
 							height: 14px;
 							border-radius: 7px;
 							text-align: center;
-							line-height:11px;
+							line-height:9px;
 							font-size: 15px;
 							background: var(--interactive-muted);
 							color: var(--background-secondary-alt);
