@@ -42,21 +42,24 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.0.0",
+			version: "1.1.0",
 			description: "Allows you to open multiple tabs",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "Proper styling",
+				title: "New features",
 				type: "added",
-				items: ["Thanks to 11pixels#2004 for creating a way better style than I would be able to make!"]
+				items: [
+					"Middle clicking on a tab closes it",
+					"Added icon to tabs (if present)"
+				]
 			},
 			{
-				title: "Actual release",
-				type: "progress",
-				items: ["This plugin is now officially released."]
+				title: "Fixes",
+				type: "fixed",
+				items: ["The title for the guild discovery is correct now"]
 			}
 		]
 	};
@@ -92,7 +95,7 @@ module.exports = (() => {
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const { WebpackModules, PluginUtilities, DiscordModules, ReactComponents, Patcher, DCM } = Api;
+			const { WebpackModules, PluginUtilities, DiscordModules, Patcher, DCM } = Api;
 			const { React } = DiscordModules;
 			return class ChannelTabs extends Plugin {
 				constructor(){
@@ -101,25 +104,32 @@ module.exports = (() => {
 				
 				onStart(){
 					PluginUtilities.addStyle("channelTabs-style", `
-						.channelTabs-name {
-							width: 132px;
-							display: inline-block;
-							overflow: hidden;
-							white-space: nowrap;
-							text-overflow: ellipsis;
+						:root {
+							--channelTabs-tabWidth: 190px;
 						}
 						.channelTabs-tab {
 							display: inline-block;
 							margin: 2px 0;
 							margin-left: 4px;
 							font-size: 18px;
-							width: 150px;
+							width: var(--channelTabs-tabWidth);
 							position: relative;
 							background: none;
 							border:none;
 							padding:6px;
 							border-radius:5px;
 							color:var(--interactive-normal);
+							height: 20px;
+						}
+						.channelTabs-name {
+							width: calc(var(--channelTabs-tabWidth) - 18px);
+							display: inline-block;
+							overflow: hidden;
+							white-space: nowrap;
+							text-overflow: ellipsis;
+						}
+						.channelTabs-name:only-child {
+							width: calc(var(--channelTabs-tabWidth) - 2px);
 						}
 						.channelTabs-tabContainer {
 							height: 36px;
@@ -167,16 +177,28 @@ module.exports = (() => {
 							background:var(--interactive-muted);
 							font-weight: 600;
 							cursor: pointer;
-							color: var(--background-secondary-alt)
+							color: var(--background-secondary-alt);
+							position: absolute;
+							top: 9px;
 						}
 						.channelTabs-newTab:hover {
 							background: var(--interactive-normal);
+						}
+						.channelTabs-tabIcon {
+							height: 100%;
+							display: inline-block;
+							margin-right: 5px;
+							border-radius: 40%;
+						}
+						.channelTabs-tabIcon ~ .channelTabs-name {
+							width: calc(var(--channelTabs-tabWidth) - 32px);
 						}
 					`);
 					this.tabs = [{
 						name: this.getCurrentName(),
 						url: location.pathname,
-						selected: true
+						selected: true,
+						iconUrl: this.getCurrentIconUrl()
 					}];
 					this.selectedTab = 0;
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
@@ -198,7 +220,8 @@ module.exports = (() => {
 					this.tabs[this.selectedTab] = {
 						name: this.getCurrentName(),
 						url: location.pathname,
-						selected: true
+						selected: true,
+						iconUrl: this.getCurrentIconUrl()
 					};
 					this.rerenderAppView();
 				}
@@ -218,21 +241,21 @@ module.exports = (() => {
 				
 				patchTextChannelContextMenu(){
 					const [, , TextChannelContextMenu] = WebpackModules.getModules(m => m.default && m.default.displayName == "ChannelListTextChannelContextMenu");
-					Patcher.after(TextChannelContextMenu, "default", (thisObject, [props], returnValue) => {
+					Patcher.after(TextChannelContextMenu, "default", (_, [props], returnValue) => {
 						returnValue.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, props.channel.name)
+							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
 						}))
 					});
 				}
 				
 				patchDMContextMenu(){
 					const DMContextMenu = WebpackModules.find(({ default: defaul }) => defaul && defaul.displayName === 'DMUserContextMenu');
-					Patcher.after(DMContextMenu, "default", (thisObject, [props], returnValue) => {
+					Patcher.after(DMContextMenu, "default", (_, [props], returnValue) => {
 						if(!returnValue) return;
 						returnValue.props.children.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, props.channel.name || props.user.username)
+							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
 						}))
 					});
 				}
@@ -243,7 +266,7 @@ module.exports = (() => {
 						if(!returnValue) return;
 						returnValue.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", "))
+							action: ()=>this.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
 						}))
 					});
 				}
@@ -255,7 +278,7 @@ module.exports = (() => {
 							{
 								className: "channelTabs-tabContainer"
 							},
-							...tabs.map((tab, tabIndex) => this.renderTab(tab, tabIndex)),
+							...tabs.map((tab, tabIndex) => this.renderTab(tab, tabIndex, this.tabs.length)),
 							React.createElement(
 								"div",
 								{
@@ -274,13 +297,22 @@ module.exports = (() => {
 					);
 				}
 				
-				renderTab(tab, tabIndex){
+				renderTab(tab, tabIndex, tabCount){
 					return React.createElement(
 						"div",
 						{
 							className: "channelTabs-tab" + (tab.selected ? " channelTabs-selected" : ""),
-							onClick: ()=>this.switchToTab(tabIndex)
+							onClick: ()=>{if(!tab.selected) this.switchToTab(tabIndex);},
+							onMouseUp: e=>{
+								if(e.button!==1) return;
+								e.preventDefault();
+								this.closeTab(tabIndex);
+							}
 						},
+						!tab.iconUrl ? null : React.createElement("img", {
+							className: "channelTabs-tabIcon",
+							src: tab.iconUrl
+						}),
 						React.createElement(
 							"span",
 							{
@@ -288,7 +320,7 @@ module.exports = (() => {
 							},
 							tab.name
 						),
-						React.createElement(
+						tabCount == 1 ? null : React.createElement(
 							"div",
 							{
 								className: "channelTabs-close",
@@ -302,11 +334,12 @@ module.exports = (() => {
 					);
 				}
 				
-				saveChannel(guildId, channelId, channelName){
+				saveChannel(guildId, channelId, name, iconUrl){
 					if(!this.tabs.some(tab=>tab.channelId===channelId)){
 						this.tabs.push({
 							url: `/channels/${guildId || "@me"}/${channelId}`,
-							name: channelName
+							name,
+							iconUrl
 						});
 						this.rerenderAppView();
 					}
@@ -338,14 +371,34 @@ module.exports = (() => {
 					const cId = DiscordModules.SelectedChannelStore.getChannelId();
 					if(cId){
 						const channel = DiscordModules.ChannelStore.getChannel(cId);
-						if(channel.name) return channel.name;
-						else if(channel.rawRecipients) return channel.rawRecipients.map(u=>u.username).join(", ");
+						if(channel.name) return (channel.guild_id ? "#" : "@") + channel.name;
+						else if(channel.rawRecipients) return "@" + channel.rawRecipients.map(u=>u.username).join(", ");
 						else return location.pathname;
 					}else{
 						if(pathname === "/channels/@me") return "Friends";
-						else if(pathname.match(/^\/[a-z]+$/)) return pathname.substr(1, 1).toUpperCase() + pathname.substr(2);
+						else if(pathname.match(/^\/[a-z\-]+$/)) return pathname.substr(1).split("-").map(part => part.substr(0, 1).toUpperCase() + part.substr(1)).join(" ");
 						else return pathname;
 					}
+				}
+				
+				getCurrentIconUrl(){
+					const { pathname } = location;
+					const cId = DiscordModules.SelectedChannelStore.getChannelId();
+					if(cId){
+						const channel = DiscordModules.ChannelStore.getChannel(cId);
+						if(channel.guild_id){
+							const guild = DiscordModules.GuildStore.getGuild(channel.guild_id);
+							return guild.getIconURL() || "";
+						}else{
+							if(channel.isDM()){
+								const user = DiscordModules.UserStore.getUser(channel.getRecipientId());
+								return user.avatarURL;
+							}else if(channel.isGroupDM()){
+								// TODO
+							}
+						}
+					}
+					return "";
 				}
 				
 				// COMING SOON
