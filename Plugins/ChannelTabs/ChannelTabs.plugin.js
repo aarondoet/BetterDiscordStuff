@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.1.0",
+			version: "1.1.1",
 			description: "Allows you to open multiple tabs",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -59,7 +59,10 @@ module.exports = (() => {
 			{
 				title: "Fixes",
 				type: "fixed",
-				items: ["The title for the guild discovery is correct now"]
+				items: [
+					"The title for the guild discovery is correct now",
+					"Tabs without icon are not placed lower than tabs with icon anymore"
+				]
 			}
 		]
 	};
@@ -185,12 +188,13 @@ module.exports = (() => {
 							background: var(--interactive-normal);
 						}
 						.channelTabs-tabIcon {
-							height: 100%;
+							height: 20px;
 							display: inline-block;
-							margin-right: 5px;
 							border-radius: 40%;
+							position: absolute;
 						}
 						.channelTabs-tabIcon ~ .channelTabs-name {
+							margin-left: 27px;
 							width: calc(var(--channelTabs-tabWidth) - 32px);
 						}
 					`);
