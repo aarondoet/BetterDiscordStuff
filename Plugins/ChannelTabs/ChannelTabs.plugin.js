@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.1.1",
+			version: "1.2.0",
 			description: "Allows you to open multiple tabs",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -52,16 +52,8 @@ module.exports = (() => {
 				title: "New features",
 				type: "added",
 				items: [
-					"Middle clicking on a tab closes it",
-					"Added icon to tabs (if present)"
-				]
-			},
-			{
-				title: "Fixes",
-				type: "fixed",
-				items: [
-					"The title for the guild discovery is correct now",
-					"Tabs without icon are not placed lower than tabs with icon anymore"
+					"If you want to change the size of the tabs you can now just change the `--channelTabs-tabWidth` and `--channelTabs-tabHeight` CSS variables.",
+					"Tabs are now saved. They will be loaded again when restarting discord or reenabling the plugin."
 				]
 			}
 		]
@@ -105,16 +97,23 @@ module.exports = (() => {
 					super();
 				}
 				
+				get defaultSettings(){
+					return {
+						tabs: []
+					};
+				}
+				
 				onStart(){
 					PluginUtilities.addStyle("channelTabs-style", `
 						:root {
 							--channelTabs-tabWidth: 190px;
+							--channelTabs-tabHeight: 20px;
 						}
 						.channelTabs-tab {
 							display: inline-block;
 							margin: 2px 0;
 							margin-left: 4px;
-							font-size: 18px;
+							font-size: calc(var(--channelTabs-tabHeight) - 2px);
 							width: var(--channelTabs-tabWidth);
 							position: relative;
 							background: none;
@@ -122,7 +121,7 @@ module.exports = (() => {
 							padding:6px;
 							border-radius:5px;
 							color:var(--interactive-normal);
-							height: 20px;
+							height: var(--channelTabs-tabHeight);
 						}
 						.channelTabs-name {
 							width: calc(var(--channelTabs-tabWidth) - 18px);
@@ -135,7 +134,7 @@ module.exports = (() => {
 							width: calc(var(--channelTabs-tabWidth) - 2px);
 						}
 						.channelTabs-tabContainer {
-							height: 36px;
+							height: calc(var(--channelTabs-tabHeight) + 16px);
 							background: var(--background-secondary-alt);
 							z-index: 1;
 						}
@@ -182,29 +181,31 @@ module.exports = (() => {
 							cursor: pointer;
 							color: var(--background-secondary-alt);
 							position: absolute;
-							top: 9px;
+							top: calc(var(--channelTabs-tabHeight) / 2 - 2px);
 						}
 						.channelTabs-newTab:hover {
 							background: var(--interactive-normal);
 						}
 						.channelTabs-tabIcon {
-							height: 20px;
+							height: var(--channelTabs-tabHeight);
 							display: inline-block;
 							border-radius: 40%;
 							position: absolute;
 						}
 						.channelTabs-tabIcon ~ .channelTabs-name {
-							margin-left: 27px;
-							width: calc(var(--channelTabs-tabWidth) - 32px);
+							margin-left: calc(var(--channelTabs-tabHeight) + 7px);
+							width: calc(var(--channelTabs-tabWidth) - var(--channelTabs-tabHeight) - 12px);
 						}
 					`);
-					this.tabs = [{
+					this.loadSettings();
+					this.tabs = this.settings.tabs.length == 0 ? [{
 						name: this.getCurrentName(),
 						url: location.pathname,
 						selected: true,
 						iconUrl: this.getCurrentIconUrl()
-					}];
-					this.selectedTab = 0;
+					}] : this.settings.tabs;
+					this.selectedTab = this.findIndex(this.tabs, tab=>tab.selected);
+					this.switchToTab(this.selectedTab);
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
 					this.patchAppView(this.promises.state);
 					this.patchTextChannelContextMenu();
@@ -228,6 +229,14 @@ module.exports = (() => {
 						iconUrl: this.getCurrentIconUrl()
 					};
 					this.rerenderAppView();
+					this.saveSettings();
+				}
+				
+				findIndex(arr, query){
+					for(let i = 0; i < arr.length; i++){
+						if(query(arr[i])) return i;
+					}
+					return -1;
 				}
 				
 				async patchAppView(promiseState){
@@ -294,6 +303,7 @@ module.exports = (() => {
 											selected: false
 										});
 										this.rerenderAppView();
+										this.saveSettings();
 									}
 								},
 								"+"
@@ -346,6 +356,7 @@ module.exports = (() => {
 							iconUrl
 						});
 						this.rerenderAppView();
+						this.saveSettings();
 					}
 				}
 				
@@ -356,6 +367,7 @@ module.exports = (() => {
 					this.switching = true;
 					DiscordModules.NavigationUtils.transitionTo(this.tabs[this.selectedTab].url);
 					this.switching = false;
+					this.saveSettings();
 				}
 				
 				closeTab(tabIndex){
@@ -368,6 +380,7 @@ module.exports = (() => {
 						this.selectedTab--;
 					}
 					this.rerenderAppView();
+					this.saveSettings();
 				}
 				
 				getCurrentName(){
@@ -420,6 +433,14 @@ module.exports = (() => {
 				
 				previousTab(){
 					this.switchToTab((this.selectedTab + this.tabs.length - 1) % this.tabs.length);
+				}
+				
+				loadSettings(){
+					this.settings = PluginUtilities.loadSettings(this.getName(), this.defaultSettings);
+				}
+				saveSettings(){
+					this.settings.tabs = this.tabs;
+					PluginUtilities.saveSettings(this.getName(), this.settings);
 				}
 			}
 		};
