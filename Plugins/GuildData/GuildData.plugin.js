@@ -1541,7 +1541,7 @@ class GuildData {
 		let popup = this.alertText('Welcome', `<p>GuildData is a plugin that displays the Guild Information such as the owner, when the server was created, when you joined, their verification level, etc. As well as user, channel, and role information which is very detailed.</p>
 		<p>To use this plugin, rigth click a guild in the guild list and click on the item "Show Guild Data" in the context menu. You can also click on the name of a guild above the channel list and click the button with the text "Show Guild Data" there.</p>
 		<button class="guilddata-welcome guilddata-openchangelog" style="position:absolute;bottom:5px;right:5px;background-color:#677bc4;color:#fff">Show Changelog</button>`);
-		$(popup.querySelector("button.guilddata-welcome.guilddata-openchangelog")).addEventListener("click", ()=>this.showChangelog());
+		$(popup.querySelector("button.guilddata-welcome.guilddata-openchangelog")).on("click", ()=>this.showChangelog());
 	}
 	// probably have to rewrite it since it is just copied from the old version of this plugin, but i'm too lazy rn
 	showChangelog(oldVersion, newVersion){
