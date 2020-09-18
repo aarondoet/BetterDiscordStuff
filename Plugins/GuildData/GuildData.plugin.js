@@ -1393,7 +1393,6 @@ class GuildData {
 								<div class="scroller-2FKFPG da-scroller systemPad-3UxEGl da-systemPad inner-ZyuQk0 da-inner content-2oypg3 da-content">
 									<div class="markdown-11q6EU da-markdown">
 										<div class="paragraph-3Ejjt0 da-paragraph">
-											${t.includes("<input") ? `Inputting passwords might not be working at the moment. Open the console (CTRL+SHIFT+I) and execute <b>BdApi.Plugins.get("AccountSwitcher").setPassword("<i style='opacity:0.9;'>your password here</i>")</b> to set the password. Enabling encryption should not work this way.<br><br>` : ""}
 											${t}
 										</div>
 									</div>
