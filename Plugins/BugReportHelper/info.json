@@ -1,0 +1,14 @@
+{
+  "supportChannels": {
+    "523549866790617118": ["l0c4lh057"],
+	  "655486376858615838": ["Strencher"]
+  },
+  "knownIssues": {
+    "GuildData": [
+      {
+        "title": "[something] does not work",
+        "solution": "The plugin currently is in a broken state. I will rewrite it at some point in the future but I can't tell when that will be."
+      }
+    ]
+  }
+}
