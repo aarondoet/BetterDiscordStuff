@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.0.0",
+			version: "1.0.1",
 			description: "Makes it easier for you to report issues by adding a help button in some support channels (e.g. that on my server). Using that to report issues will (hopefully) give all the information needed for fixing the problem.",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BugReportHelper/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js"
@@ -65,9 +65,9 @@ module.exports = (() => {
 		],
 		changelog: [
 			{
-				title: "Release",
+				title: "New features",
 				type: "added",
-				items: ["Initial release"]
+				items: ["Now supports Powercord with bdCompat"]
 			}
 		]
 	};
@@ -89,7 +89,8 @@ module.exports = (() => {
 							await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
 						});
 					}
-				});
+				}
+			);
 		}
 		start(){}
 		stop(){}
@@ -119,7 +120,7 @@ module.exports = (() => {
 				container: WebpackModules.getByProps("body", "container", "content").container,
 				content: WebpackModules.getByProps("body", "container", "content").content
 			}
-			const isPowercord = ()=>window.WebSocket&&window.WebSocket.name&&window.WebSocket.name.includes("Patched");
+			const isPowercord = ()=>!!window.powercord;
 			const issueOther = {title: "Other"};
 			const PluginInfo = class PluginInfo {
 				constructor(name, version, author, instance){
@@ -557,7 +558,7 @@ module.exports = (() => {
 							return `\n\n**Information**
 - Versions:
 	\\* Plugin: ${this.state.selectedPlugin.getVersion()}
-	\\* BBD: ${isPowercord() ? "Powercord" : BdApi.getBDData("version")}
+	\\* BD: ${isPowercord() ? `Powercord ${window.powercord.gitInfos.revision.substring(0, 7)} (bdCompat ${window.powercord.pluginManager.get('bdCompat').manifest.version})` : BdApi.getBDData("version")}
 	\\* ZLibrary: ${(getPlugin("ZeresPluginLibrary")||{getVersion:()=>"not installed"}).getVersion()}
 	\\* Release channel: ${WebpackModules.getByProps("releaseChannel").releaseChannel}
 	\\* Build ID: ${GLOBAL_ENV.SENTRY_TAGS.buildId}
