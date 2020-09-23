@@ -14,7 +14,7 @@ var TypingIndicator = (() => {
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.4.0",
+			version: "0.4.1",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
