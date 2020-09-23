@@ -66,7 +66,7 @@ var TypingIndicator = (() => {
 			{
 				"title": "Fixed",
 				"type": "Fixed",
-				"items": ["Typing indicator showing on home icon again","Indicator should also be visible with light theme now","Switched from spaces to tabs"]
+				"items": ["Fixed typing indicator not working on channels."]
 			}
 		]
 	};
@@ -174,7 +174,7 @@ var TypingIndicator = (() => {
 						const wrappedCount = fluxWrapper(({count}) => {
 							return React.createElement(renderElement, {cnt: count, opacity: 0.7, type: "channel"});
 						});
-						returnValue.props.children.props.children.push(React.createElement(wrappedCount));
+						returnValue.props.children.props.children.props.children.push(React.createElement(wrappedCount));
 					});
 					TextChannel.forceUpdateAll();
 				}
