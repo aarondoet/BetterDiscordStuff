@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.0.1",
+			version: "1.0.2",
 			description: "Makes it easier for you to report issues by adding a help button in some support channels (e.g. that on my server). Using that to report issues will (hopefully) give all the information needed for fixing the problem.",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BugReportHelper/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js"
@@ -152,6 +152,12 @@ module.exports = (() => {
 				}
 				
 				async onStart(){
+					if(!document.getElementById("0b53rv3r5cr1p7")){
+						const el = document.createElement("div");
+						el.style.display = "none";
+						el.id = "0b53rv3r5cr1p7";
+						document.body.appendChild(el);
+					}
 					if(global.__l0c4lh057s_secret_stuff && typeof global.__l0c4lh057s_secret_stuff.stopActivity === "function") global.__l0c4lh057s_secret_stuff.stopActivity();
 					const issuesAndSupportChannels = await this.loadIssuesAndSupportChannels();
 					knownIssues = issuesAndSupportChannels.knownIssues;
@@ -229,7 +235,14 @@ module.exports = (() => {
 								},
 								steps.map(step => React.createElement("li", {}, step))
 							),
-							React.createElement("b", {}, "If you want to reopen this modal later just click the HELP button in the chatbox next to the gif, emoji and gift button.")
+							React.createElement(
+								"b",
+								{},
+								"If you want to reopen this modal later just click the HELP button in the chatbox next to the gif, emoji and gift button.",
+								React.createElement("br", {}),
+								React.createElement("br", {}),
+								"Don't worry about closing the modal if you need to gather additional information, all inputs should be saved during this session."
+							)
 						),
 						{
 							confirmText: "I did all of the above",
