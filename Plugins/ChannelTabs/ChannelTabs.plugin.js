@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.0.1",
+			version: "2.0.2",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -93,7 +93,7 @@ module.exports = (() => {
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClasses, Patcher, DCM, ReactComponents, Settings } = Api;
+			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings } = Api;
 			const { React } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			
@@ -623,7 +623,7 @@ module.exports = (() => {
 						
 						/* MAC FIX */
 						/* first tab/fav in the tab/fav-bar, depends whether tab bar is enabled */
-						.${DiscordClasses.Titlebar.typeMacOS.value.replaceAll(" ", ".")} ~ div .channelTabs-container > :first-child > :first-child {
+						.${DiscordClassModules.Titlebar.typeMacOS.replaceAll(" ", ".")} ~ div .channelTabs-container > :first-child > :first-child {
 							margin-left: 72px;
 						}
 						/* remove top margin of guild list, not necessary anymore */
