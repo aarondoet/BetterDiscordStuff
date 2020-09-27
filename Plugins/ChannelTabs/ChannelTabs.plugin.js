@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.0.0",
+			version: "2.0.1",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -60,6 +60,11 @@ module.exports = (() => {
 					"Tab context menus: Right click on a tab to get a menu with some actions.",
 					"Bookmarks! Right click a tab to add it to your favourites or add the currently selected channels as bookmark by right clicking the fav bar. If you don't want to use this feature, please disable it in the plugin settings."
 				]
+			},
+			{
+				title: "Fixed",
+				type: "fixed",
+				items: ["If you are using mac you should no longer have problems with the min/max/close buttons overlapping with the tab bar (if your theme does not modify those buttons itself)"]
 			}
 		]
 	};
@@ -88,7 +93,7 @@ module.exports = (() => {
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const { WebpackModules, PluginUtilities, DiscordModules, Patcher, DCM, ReactComponents, Settings } = Api;
+			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClasses, Patcher, DCM, ReactComponents, Settings } = Api;
 			const { React } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			
@@ -614,6 +619,16 @@ module.exports = (() => {
 						}
 						.channelTabs-favIcon ~ .channelTabs-favName {
 							margin-left: calc(var(--channelTabs-favHeight) + 3px);
+						}
+						
+						/* MAC FIX */
+						/* first tab/fav in the tab/fav-bar, depends whether tab bar is enabled */
+						.${DiscordClasses.Titlebar.typeMacOS.value.replaceAll(" ", ".")} ~ div .channelTabs-container > :first-child > :first-child {
+							margin-left: 72px;
+						}
+						/* remove top margin of guild list, not necessary anymore */
+						.platform-osx .wrapper-1Rf91z {
+							margin-top: 0;
 						}
 					`);
 					this.loadSettings();
