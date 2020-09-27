@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.0.2",
+			version: "2.0.3",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -623,7 +623,7 @@ module.exports = (() => {
 						
 						/* MAC FIX */
 						/* first tab/fav in the tab/fav-bar, depends whether tab bar is enabled */
-						.${DiscordClassModules.Titlebar.typeMacOS.replaceAll(" ", ".")} ~ div .channelTabs-container > :first-child > :first-child {
+						.${DiscordClassModules.Titlebar.typeMacOS.replace(/ /g, ".")} ~ div .channelTabs-container > :first-child > :first-child {
 							margin-left: 72px;
 						}
 						/* remove top margin of guild list, not necessary anymore */
