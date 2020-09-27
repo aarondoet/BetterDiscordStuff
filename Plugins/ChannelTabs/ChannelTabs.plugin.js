@@ -628,7 +628,10 @@ module.exports = (() => {
 						}
 						/* remove top margin of guild list, not necessary anymore */
 						.platform-osx .wrapper-1Rf91z {
-							margin-top: 12px;
+							margin-top: 0;
+						}
+						.platform-osx .scroller-2TZvBN {
+							padding-top: 12px;
 						}
 					`);
 					this.loadSettings();
