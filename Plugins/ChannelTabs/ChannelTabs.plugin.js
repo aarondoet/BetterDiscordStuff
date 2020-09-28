@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.0.3",
+			version: "2.0.4",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -57,14 +57,14 @@ module.exports = (() => {
 				title: "Added",
 				type: "added",
 				items: [
-					"Tab context menus: Right click on a tab to get a menu with some actions.",
+					"Tab context menus: Right click on a tab to get a menu with some actions. **(NEW update: you can move tabs that way)**",
 					"Bookmarks! Right click a tab to add it to your favourites or add the currently selected channels as bookmark by right clicking the fav bar. If you don't want to use this feature, please disable it in the plugin settings."
 				]
 			},
 			{
-				title: "Fixed",
+				title: "Removed",
 				type: "fixed",
-				items: ["If you are using mac you should no longer have problems with the min/max/close buttons overlapping with the tab bar (if your theme does not modify those buttons itself)"]
+				items: ["The confirmation when removing bookmarks is no longer there."]
 			}
 		]
 	};
@@ -149,7 +149,7 @@ module.exports = (() => {
 				"div",
 				{
 					className: "channelTabs-tab" + (props.selected ? " channelTabs-selected" : ""),
-					onClick: ()=>props.switchToTab(props.tabIndex),
+					onClick: ()=>{if(!props.selected) props.switchToTab(props.tabIndex);},
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
 						e.preventDefault();
@@ -163,6 +163,14 @@ module.exports = (() => {
 									type: "group",
 									items: [
 										{
+											label: "Move left",
+											action: props.moveLeft
+										},
+										{
+											label: "Move right",
+											action: props.moveRight
+										},
+										{
 											label: "Add to favourites",
 											action: ()=>props.addToFavs(props.name, props.iconUrl, props.url)
 										},
@@ -171,7 +179,7 @@ module.exports = (() => {
 											action: ()=>props.closeTab(props.tabIndex),
 											danger: true
 										}
-									]
+									].slice(props.tabCount < 2 ? 2 : 0)
 								}
 							]),
 							{
@@ -206,6 +214,8 @@ module.exports = (() => {
 						switchToTab: props.switchToTab,
 						closeTab: props.closeTab,
 						addToFavs: props.addToFavs,
+						moveLeft: ()=>props.moveLeft(tabIndex),
+						moveRight: ()=>props.moveRight(tabIndex),
 						tabCount: props.tabs.length,
 						tabIndex,
 						name: tab.name,
@@ -391,16 +401,9 @@ module.exports = (() => {
 					);
 				}
 				deleteFav(favIndex){
-					BdApi.showConfirmationModal(
-						"Are you sure?",
-						"This action can not be reverted.",
-						{
-							confirmText: "Delete",
-							onConfirm: ()=>this.setState({
-								favs: this.state.favs.filter((fav, index)=>index!==favIndex)
-							}, this.props.plugin.saveSettings)
-						}
-					)
+					this.setState({
+						favs: this.state.favs.filter((fav, index)=>index!==favIndex)
+					}, this.props.plugin.saveSettings);
 				}
 				addToFavs(name, iconUrl, url){
 					console.log(name, iconUrl, url);
@@ -427,7 +430,23 @@ module.exports = (() => {
 									}]
 								}, this.props.plugin.saveSettings)
 							},
-							addToFavs: this.addToFavs
+							addToFavs: this.addToFavs,
+							moveLeft: tabIndex=>{
+								const tabs = this.state.tabs.filter((tab, index)=>index!==tabIndex);
+								tabs.splice((tabIndex+this.state.tabs.length-1)%this.state.tabs.length, 0, this.state.tabs[tabIndex]);
+								this.setState({
+									tabs,
+									selectedTabIndex: tabs.findIndex(tab=>tab.selected)
+								}, this.props.plugin.saveSettings);
+							},
+							moveRight: tabIndex=>{
+								const tabs = this.state.tabs.filter((tab, index)=>index!==tabIndex);
+								tabs.splice((tabIndex+1)%this.state.tabs.length, 0, this.state.tabs[tabIndex]);
+								this.setState({
+									tabs,
+									selectedTabIndex: tabs.findIndex(tab=>tab.selected)
+								}, this.props.plugin.saveSettings);
+							}
 						}),
 						!this.state.showFavBar ? null : React.createElement(FavBar, {
 							favs: this.state.favs,
@@ -648,6 +667,9 @@ module.exports = (() => {
 					this.patchGroupContextMenu();
 					this.patchGuildIconContextMenu();
 					this.patchTextChannelContextMenu();
+					switching = true;
+					DiscordModules.NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
+					switching = false;
 				}
 				
 				onStop(){
