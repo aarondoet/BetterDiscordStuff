@@ -64,7 +64,7 @@ module.exports = (() => {
 			{
 				title: "Removed",
 				type: "fixed",
-				items: ["The confirmation when removing bookmarks is no longer there."]
+				items: ["The confirmation when removing bookmarks is no longer there.", "Also if you disable the plugin it should no longer display a big empty area anymore."]
 			}
 		]
 	};
@@ -98,6 +98,7 @@ module.exports = (() => {
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			
 			var switching = false;
+			var patches = [];
 			
 			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
 				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
@@ -171,6 +172,10 @@ module.exports = (() => {
 											action: props.moveRight
 										},
 										{
+											label: "Duplicate",
+											action: props.openInNewTab
+										},
+										{
 											label: "Add to favourites",
 											action: ()=>props.addToFavs(props.name, props.iconUrl, props.url)
 										},
@@ -216,6 +221,7 @@ module.exports = (() => {
 						addToFavs: props.addToFavs,
 						moveLeft: ()=>props.moveLeft(tabIndex),
 						moveRight: ()=>props.moveRight(tabIndex),
+						openInNewTab: ()=>props.openInNewTab(tab),
 						tabCount: props.tabs.length,
 						tabIndex,
 						name: tab.name,
@@ -415,7 +421,7 @@ module.exports = (() => {
 					return React.createElement(
 						"div",
 						{
-							className: "channelTabs-container"
+							id: "channelTabs-container"
 						},
 						!this.state.showTabBar ? null : React.createElement(TabBar, {
 							tabs: this.state.tabs,
@@ -429,6 +435,11 @@ module.exports = (() => {
 										selected: false
 									}]
 								}, this.props.plugin.saveSettings)
+							},
+							openInNewTab: tab=>{
+								this.setState({
+									tabs: [...this.state.tabs, Object.assign({}, tab, {selected: false})]
+								}, this.props.plugin.saveSettings);
 							},
 							addToFavs: this.addToFavs,
 							moveLeft: tabIndex=>{
@@ -549,7 +560,7 @@ module.exports = (() => {
 						.channelTabs-tabName:only-child {
 							width: calc(var(--channelTabs-tabWidth) - 2px);
 						}
-						.channelTabs-container {
+						#channelTabs-container {
 							z-index: 1;
 						}
 						.channelTabs-tabContainer {
@@ -642,7 +653,7 @@ module.exports = (() => {
 						
 						/* MAC FIX */
 						/* first tab/fav in the tab/fav-bar, depends whether tab bar is enabled */
-						.${DiscordClassModules.Titlebar.typeMacOS.replace(/ /g, ".")} ~ div .channelTabs-container > :first-child > :first-child {
+						.${DiscordClassModules.Titlebar.typeMacOS.replace(/ /g, ".")} ~ div #channelTabs-container > :first-child > :first-child {
 							margin-left: 72px;
 						}
 						/* remove top margin of guild list, not necessary anymore */
@@ -653,6 +664,7 @@ module.exports = (() => {
 							padding-top: 12px;
 						}
 					`);
+					patches = [];
 					this.loadSettings();
 					if(this.settings.tabs.length == 0) this.settings.tabs = [{
 						name: getCurrentName(),
@@ -676,11 +688,12 @@ module.exports = (() => {
 					PluginUtilities.removeStyle("channelTabs-style");
 					Patcher.unpatchAll();
 					this.promises.cancel();
+					patches.forEach(patch=>patch());
 				}
 				
 				onSwitch(){
 					if(switching) return;
-					TopBarRef.current.setState({
+					if(TopBarRef.current) TopBarRef.current.setState({
 						tabs: TopBarRef.current.state.tabs.map(tab => {
 							if(tab.selected){
 								return {
@@ -713,6 +726,7 @@ module.exports = (() => {
 						].flat();
 					});
 					AppView.forceUpdateAll();
+					patches.push(()=>AppView.forceUpdateAll());
 				}
 				
 				patchGuildIconContextMenu(){
@@ -722,7 +736,7 @@ module.exports = (() => {
 						const channel = DiscordModules.ChannelStore.getChannel(DiscordModules.SelectedChannelStore.getChannelId(props.guild.id));
 						returnValue.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
+							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
 						}))
 					});
 				}
@@ -733,7 +747,7 @@ module.exports = (() => {
 						if(!this.settings.showTabBar) return;
 						returnValue.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
+							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
 						}))
 					});
 				}
@@ -745,7 +759,7 @@ module.exports = (() => {
 						if(!returnValue) return;
 						returnValue.props.children.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
+							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
 						}))
 					});
 				}
@@ -757,7 +771,7 @@ module.exports = (() => {
 						if(!returnValue) return;
 						returnValue.props.children.push(DCM.buildMenuItem({
 							label: "Open in new tab",
-							action: ()=>TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
+							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
 						}))
 					});
 				}
@@ -775,8 +789,10 @@ module.exports = (() => {
 					this.settings = PluginUtilities.loadSettings(this.getName(), this.defaultVariables);
 				}
 				saveSettings(){
-					this.settings.tabs = TopBarRef.current.state.tabs;
-					this.settings.favs = TopBarRef.current.state.favs;
+					if(TopBarRef.current){
+						this.settings.tabs = TopBarRef.current.state.tabs;
+						this.settings.favs = TopBarRef.current.state.favs;
+					}
 					PluginUtilities.saveSettings(this.getName(), this.settings);
 				}
 				
@@ -787,14 +803,14 @@ module.exports = (() => {
 					new Settings.SettingGroup(this.getName(), {shown:true}).appendTo(panel)
 							.append(new Settings.Switch("Show tab bar", "Allows you to have multiple tabs like in a web browser", this.settings.showTabBar, checked=>{
 								this.settings.showTabBar = checked;
-								TopBarRef.current.setState({
+								if(TopBarRef.current) TopBarRef.current.setState({
 									showTabBar: checked
 								});
 								this.saveSettings();
 							}))
 							.append(new Settings.Switch("Show fav bar", "Allows you to add bookmarks by right clicking a tab or the fav bar", this.settings.showFavBar, checked=>{
 								this.settings.showFavBar = checked;
-								TopBarRef.current.setState({
+								if(TopBarRef.current) TopBarRef.current.setState({
 									showFavBar: checked
 								});
 								this.saveSettings();
