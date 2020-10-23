@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.1.0",
+			version: "2.1.1",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -54,7 +54,8 @@ module.exports = (() => {
 				items: [
 					"Information when the fav bar is shown but empty, for all the people who can't read a changelog",
 					"A setting to choose whether you want to select the last opened channel again instead of the friends page when starting discord",
-					"Keybinds. For switching to the previous/next tab use *Left CTRL + Page UP* or *Left CTRL + Page DOWN* and to close the current tab press *Left CTRL + W*"
+					"Keybinds. For switching to the previous/next tab use *Left CTRL + Page UP* or *Left CTRL + Page DOWN* and to close the current tab press *Left CTRL + W*",
+					"With no additional themeing the tab bar should now grow if more space is needed for more tabs"
 				]
 			}
 		]
@@ -559,8 +560,9 @@ module.exports = (() => {
 							z-index: 1;
 						}
 						.channelTabs-tabContainer {
-							height: calc(var(--channelTabs-tabHeight) + 14px);
+							min-height: calc(var(--channelTabs-tabHeight) + 14px);
 							background: var(--background-secondary-alt);
+							position: relative;
 						}
 						.channelTabs-tab:not(.channelTabs-selected):hover {
 							background: var(--background-modifier-hover);
@@ -605,7 +607,7 @@ module.exports = (() => {
 							cursor: pointer;
 							color: var(--background-secondary-alt);
 							position: absolute;
-							top: calc(var(--channelTabs-tabHeight) / 2 - 2px);
+							bottom: calc(var(--channelTabs-tabHeight) / 2 - 2px);
 						}
 						.channelTabs-newTab:hover {
 							background: var(--interactive-normal);
