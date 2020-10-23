@@ -42,29 +42,20 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.0.4",
+			version: "2.1.0",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "Rewrite",
-				type: "improved",
-				items: ["The plugin got rewritten. The code now is not as bad anymore and performance might be improved."]
-			},
-			{
 				title: "Added",
 				type: "added",
 				items: [
-					"Tab context menus: Right click on a tab to get a menu with some actions. **(NEW update: you can move tabs that way)**",
-					"Bookmarks! Right click a tab to add it to your favourites or add the currently selected channels as bookmark by right clicking the fav bar. If you don't want to use this feature, please disable it in the plugin settings."
+					"Information when the fav bar is shown but empty, for all the people who can't read a changelog",
+					"A setting to choose whether you want to select the last opened channel again instead of the friends page when starting discord",
+					"Keybinds. For switching to the previous/next tab use *Left CTRL + Page UP* or *Left CTRL + Page DOWN* and to close the current tab press *Left CTRL + W*"
 				]
-			},
-			{
-				title: "Removed",
-				type: "fixed",
-				items: ["The confirmation when removing bookmarks is no longer there.", "Also if you disable the plugin it should no longer display a big empty area anymore."]
 			}
 		]
 	};
@@ -323,14 +314,19 @@ module.exports = (() => {
 						)
 					}
 				},
-				props.favs.map((fav, favIndex) => React.createElement(Fav, {
-					name: fav.name,
-					iconUrl: fav.iconUrl,
-					url: fav.url,
-					rename: ()=>props.rename(fav.name, favIndex),
-					delete: ()=>props.delete(favIndex),
-					openInNewTab: ()=>props.openInNewTab(fav)
-				}))
+				props.favs.length > 0
+					? props.favs.map((fav, favIndex) => React.createElement(Fav, {
+							name: fav.name,
+							iconUrl: fav.iconUrl,
+							url: fav.url,
+							rename: ()=>props.rename(fav.name, favIndex),
+							delete: ()=>props.delete(favIndex),
+							openInNewTab: ()=>props.openInNewTab(fav),
+							mouseDown: ()=>props.mouseDown(favIndex)
+						}))
+					: React.createElement("span", {
+						className: "channelTabs-noFavs"
+					}, "You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.")
 			);
 
 			const TopBar = class TopBar extends React.Component {
@@ -412,7 +408,6 @@ module.exports = (() => {
 					}, this.props.plugin.saveSettings);
 				}
 				addToFavs(name, iconUrl, url){
-					console.log(name, iconUrl, url);
 					this.setState({
 						favs: [...this.state.favs, {name, iconUrl, url}]
 					}, this.props.plugin.saveSettings);
@@ -628,6 +623,7 @@ module.exports = (() => {
 						
 						.channelTabs-favContainer {
 							min-height: calc(var(--channelTabs-favHeight) + 10px);
+							position: relative;
 						}
 						.channelTabs-fav {
 							position: relative;
@@ -649,6 +645,14 @@ module.exports = (() => {
 						}
 						.channelTabs-favIcon ~ .channelTabs-favName {
 							margin-left: calc(var(--channelTabs-favHeight) + 3px);
+						}
+						
+						.channelTabs-noFavs {
+							background-color: var(--background-tertiary);
+							color: var(--text-muted);
+							font-size: calc(var(--channelTabs-favHeight) - 5px);
+							position: absolute;
+							padding: 5px;
 						}
 						
 						/* MAC FIX */
@@ -674,18 +678,23 @@ module.exports = (() => {
 					}];
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
 					this.saveSettings = this.saveSettings.bind(this);
+					this.onSwitch();
 					this.patchAppView(this.promises.state);
 					this.patchDMContextMenu();
 					this.patchGroupContextMenu();
 					this.patchGuildIconContextMenu();
 					this.patchTextChannelContextMenu();
-					switching = true;
-					DiscordModules.NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
-					switching = false;
+					if(this.settings.reopenLastChannel){
+						switching = true;
+						DiscordModules.NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
+						switching = false;
+					}
+					this.registerKeybinds();
 				}
 				
 				onStop(){
 					PluginUtilities.removeStyle("channelTabs-style");
+					this.unregisterKeybinds();
 					Patcher.unpatchAll();
 					this.promises.cancel();
 					patches.forEach(patch=>patch());
@@ -693,20 +702,29 @@ module.exports = (() => {
 				
 				onSwitch(){
 					if(switching) return;
-					if(TopBarRef.current) TopBarRef.current.setState({
-						tabs: TopBarRef.current.state.tabs.map(tab => {
-							if(tab.selected){
-								return {
-									name: getCurrentName(),
-									url: location.pathname,
-									selected: true,
-									iconUrl: getCurrentIconUrl()
-								};
-							}else{
-								return Object.assign({}, tab);
-							}
-						})
-					}, this.saveSettings);
+					if(TopBarRef.current){
+						TopBarRef.current.setState({
+							tabs: TopBarRef.current.state.tabs.map(tab => {
+								if(tab.selected){
+									return {
+										name: getCurrentName(),
+										url: location.pathname,
+										selected: true,
+										iconUrl: getCurrentIconUrl()
+									};
+								}else{
+									return Object.assign({}, tab);
+								}
+							})
+						}, this.saveSettings);
+					}else if(!this.settings.reopenLastChannel){
+						this.settings.tabs[this.settings.tabs.findIndex(tab=>tab.selected)] = {
+							name: getCurrentName(),
+							url: location.pathname,
+							selected: true,
+							iconUrl: getCurrentIconUrl()
+						};
+					}
 				}
 				
 				async patchAppView(promiseState){
@@ -776,12 +794,38 @@ module.exports = (() => {
 					});
 				}
 				
+				registerKeybinds(){
+					const registerKeybind = WebpackModules.getByProps('inputEventRegister').inputEventRegister.bind(WebpackModules.getByProps('inputEventUnregister'));
+					// 37 = CTRL, 112 = PG_UP, 117 = PG_DOWN, 25 = W
+					registerKeybind("53478954398", [[0, 37], [0, 112]], pressed => this.previousTab(), {blurred: false, focused: true, keydown: true, keyup: false});
+					registerKeybind("53478954399", [[0, 37], [0, 117]], pressed => this.nextTab(), {blurred: false, focused: true, keydown: true, keyup: false});
+					registerKeybind("53478954400", [[0, 37], [0, 25]], pressed => this.closeCurrentTab(), {blurred: false, focused: true, keydown: true, keyup: false})
+				}
+				
+				unregisterKeybinds(){
+					const unregisterKeybind = WebpackModules.getByProps('inputEventUnregister').inputEventUnregister.bind(WebpackModules.getByProps('inputEventUnregister'));
+					unregisterKeybind("53478954398");
+					unregisterKeybind("53478954399");
+					unregisterKeybind("53478954400");
+				}
+				
+				nextTab(){
+					if(TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex + 1) % TopBarRef.current.state.tabs.length);
+				}
+				previousTab(){
+					if(TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex - 1 + TopBarRef.current.state.tabs.length) % TopBarRef.current.state.tabs.length);
+				}
+				closeCurrentTab(){
+					if(TopBarRef.current) TopBarRef.current.closeTab(TopBarRef.current.state.selectedTabIndex);
+				}
+				
 				get defaultVariables(){
 					return {
 						tabs: [],
 						favs: [],
 						showTabBar: true,
-						showFavBar: true
+						showFavBar: true,
+						reopenLastChannel: false
 					};
 				}
 				
@@ -813,6 +857,10 @@ module.exports = (() => {
 								if(TopBarRef.current) TopBarRef.current.setState({
 									showFavBar: checked
 								});
+								this.saveSettings();
+							}))
+							.append(new Settings.Switch("Reopen last channel", "When starting the plugin (or discord) the channel will be selected again instead of the friends page", this.settings.reopenLastChannel, checked=>{
+								this.settings.reopenLastChannel = checked;
 								this.saveSettings();
 							}));
 					return panel;
