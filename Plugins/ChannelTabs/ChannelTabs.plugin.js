@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.1.1",
+			version: "2.2.0",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -52,10 +52,18 @@ module.exports = (() => {
 				title: "Added",
 				type: "added",
 				items: [
-					"Information when the fav bar is shown but empty, for all the people who can't read a changelog",
-					"A setting to choose whether you want to select the last opened channel again instead of the friends page when starting discord",
-					"Keybinds. For switching to the previous/next tab use *Left CTRL + Page UP* or *Left CTRL + Page DOWN* and to close the current tab press *Left CTRL + W*",
+					"**Unread Badges:** When there are unread messages or mentions in a tab it will show an indicator.",
+					"**Information when the fav bar is shown but empty**, for all the people who can't read a changelog",
+					"A setting to choose whether you want to **select the last opened channel** again instead of the friends page when starting discord",
+					"**Keybinds:** For switching to the previous/next tab use `Ctrl`+`PageUp` or `Ctrl`+`PageDown` and to close the current tab press `Ctrl`+`W`",
 					"With no additional themeing the tab bar should now grow if more space is needed for more tabs"
+				]
+			},
+			{
+				title: "Changed",
+				type: "progress",
+				items: [
+					"Opening a new tab using the (+) button **automatically switches to the new tab**"
 				]
 			}
 		]
@@ -88,6 +96,9 @@ module.exports = (() => {
 			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings } = Api;
 			const { React } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
+			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
+			const MessageActions = WebpackModules.getByProps("markMessageUnread");
+			const Flux = WebpackModules.getByProps("connectStores");
 			
 			var switching = false;
 			var patches = [];
@@ -127,7 +138,7 @@ module.exports = (() => {
 				},
 				props.name
 			);
-			const TabClose = props=>React.createElement(
+			const TabClose = props=>props.tabCount < 2 ? null : React.createElement(
 				"div",
 				{
 					className: "channelTabs-closeTab",
@@ -138,10 +149,19 @@ module.exports = (() => {
 				},
 				"⨯"
 			);
+			const UnreadBadge = props=>props.unreadCount === 0 ? null : React.createElement("div", {
+				className: "channelTabs-unreadBadge"
+			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
+			const MentionBadge = props=>props.mentionCount === 0 ? null : React.createElement("div", {
+				className: "channelTabs-mentionBadge"
+			}, props.mentionCount);
 			const Tab = props=>React.createElement(
 				"div",
 				{
-					className: "channelTabs-tab" + (props.selected ? " channelTabs-selected" : ""),
+					className: "channelTabs-tab"
+									+ (props.selected ? " channelTabs-selected" : "")
+									+ (props.unreadCount > 0 ? " channelTabs-unread" : "")
+									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
 					onClick: ()=>{if(!props.selected) props.switchToTab(props.tabIndex);},
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
@@ -169,7 +189,7 @@ module.exports = (() => {
 										},
 										{
 											label: "Add to favourites",
-											action: ()=>props.addToFavs(props.name, props.iconUrl, props.url)
+											action: ()=>props.addToFavs(props.name, props.iconUrl, props.url, props.channelId)
 										},
 										{
 											label: "Close",
@@ -188,7 +208,9 @@ module.exports = (() => {
 				},
 				React.createElement(TabIcon, {iconUrl: props.iconUrl}),
 				React.createElement(TabName, {name: props.name}),
-				props.tabCount < 2 ? null : React.createElement(TabClose, {closeTab: ()=>props.closeTab(props.tabIndex)})
+				React.createElement(MentionBadge, {mentionCount: props.mentionCount}),
+				React.createElement(UnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated}),
+				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
 
 			const NewTab = props=>React.createElement(
@@ -199,13 +221,17 @@ module.exports = (() => {
 				},
 				"+"
 			);
-
+			
 			const TabBar = props=>React.createElement(
 				"div",
 				{
 					className: "channelTabs-tabContainer"
 				},
-				props.tabs.map((tab, tabIndex)=>React.createElement(
+				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
+					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
+					unreadEstimated: UnreadStateStore.isEstimated(tab.channelId),
+					mentionCount: UnreadStateStore.getMentionCount(tab.channelId)
+				}))(result => React.createElement(
 					Tab,
 					{
 						switchToTab: props.switchToTab,
@@ -219,9 +245,13 @@ module.exports = (() => {
 						name: tab.name,
 						iconUrl: tab.iconUrl,
 						url: tab.url,
-						selected: tab.selected
+						selected: tab.selected,
+						channelId: tab.channelId,
+						unreadCount: result.unreadCount,
+						unreadEstimated: result.unreadEstimated,
+						mentionCount: result.mentionCount
 					}
-				)),
+				)))),
 				React.createElement(NewTab, {
 					openNewTab: props.openNewTab
 				})
@@ -288,7 +318,7 @@ module.exports = (() => {
 			const FavBar = props=>React.createElement(
 				"div",
 				{
-					className: "channelTabs-favContainer",
+					className: "channelTabs-favContainer" + (props.favs.length == 0 ? " channelTabs-noFavs" : ""),
 					onContextMenu: e=>{
 						DCM.openContextMenu(
 							e,
@@ -298,7 +328,7 @@ module.exports = (() => {
 									items: [
 										{
 											label: "Add current tab as favourite",
-											action: ()=>props.addToFavs(getCurrentName(), getCurrentIconUrl(), location.pathname)
+											action: ()=>props.addToFavs(getCurrentName(), getCurrentIconUrl(), location.pathname, DiscordModules.SelectedChannelStore.getChannelId())
 										},
 										{
 											label: "Hide bookmarks",
@@ -326,10 +356,10 @@ module.exports = (() => {
 							mouseDown: ()=>props.mouseDown(favIndex)
 						}))
 					: React.createElement("span", {
-						className: "channelTabs-noFavs"
+						className: "channelTabs-noFavNotice"
 					}, "You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.")
 			);
-
+			
 			const TopBar = class TopBar extends React.Component {
 				constructor(props){
 					super(props);
@@ -379,7 +409,8 @@ module.exports = (() => {
 						tabs: [...this.state.tabs, {
 							url: `/channels/${guildId || "@me"}/${channelId}`,
 							name,
-							iconUrl
+							iconUrl,
+							channelId
 						}]
 					}, this.props.plugin.saveSettings);
 				}
@@ -408,9 +439,9 @@ module.exports = (() => {
 						favs: this.state.favs.filter((fav, index)=>index!==favIndex)
 					}, this.props.plugin.saveSettings);
 				}
-				addToFavs(name, iconUrl, url){
+				addToFavs(name, iconUrl, url, channelId){
 					this.setState({
-						favs: [...this.state.favs, {name, iconUrl, url}]
+						favs: [...this.state.favs, {name, iconUrl, url, channelId}]
 					}, this.props.plugin.saveSettings);
 				}
 				render(){
@@ -424,13 +455,19 @@ module.exports = (() => {
 							closeTab: this.closeTab,
 							switchToTab: this.switchToTab,
 							openNewTab: ()=>{
+								const newTabIndex = this.state.tabs.length;
 								this.setState({
-									tabs: [...this.state.tabs, {
+									tabs: [...this.state.tabs.map(tab=>Object.assign(tab, {selected: false})), {
 										url: "/channels/@me",
 										name: "Friends",
-										selected: false
-									}]
-								}, this.props.plugin.saveSettings)
+										selected: true,
+										channelId: undefined
+									}],
+									selectedTabIndex: newTabIndex
+								}, ()=>{
+									this.props.plugin.saveSettings();
+									this.switchToTab(newTabIndex);
+								})
 							},
 							openInNewTab: tab=>{
 								this.setState({
@@ -466,7 +503,8 @@ module.exports = (() => {
 										url: fav.url,
 										selected: false,
 										name: getCurrentName(fav.url),
-										iconUrl: getCurrentIconUrl(fav.url)
+										iconUrl: getCurrentIconUrl(fav.url),
+										channelId: fav.channelId
 									}]
 								}, this.props.plugin.saveSettings);
 							},
@@ -623,6 +661,43 @@ module.exports = (() => {
 							width: calc(var(--channelTabs-tabWidth) - var(--channelTabs-tabHeight) - 12px);
 						}
 						
+						.channelTabs-unread:not(.channelTabs-selected),
+						.channelTabs-mention:not(.channelTabs-selected) {
+							color: var(--interactive-hover);
+						}
+						.channelTabs-unread:not(.channelTabs-selected):hover,
+						.channelTabs-mention:not(.channelTabs-selected):hover {
+							color: var(--interactive-active);
+						}
+						.channelTabs-mentionBadge {
+							background-color: rgb(240, 71, 71);
+						}
+						.channelTabs-unreadBadge {
+							background-color: rgb(114, 137, 218);
+						}
+						.channelTabs-mentionBadge,
+						.channelTabs-unreadBadge {
+							position: absolute;
+							display: inline-block;
+							border-radius: 8px;
+							padding-left: 4px;
+							padding-right: 4px;
+							margin-left: 3px;
+							min-width: 8px;
+							width: fit-content;
+							font-size: 12px;
+							line-height: 16px;
+							font-weight: 600;
+							text-align: center;
+							color: #fff;
+							top: 50%;
+							transform: translateY(-50%);
+							right: 20px;
+						}
+						.channelTabs-mentionBadge ~ .channelTabs-unreadBadge {
+							right: 40px;
+						}
+						
 						.channelTabs-favContainer {
 							min-height: calc(var(--channelTabs-favHeight) + 10px);
 							position: relative;
@@ -649,8 +724,7 @@ module.exports = (() => {
 							margin-left: calc(var(--channelTabs-favHeight) + 3px);
 						}
 						
-						.channelTabs-noFavs {
-							background-color: var(--background-tertiary);
+						.channelTabs-noFavNotice {
 							color: var(--text-muted);
 							font-size: calc(var(--channelTabs-favHeight) - 5px);
 							position: absolute;
@@ -680,6 +754,7 @@ module.exports = (() => {
 					}];
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
 					this.saveSettings = this.saveSettings.bind(this);
+					this.keybindHandler = this.keybindHandler.bind(this);
 					this.onSwitch();
 					this.patchAppView(this.promises.state);
 					this.patchDMContextMenu();
@@ -691,12 +766,12 @@ module.exports = (() => {
 						DiscordModules.NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
 						switching = false;
 					}
-					this.registerKeybinds();
+					document.addEventListener("keydown", this.keybindHandler);
 				}
 				
 				onStop(){
 					PluginUtilities.removeStyle("channelTabs-style");
-					this.unregisterKeybinds();
+					document.removeEventListener("keydown", this.keybindHandler);
 					Patcher.unpatchAll();
 					this.promises.cancel();
 					patches.forEach(patch=>patch());
@@ -708,11 +783,13 @@ module.exports = (() => {
 						TopBarRef.current.setState({
 							tabs: TopBarRef.current.state.tabs.map(tab => {
 								if(tab.selected){
+									const channelId = DiscordModules.SelectedChannelStore.getChannelId();
 									return {
 										name: getCurrentName(),
 										url: location.pathname,
 										selected: true,
-										iconUrl: getCurrentIconUrl()
+										iconUrl: getCurrentIconUrl(),
+										channelId
 									};
 								}else{
 									return Object.assign({}, tab);
@@ -720,11 +797,13 @@ module.exports = (() => {
 							})
 						}, this.saveSettings);
 					}else if(!this.settings.reopenLastChannel){
+						const channelId = DiscordModules.SelectedChannelStore.getChannelId();
 						this.settings.tabs[this.settings.tabs.findIndex(tab=>tab.selected)] = {
 							name: getCurrentName(),
 							url: location.pathname,
 							selected: true,
-							iconUrl: getCurrentIconUrl()
+							iconUrl: getCurrentIconUrl(),
+							channelId
 						};
 					}
 				}
@@ -796,19 +875,15 @@ module.exports = (() => {
 					});
 				}
 				
-				registerKeybinds(){
-					const registerKeybind = WebpackModules.getByProps('inputEventRegister').inputEventRegister.bind(WebpackModules.getByProps('inputEventUnregister'));
-					// 37 = CTRL, 112 = PG_UP, 117 = PG_DOWN, 25 = W
-					registerKeybind("53478954398", [[0, 37], [0, 112]], pressed => this.previousTab(), {blurred: false, focused: true, keydown: true, keyup: false});
-					registerKeybind("53478954399", [[0, 37], [0, 117]], pressed => this.nextTab(), {blurred: false, focused: true, keydown: true, keyup: false});
-					registerKeybind("53478954400", [[0, 37], [0, 25]], pressed => this.closeCurrentTab(), {blurred: false, focused: true, keydown: true, keyup: false})
-				}
-				
-				unregisterKeybinds(){
-					const unregisterKeybind = WebpackModules.getByProps('inputEventUnregister').inputEventUnregister.bind(WebpackModules.getByProps('inputEventUnregister'));
-					unregisterKeybind("53478954398");
-					unregisterKeybind("53478954399");
-					unregisterKeybind("53478954400");
+				keybindHandler(e){
+					const keybinds = [
+						{altKey: false, ctrlKey: true, shiftKey: false, keyCode: 87 /*w*/, action: this.closeCurrentTab},
+						{altKey: false, ctrlKey: true, shiftKey: false, keyCode: 33 /*pg_up*/, action: this.previousTab},
+						{altKey: false, ctrlKey: true, shiftKey: false, keyCode: 34 /*pg_down*/, action: this.nextTab}
+					];
+					keybinds.forEach(keybind => {
+						if(e.altKey === keybind.altKey && e.ctrlKey === keybind.ctrlKey && e.shiftKey === keybind.shiftKey && e.keyCode === keybind.keyCode) keybind.action();
+					})
 				}
 				
 				nextTab(){
