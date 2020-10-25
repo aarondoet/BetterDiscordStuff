@@ -328,7 +328,7 @@ module.exports = (() => {
 				},
 				React.createElement(FavIcon, {iconUrl: props.iconUrl}),
 				React.createElement(FavName, {name: props.name}),
-				!props.showFavUnreadBadges ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
+				!(props.showFavUnreadBadges && props.channelId) ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
 					unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
 					unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
 					mentionCount: UnreadStateStore.getMentionCount(props.channelId)
