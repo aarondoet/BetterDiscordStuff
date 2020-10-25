@@ -959,6 +959,14 @@ module.exports = (() => {
 				
 				loadSettings(){
 					this.settings = PluginUtilities.loadSettings(this.getName(), this.defaultVariables);
+					this.settings.favs = this.settings.favs.map(fav => {
+						if(fav.channelId === undefined){
+							const match = fav.url.match(/^\/channels\/[^\/]+\/(\d+)$/);
+							if(match) return Object.assign(fav, {channelId: match[1]});
+						}
+						return fav;
+					});
+					this.saveSettings();
 				}
 				saveSettings(){
 					if(TopBarRef.current){
