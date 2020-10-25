@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.2.1",
+			version: "2.3.0",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -52,18 +52,18 @@ module.exports = (() => {
 				title: "Added",
 				type: "added",
 				items: [
-					"**Unread Badges:** When there are unread messages or mentions in a tab it will show an indicator. (**NEW IN 2.2.1:** Unread Badges on bookmarks)",
-					"**Information when the fav bar is shown but empty**, for all the people who can't read a changelog",
-					"A setting to choose whether you want to **select the last opened channel** again instead of the friends page when starting discord",
-					"**Keybinds:** For switching to the previous/next tab use `Ctrl`+`PageUp` or `Ctrl`+`PageDown` and to close the current tab press `Ctrl`+`W`",
-					"With no additional themeing the tab bar should now grow if more space is needed for more tabs"
+					"**Bookmarks in the Context Menu:** Instead of an `Open in new tab` context menu entry there is a `ChannelTabs` menu with an option to open in the new tab and an option to save as bookmark.",
+					"**Guild Bookmarks:** Instead of only individual channels you can bookmark guilds. This option only shows up in the guild icon context menu. When selecting that bookmark you will select the channel you had open the last time in that guild. The unread and mention badges will show the sum of all channels in that guild that are not muted.",
+					"**Unread Badges:** When there are unread messages or mentions in a tab or bookmark it will show an indicator.",
+					"A setting to choose whether you want to **select the last opened channel** again instead of the friends page when starting discord.",
+					"**Keybinds:** For switching to the previous/next tab use `Ctrl`+`PageUp` or `Ctrl`+`PageDown` and to close the current tab press `Ctrl`+`W`."
 				]
 			},
 			{
 				title: "Changed",
 				type: "progress",
 				items: [
-					"Opening a new tab using the (+) button **automatically switches to the new tab**"
+					"Opening a new tab using the (+) button **automatically switches to the new tab**."
 				]
 			}
 		]
@@ -97,8 +97,8 @@ module.exports = (() => {
 			const { React } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
-			const MessageActions = WebpackModules.getByProps("markMessageUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
+			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
 			
 			var switching = false;
 			var patches = [];
@@ -290,7 +290,7 @@ module.exports = (() => {
 				"div",
 				{
 					className: "channelTabs-fav",
-					onClick: ()=>DiscordModules.NavigationUtils.transitionTo(props.url),
+					onClick: ()=>props.guildId ? DiscordModules.NavigationUtils.transitionToGuild(props.guildId, DiscordModules.SelectedChannelStore.getChannelId(props.guildId)) : DiscordModules.NavigationUtils.transitionTo(props.url),
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
 						e.preventDefault();
@@ -328,11 +328,25 @@ module.exports = (() => {
 				},
 				React.createElement(FavIcon, {iconUrl: props.iconUrl}),
 				React.createElement(FavName, {name: props.name}),
-				!(props.showFavUnreadBadges && props.channelId) ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
-					unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
-					unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
-					mentionCount: UnreadStateStore.getMentionCount(props.channelId)
-				}))(result => React.createElement(
+				!(props.showFavUnreadBadges && (props.channelId || props.guildId)) ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>{
+					if(props.guildId){
+						const channelIds = Object.values(DiscordModules.ChannelStore.getChannels())
+									.filter(channel=>channel.guild_id===props.guildId)
+									.filter(channel=>!MutedStore.isChannelMuted(channel.guild_id, channel.id))
+									.map(channel=>channel.id);
+						return {
+							unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||0).reduce((a,b)=>a+b, 0),
+							unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)||0),
+							mentionCount: channelIds.map(id=>UnreadStateStore.getMentionCount(id)||0).reduce((a,b)=>a+b, 0)
+						};
+					}else{
+						return {
+							unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
+							unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
+							mentionCount: UnreadStateStore.getMentionCount(props.channelId)
+						};
+					}
+				})(result => React.createElement(
 					React.Fragment,
 					{},
 					React.createElement(FavUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated}),
@@ -382,6 +396,7 @@ module.exports = (() => {
 								openInNewTab: ()=>props.openInNewTab(fav),
 								mouseDown: ()=>props.mouseDown(favIndex),
 								channelId: fav.channelId,
+								guildId: fav.guildId,
 								showFavUnreadBadges: props.showFavUnreadBadges
 							}
 						))
@@ -471,9 +486,14 @@ module.exports = (() => {
 						favs: this.state.favs.filter((fav, index)=>index!==favIndex)
 					}, this.props.plugin.saveSettings);
 				}
-				addToFavs(name, iconUrl, url, channelId){
+				/*
+				 * The guildId parameter is only passed when the guild is saved and not the channel alone.
+				 * This indicates that the currently selected channel needs to get selected instead of the
+				 * provided channel id (which should be empty when a guildId is provided)
+				 */
+				addToFavs(name, iconUrl, url, channelId, guildId){
 					this.setState({
-						favs: [...this.state.favs, {name, iconUrl, url, channelId}]
+						favs: [...this.state.favs, {name, iconUrl, url, channelId, guildId}]
 					}, this.props.plugin.saveSettings);
 				}
 				render(){
@@ -533,13 +553,14 @@ module.exports = (() => {
 							addToFavs: this.addToFavs,
 							mouseDown: this.mouseDown,
 							openInNewTab: fav=>{
+								const url = fav.url + (fav.guildId ? `/${fav.guildId}` : "")
 								this.setState({
 									tabs: [...this.state.tabs, {
-										url: fav.url,
+										url,
 										selected: false,
-										name: getCurrentName(fav.url),
-										iconUrl: getCurrentIconUrl(fav.url),
-										channelId: fav.channelId
+										name: getCurrentName(url),
+										iconUrl: getCurrentIconUrl(url),
+										channelId: fav.channelId || DiscordModules.SelectedChannelStore.getChannelId(fav.guildId)
 									}]
 								}, this.props.plugin.saveSettings);
 							},
@@ -742,7 +763,7 @@ module.exports = (() => {
 						.channelTabs-noMention,
 						.channelTabs-noUnread {
 							background-color: var(--background-primary);
-							color: #777;
+							color: var(--text-muted);
 						}
 						
 						.channelTabs-favContainer {
@@ -882,10 +903,29 @@ module.exports = (() => {
 					Patcher.after(GuildContextMenu, "default", (_, [props], returnValue) => {
 						if(!this.settings.showTabBar) return;
 						const channel = DiscordModules.ChannelStore.getChannel(DiscordModules.SelectedChannelStore.getChannelId(props.guild.id));
-						returnValue.props.children.push(DCM.buildMenuItem({
-							label: "Open in new tab",
-							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
-						}))
+						returnValue.props.children.push(DCM.buildMenuChildren([{
+							type: "group",
+							items: [
+								{
+									type: "submenu",
+									label: "ChannelTabs",
+									items: [
+										{
+											label: "Open channel in new tab",
+											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
+										},
+										{
+											label: "Save channel as bookmark",
+											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${channel.id}`, channel.id)
+										},
+										{
+											label: "Save guild as bookmark",
+											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs(props.guild.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}`, undefined, props.guild.id)
+										}
+									]
+								}
+							]
+						}]))
 					});
 				}
 				
@@ -893,10 +933,25 @@ module.exports = (() => {
 					const [, , TextChannelContextMenu] = WebpackModules.getModules(m => m.default && m.default.displayName === "ChannelListTextChannelContextMenu");
 					Patcher.after(TextChannelContextMenu, "default", (_, [props], returnValue) => {
 						if(!this.settings.showTabBar) return;
-						returnValue.props.children.push(DCM.buildMenuItem({
-							label: "Open in new tab",
-							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
-						}))
+						returnValue.props.children.push(DCM.buildMenuChildren([{
+							type: "group",
+							items: [
+								{
+									type: "submenu",
+									label: "ChannelTabs",
+									items: [
+										{
+											label: "Open in new tab",
+											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
+										},
+										{
+											label: "Save bookmark",
+											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + props.channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${props.channel.id}`, props.channel.id)
+										}
+									]
+								}
+							]
+						}]))
 					});
 				}
 				
@@ -905,10 +960,25 @@ module.exports = (() => {
 					Patcher.after(DMContextMenu, "default", (_, [props], returnValue) => {
 						if(!this.settings.showTabBar) return;
 						if(!returnValue) return;
-						returnValue.props.children.props.children.push(DCM.buildMenuItem({
-							label: "Open in new tab",
-							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
-						}))
+						returnValue.props.children.props.children.push(DCM.buildMenuChildren([{
+							type: "group",
+							items: [
+								{
+									type: "submenu",
+									label: "ChannelTabs",
+									items: [
+										{
+											label: "Open in new tab",
+											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
+										},
+										{
+											label: "Save bookmark",
+											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.user.username), props.user.avatarURL, `/channels/@me/${props.channel.id}`, props.channel.id)
+										}
+									]
+								}
+							]
+						}]))
 					});
 				}
 				
@@ -917,10 +987,25 @@ module.exports = (() => {
 					Patcher.after(DMContextMenu, "default", (thisObject, [props], returnValue) => {
 						if(!this.settings.showTabBar) return;
 						if(!returnValue) return;
-						returnValue.props.children.push(DCM.buildMenuItem({
-							label: "Open in new tab",
-							action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
-						}))
+						returnValue.props.children.push(DCM.buildMenuChildren([{
+							type: "group",
+							items: [
+								{
+									type: "submenu",
+									label: "ChannelTabs",
+									items: [
+										{
+											label: "Open in new tab",
+											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
+										},
+										{
+											label: "Save bookmark",
+											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/, `/channels/@me/${props.channel.id}`, props.channel.id)
+										}
+									]
+								}
+							]
+						}]))
 					});
 				}
 				
