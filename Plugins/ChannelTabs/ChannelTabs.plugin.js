@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.2.0",
+			version: "2.2.1",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -52,7 +52,7 @@ module.exports = (() => {
 				title: "Added",
 				type: "added",
 				items: [
-					"**Unread Badges:** When there are unread messages or mentions in a tab it will show an indicator.",
+					"**Unread Badges:** When there are unread messages or mentions in a tab it will show an indicator. (**NEW IN 2.2.1:** Unread Badges on bookmarks)",
 					"**Information when the fav bar is shown but empty**, for all the people who can't read a changelog",
 					"A setting to choose whether you want to **select the last opened channel** again instead of the friends page when starting discord",
 					"**Keybinds:** For switching to the previous/next tab use `Ctrl`+`PageUp` or `Ctrl`+`PageDown` and to close the current tab press `Ctrl`+`W`",
@@ -149,11 +149,11 @@ module.exports = (() => {
 				},
 				"⨯"
 			);
-			const UnreadBadge = props=>props.unreadCount === 0 ? null : React.createElement("div", {
-				className: "channelTabs-unreadBadge"
+			const TabUnreadBadge = props=>props.unreadCount === 0 ? null : React.createElement("div", {
+				className: "channelTabs-unreadBadge channelTabs-tabUnreadBadge"
 			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
-			const MentionBadge = props=>props.mentionCount === 0 ? null : React.createElement("div", {
-				className: "channelTabs-mentionBadge"
+			const TabMentionBadge = props=>props.mentionCount === 0 ? null : React.createElement("div", {
+				className: "channelTabs-mentionBadge channelTabs-tabMentionBadge"
 			}, props.mentionCount);
 			const Tab = props=>React.createElement(
 				"div",
@@ -208,11 +208,19 @@ module.exports = (() => {
 				},
 				React.createElement(TabIcon, {iconUrl: props.iconUrl}),
 				React.createElement(TabName, {name: props.name}),
-				React.createElement(MentionBadge, {mentionCount: props.mentionCount}),
-				React.createElement(UnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated}),
+				!props.showTabUnreadBadges ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
+					unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
+					unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
+					mentionCount: UnreadStateStore.getMentionCount(props.channelId)
+				}))(result => React.createElement(
+					React.Fragment,
+					{},
+					React.createElement(TabMentionBadge, {mentionCount: result.mentionCount}),
+					React.createElement(TabUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated})
+				))),
 				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
-
+			
 			const NewTab = props=>React.createElement(
 				"div",
 				{
@@ -247,6 +255,7 @@ module.exports = (() => {
 						url: tab.url,
 						selected: tab.selected,
 						channelId: tab.channelId,
+						showTabUnreadBadges: props.showTabUnreadBadges,
 						unreadCount: result.unreadCount,
 						unreadEstimated: result.unreadEstimated,
 						mentionCount: result.mentionCount
@@ -271,6 +280,12 @@ module.exports = (() => {
 				},
 				props.name
 			)
+			const FavUnreadBadge = props=>React.createElement("div", {
+				className: "channelTabs-unreadBadge channelTabs-favUnreadBadge" + (props.unreadCount === 0 ? " channelTabs-noUnread" : "")
+			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
+			const FavMentionBadge = props=>React.createElement("div", {
+				className: "channelTabs-mentionBadge channelTabs-favMentionBadge" + (props.mentionCount === 0 ? " channelTabs-noMention" : "")
+			}, props.mentionCount);
 			const Fav = props=>React.createElement(
 				"div",
 				{
@@ -312,9 +327,19 @@ module.exports = (() => {
 					}
 				},
 				React.createElement(FavIcon, {iconUrl: props.iconUrl}),
-				React.createElement(FavName, {name: props.name})
+				React.createElement(FavName, {name: props.name}),
+				!props.showFavUnreadBadges ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
+					unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
+					unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
+					mentionCount: UnreadStateStore.getMentionCount(props.channelId)
+				}))(result => React.createElement(
+					React.Fragment,
+					{},
+					React.createElement(FavUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated}),
+					React.createElement(FavMentionBadge, {mentionCount: result.mentionCount})
+				)))
 			);
-
+			
 			const FavBar = props=>React.createElement(
 				"div",
 				{
@@ -346,18 +371,23 @@ module.exports = (() => {
 					}
 				},
 				props.favs.length > 0
-					? props.favs.map((fav, favIndex) => React.createElement(Fav, {
-							name: fav.name,
-							iconUrl: fav.iconUrl,
-							url: fav.url,
-							rename: ()=>props.rename(fav.name, favIndex),
-							delete: ()=>props.delete(favIndex),
-							openInNewTab: ()=>props.openInNewTab(fav),
-							mouseDown: ()=>props.mouseDown(favIndex)
-						}))
+					? props.favs.map((fav, favIndex) => React.createElement(
+							Fav,
+							{
+								name: fav.name,
+								iconUrl: fav.iconUrl,
+								url: fav.url,
+								rename: ()=>props.rename(fav.name, favIndex),
+								delete: ()=>props.delete(favIndex),
+								openInNewTab: ()=>props.openInNewTab(fav),
+								mouseDown: ()=>props.mouseDown(favIndex),
+								channelId: fav.channelId,
+								showFavUnreadBadges: props.showFavUnreadBadges
+							}
+						))
 					: React.createElement("span", {
-						className: "channelTabs-noFavNotice"
-					}, "You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.")
+							className: "channelTabs-noFavNotice"
+						}, "You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.")
 			);
 			
 			const TopBar = class TopBar extends React.Component {
@@ -368,7 +398,9 @@ module.exports = (() => {
 						tabs: props.tabs,
 						favs: props.favs,
 						showTabBar: props.showTabBar,
-						showFavBar: props.showFavBar
+						showFavBar: props.showFavBar,
+						showTabUnreadBadges: props.showTabUnreadBadges,
+						showFavUnreadBadges: props.showFavUnreadBadges
 					};
 					this.switchToTab = this.switchToTab.bind(this);
 					this.closeTab = this.closeTab.bind(this);
@@ -452,6 +484,7 @@ module.exports = (() => {
 						},
 						!this.state.showTabBar ? null : React.createElement(TabBar, {
 							tabs: this.state.tabs,
+							showTabUnreadBadges: this.state.showTabUnreadBadges,
 							closeTab: this.closeTab,
 							switchToTab: this.switchToTab,
 							openNewTab: ()=>{
@@ -494,9 +527,11 @@ module.exports = (() => {
 						}),
 						!this.state.showFavBar ? null : React.createElement(FavBar, {
 							favs: this.state.favs,
+							showFavUnreadBadges: this.state.showFavUnreadBadges,
 							rename: this.renameFav,
 							delete: this.deleteFav,
 							addToFavs: this.addToFavs,
+							mouseDown: this.mouseDown,
 							openInNewTab: fav=>{
 								this.setState({
 									tabs: [...this.state.tabs, {
@@ -677,7 +712,6 @@ module.exports = (() => {
 						}
 						.channelTabs-mentionBadge,
 						.channelTabs-unreadBadge {
-							position: absolute;
 							display: inline-block;
 							border-radius: 8px;
 							padding-left: 4px;
@@ -690,12 +724,25 @@ module.exports = (() => {
 							font-weight: 600;
 							text-align: center;
 							color: #fff;
+						}
+						.channelTabs-tabMentionBadge,
+						.channelTabs-tabUnreadBadge {
+							position: absolute;
 							top: 50%;
 							transform: translateY(-50%);
 							right: 20px;
 						}
-						.channelTabs-mentionBadge ~ .channelTabs-unreadBadge {
+						.channelTabs-tabMentionBadge ~ .channelTabs-tabUnreadBadge {
 							right: 40px;
+						}
+						.channelTabs-favMentionBadge,
+						.channelTabs-favUnreadBadge {
+							vertical-align: bottom;
+						}
+						.channelTabs-noMention,
+						.channelTabs-noUnread {
+							background-color: var(--background-primary);
+							color: #777;
 						}
 						
 						.channelTabs-favContainer {
@@ -816,6 +863,8 @@ module.exports = (() => {
 							React.createElement(TopBar, {
 								showTabBar: this.settings.showTabBar,
 								showFavBar: this.settings.showFavBar,
+								showTabUnreadBadges: this.settings.showTabUnreadBadges,
+								showFavUnreadBadges: this.settings.showFavUnreadBadges,
 								tabs: this.settings.tabs,
 								favs: this.settings.favs,
 								ref: TopBarRef,
@@ -902,7 +951,9 @@ module.exports = (() => {
 						favs: [],
 						showTabBar: true,
 						showFavBar: true,
-						reopenLastChannel: false
+						reopenLastChannel: false,
+						showTabUnreadBadges: true,
+						showFavUnreadBadges: true
 					};
 				}
 				
@@ -938,6 +989,20 @@ module.exports = (() => {
 							}))
 							.append(new Settings.Switch("Reopen last channel", "When starting the plugin (or discord) the channel will be selected again instead of the friends page", this.settings.reopenLastChannel, checked=>{
 								this.settings.reopenLastChannel = checked;
+								this.saveSettings();
+							}))
+							.append(new Settings.Switch("Show unread badges on tabs", "Adds badges to tabs showing how many unread messages and mentions there are in a channel", this.settings.showTabUnreadBadges, checked=>{
+								this.settings.showTabUnreadBadges = checked;
+								if(TopBarRef.current) TopBarRef.current.setState({
+									showTabUnreadBadges: checked
+								});
+								this.saveSettings();
+							}))
+							.append(new Settings.Switch("Show unread badges on bookmarks", "Adds badges to bookmarks showing how many unread messages and mentions there are in a channel", this.settings.showFavUnreadBadges, checked=>{
+								this.settings.showFavUnreadBadges = checked;
+								if(TopBarRef.current) TopBarRef.current.setState({
+									showFavUnreadBadges: checked
+								});
 								this.saveSettings();
 							}));
 					return panel;
