@@ -746,15 +746,16 @@ module.exports = (() => {
 							text-align: center;
 							color: #fff;
 						}
+						.channelTabs-selected .channelTabs-tabMentionBadge,
+						.channelTabs-selected .channelTabs-tabUnreadBadge {
+    					display: none;
+						}
 						.channelTabs-tabMentionBadge,
 						.channelTabs-tabUnreadBadge {
-							position: absolute;
-							top: 50%;
-							transform: translateY(-50%);
-							right: 20px;
-						}
-						.channelTabs-tabMentionBadge ~ .channelTabs-tabUnreadBadge {
-							right: 40px;
+							position: inherit !important;
+							bottom: var(--channelTabs-tabHeight) !important;
+							right: 16px !important;
+							float: right !important;
 						}
 						.channelTabs-favMentionBadge,
 						.channelTabs-favUnreadBadge {
