@@ -42,28 +42,19 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.3.0",
+			version: "2.3.1",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "Added",
-				type: "added",
-				items: [
-					"**Bookmarks in the Context Menu:** Instead of an `Open in new tab` context menu entry there is a `ChannelTabs` menu with an option to open in the new tab and an option to save as bookmark.",
-					"**Guild Bookmarks:** Instead of only individual channels you can bookmark guilds. This option only shows up in the guild icon context menu. When selecting that bookmark you will select the channel you had open the last time in that guild. The unread and mention badges will show the sum of all channels in that guild that are not muted.",
-					"**Unread Badges:** When there are unread messages or mentions in a tab or bookmark it will show an indicator.",
-					"A setting to choose whether you want to **select the last opened channel** again instead of the friends page when starting discord.",
-					"**Keybinds:** For switching to the previous/next tab use `Ctrl`+`PageUp` or `Ctrl`+`PageDown` and to close the current tab press `Ctrl`+`W`."
-				]
-			},
-			{
 				title: "Changed",
 				type: "progress",
 				items: [
-					"Opening a new tab using the (+) button **automatically switches to the new tab**."
+					"No longer showing unread message badge on DMs and group DMs, only mention badge.",
+					"No longer showing badges on the selected tab.",
+					"Now showing empty unread badge when there are unread messages but it is not known how many."
 				]
 			}
 		]
@@ -149,9 +140,9 @@ module.exports = (() => {
 				},
 				"⨯"
 			);
-			const TabUnreadBadge = props=>props.unreadCount === 0 ? null : React.createElement("div", {
+			const TabUnreadBadge = props=>!props.hasUnread ? null : React.createElement("div", {
 				className: "channelTabs-unreadBadge channelTabs-tabUnreadBadge"
-			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
+			}, props.unreadCount === 0 ? "" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
 			const TabMentionBadge = props=>props.mentionCount === 0 ? null : React.createElement("div", {
 				className: "channelTabs-mentionBadge channelTabs-tabMentionBadge"
 			}, props.mentionCount);
@@ -160,7 +151,7 @@ module.exports = (() => {
 				{
 					className: "channelTabs-tab"
 									+ (props.selected ? " channelTabs-selected" : "")
-									+ (props.unreadCount > 0 ? " channelTabs-unread" : "")
+									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
 					onClick: ()=>{if(!props.selected) props.switchToTab(props.tabIndex);},
 					onMouseUp: e=>{
@@ -208,16 +199,12 @@ module.exports = (() => {
 				},
 				React.createElement(TabIcon, {iconUrl: props.iconUrl}),
 				React.createElement(TabName, {name: props.name}),
-				!props.showTabUnreadBadges ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
-					unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
-					unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
-					mentionCount: UnreadStateStore.getMentionCount(props.channelId)
-				}))(result => React.createElement(
+				!props.showTabUnreadBadges ? null : React.createElement(
 					React.Fragment,
 					{},
-					React.createElement(TabMentionBadge, {mentionCount: result.mentionCount}),
-					React.createElement(TabUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated})
-				))),
+					React.createElement(TabMentionBadge, {mentionCount: props.mentionCount}),
+					(()=>{const c=DiscordModules.ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread})
+				),
 				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
 			
@@ -238,6 +225,7 @@ module.exports = (() => {
 				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
 					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
 					unreadEstimated: UnreadStateStore.isEstimated(tab.channelId),
+					hasUnread: UnreadStateStore.hasUnread(tab.channelId),
 					mentionCount: UnreadStateStore.getMentionCount(tab.channelId)
 				}))(result => React.createElement(
 					Tab,
@@ -258,6 +246,7 @@ module.exports = (() => {
 						showTabUnreadBadges: props.showTabUnreadBadges,
 						unreadCount: result.unreadCount,
 						unreadEstimated: result.unreadEstimated,
+						hasUnread: result.hasUnread,
 						mentionCount: result.mentionCount
 					}
 				)))),
@@ -281,8 +270,8 @@ module.exports = (() => {
 				props.name
 			)
 			const FavUnreadBadge = props=>React.createElement("div", {
-				className: "channelTabs-unreadBadge channelTabs-favUnreadBadge" + (props.unreadCount === 0 ? " channelTabs-noUnread" : "")
-			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
+				className: "channelTabs-unreadBadge channelTabs-favUnreadBadge" + (!props.hasUnread ? " channelTabs-noUnread" : "")
+			}, props.unreadCount === 0 ? "" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
 			const FavMentionBadge = props=>React.createElement("div", {
 				className: "channelTabs-mentionBadge channelTabs-favMentionBadge" + (props.mentionCount === 0 ? " channelTabs-noMention" : "")
 			}, props.mentionCount);
@@ -336,20 +325,22 @@ module.exports = (() => {
 									.map(channel=>channel.id);
 						return {
 							unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||0).reduce((a,b)=>a+b, 0),
-							unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)||0),
+							unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)),
+							hasUnread: channelIds.some(id=>UnreadStateStore.hasUnread(id)),
 							mentionCount: channelIds.map(id=>UnreadStateStore.getMentionCount(id)||0).reduce((a,b)=>a+b, 0)
 						};
 					}else{
 						return {
 							unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
 							unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
+							hasUnread: UnreadStateStore.hasUnread(props.channelId),
 							mentionCount: UnreadStateStore.getMentionCount(props.channelId)
 						};
 					}
 				})(result => React.createElement(
 					React.Fragment,
 					{},
-					React.createElement(FavUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated}),
+					(()=>{const c=DiscordModules.ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(FavUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated, hasUnread: result.hasUnread}),
 					React.createElement(FavMentionBadge, {mentionCount: result.mentionCount})
 				)))
 			);
@@ -740,6 +731,7 @@ module.exports = (() => {
 							margin-left: 3px;
 							min-width: 8px;
 							width: fit-content;
+							height: 16px;
 							font-size: 12px;
 							line-height: 16px;
 							font-weight: 600;
