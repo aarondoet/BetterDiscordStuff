@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.3.1",
+			version: "2.3.2",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -55,6 +55,14 @@ module.exports = (() => {
 					"No longer showing unread message badge on DMs and group DMs, only mention badge.",
 					"No longer showing badges on the selected tab.",
 					"Now showing empty unread badge when there are unread messages but it is not known how many."
+				]
+			},
+			{
+				title: "Fixed",
+				type: "fixed",
+				items: [
+					"Unread indicator on favs is no longer empty if there is no unread message.",
+					"The context menus now still show bookmark options if tabs are disabled."
 				]
 			}
 		]
@@ -271,7 +279,7 @@ module.exports = (() => {
 			)
 			const FavUnreadBadge = props=>React.createElement("div", {
 				className: "channelTabs-unreadBadge channelTabs-favUnreadBadge" + (!props.hasUnread ? " channelTabs-noUnread" : "")
-			}, props.unreadCount === 0 ? "" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
+			}, props.unreadCount === 0 && props.hasUnread ? "" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
 			const FavMentionBadge = props=>React.createElement("div", {
 				className: "channelTabs-mentionBadge channelTabs-favMentionBadge" + (props.mentionCount === 0 ? " channelTabs-noMention" : "")
 			}, props.mentionCount);
@@ -325,7 +333,7 @@ module.exports = (() => {
 									.map(channel=>channel.id);
 						return {
 							unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||0).reduce((a,b)=>a+b, 0),
-							unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)),
+							unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)) || channelIds.some(id=>UnreadStateStore.getUnreadCount(id)===0&&UnreadStateStore.hasUnread(id)),
 							hasUnread: channelIds.some(id=>UnreadStateStore.hasUnread(id)),
 							mentionCount: channelIds.map(id=>UnreadStateStore.getMentionCount(id)||0).reduce((a,b)=>a+b, 0)
 						};
@@ -894,7 +902,7 @@ module.exports = (() => {
 				patchGuildIconContextMenu(){
 					const GuildContextMenu = WebpackModules.find(m => m.default && m.default.displayName === "GuildContextMenu" && m.default.name === "");
 					Patcher.after(GuildContextMenu, "default", (_, [props], returnValue) => {
-						if(!this.settings.showTabBar) return;
+						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
 						const channel = DiscordModules.ChannelStore.getChannel(DiscordModules.SelectedChannelStore.getChannelId(props.guild.id));
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
@@ -902,7 +910,7 @@ module.exports = (() => {
 								{
 									type: "submenu",
 									label: "ChannelTabs",
-									items: [
+									items: this.mergeItems([
 										{
 											label: "Open channel in new tab",
 											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
@@ -910,12 +918,12 @@ module.exports = (() => {
 										{
 											label: "Save channel as bookmark",
 											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${channel.id}`, channel.id)
-										},
-										{
+										}],
+										[{
 											label: "Save guild as bookmark",
 											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs(props.guild.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}`, undefined, props.guild.id)
-										}
-									]
+										}]
+									)
 								}
 							]
 						}]))
@@ -925,23 +933,23 @@ module.exports = (() => {
 				patchTextChannelContextMenu(){
 					const [, , TextChannelContextMenu] = WebpackModules.getModules(m => m.default && m.default.displayName === "ChannelListTextChannelContextMenu");
 					Patcher.after(TextChannelContextMenu, "default", (_, [props], returnValue) => {
-						if(!this.settings.showTabBar) return;
+						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
 							items: [
 								{
 									type: "submenu",
 									label: "ChannelTabs",
-									items: [
+									items: this.mergeItems([
 										{
 											label: "Open in new tab",
 											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
-										},
-										{
+										}],
+										[{
 											label: "Save bookmark",
 											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + props.channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${props.channel.id}`, props.channel.id)
-										}
-									]
+										}]
+									)
 								}
 							]
 						}]))
@@ -951,7 +959,7 @@ module.exports = (() => {
 				patchDMContextMenu(){
 					const DMContextMenu = WebpackModules.find(({ default: defaul }) => defaul && defaul.displayName === 'DMUserContextMenu');
 					Patcher.after(DMContextMenu, "default", (_, [props], returnValue) => {
-						if(!this.settings.showTabBar) return;
+						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
 						if(!returnValue) return;
 						returnValue.props.children.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
@@ -959,16 +967,16 @@ module.exports = (() => {
 								{
 									type: "submenu",
 									label: "ChannelTabs",
-									items: [
-										{
+									items: this.mergeItems(
+										[{
 											label: "Open in new tab",
 											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
-										},
-										{
+										}],
+										[{
 											label: "Save bookmark",
 											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.user.username), props.user.avatarURL, `/channels/@me/${props.channel.id}`, props.channel.id)
-										}
-									]
+										}]
+									)
 								}
 							]
 						}]))
@@ -978,7 +986,7 @@ module.exports = (() => {
 				patchGroupContextMenu(){
 					const DMContextMenu = WebpackModules.find(({ default: defaul }) => defaul && defaul.displayName === 'GroupDMContextMenu');
 					Patcher.after(DMContextMenu, "default", (thisObject, [props], returnValue) => {
-						if(!this.settings.showTabBar) return;
+						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
 						if(!returnValue) return;
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
@@ -986,20 +994,27 @@ module.exports = (() => {
 								{
 									type: "submenu",
 									label: "ChannelTabs",
-									items: [
-										{
+									items: this.mergeItems(
+										[{
 											label: "Open in new tab",
 											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
-										},
-										{
+										}],
+										[{
 											label: "Save bookmark",
 											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/, `/channels/@me/${props.channel.id}`, props.channel.id)
-										}
-									]
+										}]
+									)
 								}
 							]
 						}]))
 					});
+				}
+				
+				mergeItems(itemsTab, itemsFav){
+					const out = [];
+					if(this.settings.showTabBar) out.push(...itemsTab);
+					if(this.settings.showFavBar) out.push(...itemsFav);
+					return out;
 				}
 				
 				keybindHandler(e){
