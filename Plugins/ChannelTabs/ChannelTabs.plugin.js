@@ -42,27 +42,26 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.3.2",
+			version: "2.3.3",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "Changed",
-				type: "progress",
+				title: "Added",
+				type: "added",
 				items: [
-					"No longer showing unread message badge on DMs and group DMs, only mention badge.",
-					"No longer showing badges on the selected tab.",
-					"Now showing empty unread badge when there are unread messages but it is not known how many."
+					"Some classes on bookmarks (`channelTabs-selected`, `channelTabs-unread`, `channelTabs-mention`).",
+					"Made tab bar (or fav bar if tabs are disabled) draggable on mac."
 				]
 			},
 			{
-				title: "Fixed",
-				type: "fixed",
+				title: "Changed",
+				type: "progress",
 				items: [
-					"Unread indicator on favs is no longer empty if there is no unread message.",
-					"The context menus now still show bookmark options if tabs are disabled."
+					"Showing `1+` instead of an empty badge if the unread message count is not known.",
+					"Removed tab and bookmarks specific classes on unread/mention badges."
 				]
 			}
 		]
@@ -93,7 +92,7 @@ module.exports = (() => {
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
 			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings } = Api;
-			const { React } = DiscordModules;
+			const { React, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
@@ -149,10 +148,10 @@ module.exports = (() => {
 				"⨯"
 			);
 			const TabUnreadBadge = props=>!props.hasUnread ? null : React.createElement("div", {
-				className: "channelTabs-unreadBadge channelTabs-tabUnreadBadge"
-			}, props.unreadCount === 0 ? "" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
+				className: "channelTabs-unreadBadge"
+			}, props.unreadCount === 0 ? (props.mentionCount||1) + "+" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
 			const TabMentionBadge = props=>props.mentionCount === 0 ? null : React.createElement("div", {
-				className: "channelTabs-mentionBadge channelTabs-tabMentionBadge"
+				className: "channelTabs-mentionBadge"
 			}, props.mentionCount);
 			const Tab = props=>React.createElement(
 				"div",
@@ -211,7 +210,7 @@ module.exports = (() => {
 					React.Fragment,
 					{},
 					React.createElement(TabMentionBadge, {mentionCount: props.mentionCount}),
-					(()=>{const c=DiscordModules.ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread})
+					(()=>{const c=ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
 				),
 				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
@@ -278,16 +277,19 @@ module.exports = (() => {
 				props.name
 			)
 			const FavUnreadBadge = props=>React.createElement("div", {
-				className: "channelTabs-unreadBadge channelTabs-favUnreadBadge" + (!props.hasUnread ? " channelTabs-noUnread" : "")
-			}, props.unreadCount === 0 && props.hasUnread ? "" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
+				className: "channelTabs-unreadBadge" + (!props.hasUnread ? " channelTabs-noUnread" : "")
+			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
 			const FavMentionBadge = props=>React.createElement("div", {
-				className: "channelTabs-mentionBadge channelTabs-favMentionBadge" + (props.mentionCount === 0 ? " channelTabs-noMention" : "")
+				className: "channelTabs-mentionBadge" + (props.mentionCount === 0 ? " channelTabs-noMention" : "")
 			}, props.mentionCount);
 			const Fav = props=>React.createElement(
 				"div",
 				{
-					className: "channelTabs-fav",
-					onClick: ()=>props.guildId ? DiscordModules.NavigationUtils.transitionToGuild(props.guildId, DiscordModules.SelectedChannelStore.getChannelId(props.guildId)) : DiscordModules.NavigationUtils.transitionTo(props.url),
+					className: "channelTabs-fav" + (props.channelId ? " channelTabs-channel" : props.guildId ? " channelTabs-guild" : "")
+									+ (props.selected ? " channelTabs-selected" : "")
+									+ (props.hasUnread ? " channelTabs-unread" : "")
+									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
+					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuild(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : NavigationUtils.transitionTo(props.url),
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
 						e.preventDefault();
@@ -325,32 +327,12 @@ module.exports = (() => {
 				},
 				React.createElement(FavIcon, {iconUrl: props.iconUrl}),
 				React.createElement(FavName, {name: props.name}),
-				!(props.showFavUnreadBadges && (props.channelId || props.guildId)) ? null : React.createElement(Flux.connectStores([UnreadStateStore], ()=>{
-					if(props.guildId){
-						const channelIds = Object.values(DiscordModules.ChannelStore.getChannels())
-									.filter(channel=>channel.guild_id===props.guildId)
-									.filter(channel=>!MutedStore.isChannelMuted(channel.guild_id, channel.id))
-									.map(channel=>channel.id);
-						return {
-							unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||0).reduce((a,b)=>a+b, 0),
-							unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)) || channelIds.some(id=>UnreadStateStore.getUnreadCount(id)===0&&UnreadStateStore.hasUnread(id)),
-							hasUnread: channelIds.some(id=>UnreadStateStore.hasUnread(id)),
-							mentionCount: channelIds.map(id=>UnreadStateStore.getMentionCount(id)||0).reduce((a,b)=>a+b, 0)
-						};
-					}else{
-						return {
-							unreadCount: UnreadStateStore.getUnreadCount(props.channelId),
-							unreadEstimated: UnreadStateStore.isEstimated(props.channelId),
-							hasUnread: UnreadStateStore.hasUnread(props.channelId),
-							mentionCount: UnreadStateStore.getMentionCount(props.channelId)
-						};
-					}
-				})(result => React.createElement(
+				!(props.showFavUnreadBadges && (props.channelId || props.guildId)) ? null : React.createElement(
 					React.Fragment,
 					{},
-					(()=>{const c=DiscordModules.ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(FavUnreadBadge, {unreadCount: result.unreadCount, unreadEstimated: result.unreadEstimated, hasUnread: result.hasUnread}),
-					React.createElement(FavMentionBadge, {mentionCount: result.mentionCount})
-				)))
+					(()=>{const c=ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(FavUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread}),
+					React.createElement(FavMentionBadge, {mentionCount: props.mentionCount})
+				)
 			);
 			
 			const FavBar = props=>React.createElement(
@@ -366,7 +348,7 @@ module.exports = (() => {
 									items: [
 										{
 											label: "Add current tab as favourite",
-											action: ()=>props.addToFavs(getCurrentName(), getCurrentIconUrl(), location.pathname, DiscordModules.SelectedChannelStore.getChannelId())
+											action: ()=>props.addToFavs(getCurrentName(), getCurrentIconUrl(), location.pathname, SelectedChannelStore.getChannelId())
 										},
 										{
 											label: "Hide bookmarks",
@@ -384,7 +366,29 @@ module.exports = (() => {
 					}
 				},
 				props.favs.length > 0
-					? props.favs.map((fav, favIndex) => React.createElement(
+					? props.favs.map((fav, favIndex) => React.createElement(Flux.connectStores([UnreadStateStore, SelectedChannelStore], ()=>{
+							if(fav.guildId){
+								const channelIds = Object.values(ChannelStore.getChannels())
+											.filter(channel=>channel.guild_id===fav.guildId)
+											.filter(channel=>!MutedStore.isChannelMuted(channel.guild_id, channel.id))
+											.map(channel=>channel.id);
+								return {
+									unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||UnreadStateStore.getMentionCount(id)||(UnreadStateStore.hasUnread(id)?1:0)).reduce((a,b)=>a+b, 0),
+									unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)) || channelIds.some(id=>UnreadStateStore.getUnreadCount(id)===0&&UnreadStateStore.hasUnread(id)),
+									hasUnread: channelIds.some(id=>UnreadStateStore.hasUnread(id)),
+									mentionCount: channelIds.map(id=>UnreadStateStore.getMentionCount(id)||0).reduce((a,b)=>a+b, 0),
+									selected: SelectedGuildStore.getGuildId()===fav.guildId
+								};
+							}else{
+								return {
+									unreadCount: UnreadStateStore.getUnreadCount(fav.channelId) || UnreadStateStore.getMentionCount(fav.channelId) || (UnreadStateStore.hasUnread(fav.channelId) ? 1 : 0),
+									unreadEstimated: UnreadStateStore.isEstimated(fav.channelId) || (UnreadStateStore.hasUnread(fav.channelId) && UnreadStateStore.getUnreadCount(fav.channelId) === 0),
+									hasUnread: UnreadStateStore.hasUnread(fav.channelId),
+									mentionCount: UnreadStateStore.getMentionCount(fav.channelId),
+									selected: SelectedChannelStore.getChannelId()===fav.channelId
+								};
+							}
+						})(result => React.createElement(
 							Fav,
 							{
 								name: fav.name,
@@ -393,16 +397,18 @@ module.exports = (() => {
 								rename: ()=>props.rename(fav.name, favIndex),
 								delete: ()=>props.delete(favIndex),
 								openInNewTab: ()=>props.openInNewTab(fav),
-								mouseDown: ()=>props.mouseDown(favIndex),
 								channelId: fav.channelId,
 								guildId: fav.guildId,
-								showFavUnreadBadges: props.showFavUnreadBadges
+								showFavUnreadBadges: props.showFavUnreadBadges,
+								...result
 							}
-						))
+						))))
 					: React.createElement("span", {
 							className: "channelTabs-noFavNotice"
 						}, "You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.")
 			);
+			
+			
 			
 			const TopBar = class TopBar extends React.Component {
 				constructor(props){
@@ -435,7 +441,7 @@ module.exports = (() => {
 						selectedTabIndex: tabIndex
 					}, this.props.plugin.saveSettings);
 					switching = true;
-					DiscordModules.NavigationUtils.transitionTo(this.state.tabs[tabIndex].url);
+					NavigationUtils.transitionTo(this.state.tabs[tabIndex].url);
 					switching = false;
 				}
 				closeTab(tabIndex){
@@ -449,6 +455,15 @@ module.exports = (() => {
 						}
 						this.props.plugin.saveSettings();
 					});
+				}
+				moveTab(fromIndex, toIndex){
+					if(fromIndex === toIndex) return;
+					const tabs = this.state.tabs.filter((tab, index)=>index !== fromIndex);
+					tabs.splice(toIndex, 0, this.state.tabs[fromIndex]);
+					this.setState({
+						tabs,
+						selectedTabIndex: tabs.findIndex(tab=>tab.selected)
+					}, this.props.plugin.saveSettings);
 				}
 				saveChannel(guildId, channelId, name, iconUrl){
 					this.setState({
@@ -494,6 +509,12 @@ module.exports = (() => {
 					this.setState({
 						favs: [...this.state.favs, {name, iconUrl, url, channelId, guildId}]
 					}, this.props.plugin.saveSettings);
+				}
+				moveFav(fromIndex, toIndex){
+					if(fromIndex === toIndex) return;
+					const favs = this.state.favs.filter((fav, index)=>index !== fromIndex);
+					favs.splice(toIndex, 0, this.state.favs[fromIndex]);
+					this.setState({favs}, this.props.plugin.saveSettings);
 				}
 				render(){
 					return React.createElement(
@@ -550,7 +571,6 @@ module.exports = (() => {
 							rename: this.renameFav,
 							delete: this.deleteFav,
 							addToFavs: this.addToFavs,
-							mouseDown: this.mouseDown,
 							openInNewTab: fav=>{
 								const url = fav.url + (fav.guildId ? `/${fav.guildId}` : "")
 								this.setState({
@@ -559,7 +579,7 @@ module.exports = (() => {
 										selected: false,
 										name: getCurrentName(url),
 										iconUrl: getCurrentIconUrl(url),
-										channelId: fav.channelId || DiscordModules.SelectedChannelStore.getChannelId(fav.guildId)
+										channelId: fav.channelId || SelectedChannelStore.getChannelId(fav.guildId)
 									}]
 								}, this.props.plugin.saveSettings);
 							},
@@ -581,7 +601,7 @@ module.exports = (() => {
 			const getCurrentName = (pathname = location.pathname)=>{
 				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
 				if(cId){
-					const channel = DiscordModules.ChannelStore.getChannel(cId);
+					const channel = ChannelStore.getChannel(cId);
 					if(channel.name) return (channel.guildId ? "@" : "#") + channel.name;
 					else if(channel.rawRecipients) return "@" + channel.rawRecipients.map(u=>u.username).join(", ");
 					else return pathname;
@@ -595,13 +615,13 @@ module.exports = (() => {
 			const getCurrentIconUrl = (pathname = location.pathname)=>{
 				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
 				if(cId){
-					const channel = DiscordModules.ChannelStore.getChannel(cId);
+					const channel = ChannelStore.getChannel(cId);
 					if(channel.guild_id){
-						const guild = DiscordModules.GuildStore.getGuild(channel.guild_id);
+						const guild = GuildStore.getGuild(channel.guild_id);
 						return guild.getIconURL() || "";
 					}else{
 						if(channel.isDM()){
-							const user = DiscordModules.UserStore.getUser(channel.getRecipientId());
+							const user = UserStore.getUser(channel.getRecipientId());
 							return user.avatarURL;
 						}else if(channel.isGroupDM()){
 							// TODO
@@ -633,10 +653,10 @@ module.exports = (() => {
 							width: var(--channelTabs-tabWidth);
 							position: relative;
 							background: none;
-							border:none;
-							padding:6px;
-							border-radius:5px;
-							color:var(--interactive-normal);
+							border: none;
+							padding: 6px;
+							border-radius: 5px;
+							color: var(--interactive-normal);
 							height: var(--channelTabs-tabHeight);
 						}
 						.channelTabs-tabName {
@@ -662,7 +682,7 @@ module.exports = (() => {
 							cursor: pointer;
 							color: var(--interactive-hover);
 						}
-						.channelTabs-selected {
+						.channelTabs-tab.channelTabs-selected {
 							background: var(--background-modifier-selected);
 							color: var(--interactive-active);
 						}
@@ -675,27 +695,27 @@ module.exports = (() => {
 							height: 14px;
 							border-radius: 7px;
 							text-align: center;
-							line-height:11px;
+							line-height: 11px;
 							font-size: 15px;
 							background: var(--interactive-muted);
 							color: var(--background-secondary-alt);
 							cursor: pointer;
 						}
-						.channelTabs-selected .channelTabs-closeTab {
+						.channelTabs-tab.channelTabs-selected .channelTabs-closeTab {
 							background: var(--interactive-normal);
 						}
-						.channelTabs-selected .channelTabs-closeTab:hover {
+						.channelTabs-tab.channelTabs-selected .channelTabs-closeTab:hover {
 							background: var(--interactive-hover);
 						}
 						.channelTabs-newTab {
 							display: inline-block;
 							margin-left: 5px;
 							padding: 3px;
-							border-radius:50%;
+							border-radius: 50%;
 							width: 15px;
 							height: 15px;
-							text-align:center;
-							background:var(--interactive-muted);
+							text-align: center;
+							background: var(--interactive-muted);
 							font-weight: 600;
 							cursor: pointer;
 							color: var(--background-secondary-alt);
@@ -716,12 +736,12 @@ module.exports = (() => {
 							width: calc(var(--channelTabs-tabWidth) - var(--channelTabs-tabHeight) - 12px);
 						}
 						
-						.channelTabs-unread:not(.channelTabs-selected),
-						.channelTabs-mention:not(.channelTabs-selected) {
+						.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
+						.channelTabs-tab.channelTabs-mention:not(.channelTabs-selected) {
 							color: var(--interactive-hover);
 						}
-						.channelTabs-unread:not(.channelTabs-selected):hover,
-						.channelTabs-mention:not(.channelTabs-selected):hover {
+						.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected):hover,
+						.channelTabs-tab.channelTabs-mention:not(.channelTabs-selected):hover {
 							color: var(--interactive-active);
 						}
 						.channelTabs-mentionBadge {
@@ -746,23 +766,23 @@ module.exports = (() => {
 							text-align: center;
 							color: #fff;
 						}
-						.channelTabs-selected .channelTabs-tabMentionBadge,
-						.channelTabs-selected .channelTabs-tabUnreadBadge {
+						.channelTabs-tab.channelTabs-selected .channelTabs-mentionBadge,
+						.channelTabs-tab.channelTabs-selected .channelTabs-unreadBadge {
     					display: none;
 						}
-						.channelTabs-tabMentionBadge,
-						.channelTabs-tabUnreadBadge {
+						.channelTabs-tab .channelTabs-mentionBadge,
+						.channelTabs-tab .channelTabs-unreadBadge {
 							position: inherit !important;
 							bottom: var(--channelTabs-tabHeight) !important;
 							right: 16px !important;
 							float: right !important;
 						}
-						.channelTabs-favMentionBadge,
-						.channelTabs-favUnreadBadge {
+						.channelTabs-fav .channelTabs-mentionBadge,
+						.channelTabs-fav .channelTabs-unreadBadge {
 							vertical-align: bottom;
 						}
-						.channelTabs-noMention,
-						.channelTabs-noUnread {
+						.channelTabs-fav .channelTabs-noMention,
+						.channelTabs-fav .channelTabs-noUnread {
 							background-color: var(--background-primary);
 							color: var(--text-muted);
 						}
@@ -812,6 +832,10 @@ module.exports = (() => {
 						.platform-osx .scroller-2TZvBN {
 							padding-top: 12px;
 						}
+						/* make first bar of channeltabs draggable */
+						.${DiscordClassModules.Titlebar.typeMacOS.replace(/ /g, ".")} ~ div #channelTabs-container > :first-child {
+							-webkit-app-region: drag;
+						}
 					`);
 					patches = [];
 					this.loadSettings();
@@ -832,7 +856,7 @@ module.exports = (() => {
 					this.patchTextChannelContextMenu();
 					if(this.settings.reopenLastChannel){
 						switching = true;
-						DiscordModules.NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
+						NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
 						switching = false;
 					}
 					document.addEventListener("keydown", this.keybindHandler);
@@ -852,7 +876,7 @@ module.exports = (() => {
 						TopBarRef.current.setState({
 							tabs: TopBarRef.current.state.tabs.map(tab => {
 								if(tab.selected){
-									const channelId = DiscordModules.SelectedChannelStore.getChannelId();
+									const channelId = SelectedChannelStore.getChannelId();
 									return {
 										name: getCurrentName(),
 										url: location.pathname,
@@ -866,7 +890,7 @@ module.exports = (() => {
 							})
 						}, this.saveSettings);
 					}else if(!this.settings.reopenLastChannel){
-						const channelId = DiscordModules.SelectedChannelStore.getChannelId();
+						const channelId = SelectedChannelStore.getChannelId();
 						this.settings.tabs[this.settings.tabs.findIndex(tab=>tab.selected)] = {
 							name: getCurrentName(),
 							url: location.pathname,
@@ -903,7 +927,7 @@ module.exports = (() => {
 					const GuildContextMenu = WebpackModules.find(m => m.default && m.default.displayName === "GuildContextMenu" && m.default.name === "");
 					Patcher.after(GuildContextMenu, "default", (_, [props], returnValue) => {
 						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						const channel = DiscordModules.ChannelStore.getChannel(DiscordModules.SelectedChannelStore.getChannelId(props.guild.id));
+						const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId(props.guild.id));
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
 							items: [
