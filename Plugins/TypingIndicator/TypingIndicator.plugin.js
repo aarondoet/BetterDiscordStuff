@@ -14,7 +14,7 @@ var TypingIndicator = (() => {
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.4.2",
+			version: "0.4.3",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
@@ -65,8 +65,8 @@ var TypingIndicator = (() => {
 		changelog:[
 			{
 				"title": "Fixed",
-				"type": "Fixed",
-				"items": ["Fixed typing indicator not working on channels again, thanks discord for undoing your change..."]
+				"type": "fixed",
+				"items": ["Fixed this plugin crashing discord. This happened due to discord removing the general `getChannels` function to `getPrivateChannels` and `getGuildChannels`."]
 			}
 		]
 	};
@@ -103,9 +103,9 @@ var TypingIndicator = (() => {
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const {DiscordSelectors, WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities} = Api;
+			const { DiscordSelectors, WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities } = Api;
 			const Flux = WebpackModules.getByProps("connectStores");
-			const React = DiscordModules.React;
+			const { React, ChannelStore, UserStore, UserTypingStore, RelationshipStore, SelectedGuildStore } = DiscordModules;
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
 			
 			if(!document.getElementById("0b53rv3r5cr1p7")){
@@ -161,14 +161,14 @@ var TypingIndicator = (() => {
 				async patchChannelList(promiseState){
 					const TextChannel = await ReactComponents.getComponentByName("TextChannel", DiscordSelectors.ChannelList.containerDefault);
 					if(promiseState.cancelled) return;
-					const selfId = DiscordModules.UserStore.getCurrentUser().id;
+					const selfId = UserStore.getCurrentUser().id;
 					Patcher.after(TextChannel.component.prototype, "render", (thisObject, _, returnValue) => {
 						let channelData = thisObject.props;
 						if(channelData.selected) return;
 						if(channelData.muted && !this.settings.includeMuted) return;
-						const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.keys(DiscordModules.UserTypingStore.getTypingUsers(channelData.channel.id))
+						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.keys(UserTypingStore.getTypingUsers(channelData.channel.id))
 							.filter(uId => uId !== selfId)
-							.filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+							.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
 							.length
 						}));
 						const wrappedCount = fluxWrapper(({count}) => {
@@ -182,19 +182,19 @@ var TypingIndicator = (() => {
 				async patchGuildList(promiseState){
 					const Guild = await ReactComponents.getComponentByName("Guild", "." + WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(" ", "."));
 					if(promiseState.cancelled) return;
-					const selfId = DiscordModules.UserStore.getCurrentUser().id;
+					const selfId = UserStore.getCurrentUser().id;
 					Patcher.after(Guild.component.prototype, "render", (thisObject, _, returnValue) => {
 						let guildData = thisObject.props;
 						if(guildData.selected) return;
 						if(!this.settings.guilds) return;
 						if(!guildData.guild) return;
 						if(MutedStore.isMuted(guildData.guildId) && !this.settings.includeMuted) return;
-						const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
+						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.values(ChannelStore.getGuildChannels())
 								.filter(c => c.guild_id == guildData.guildId && c.type != 2)
 								.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
-								.map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+								.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
 										.filter(uId => uId !== selfId)
-										.filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+										.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
 										.length
 								)
 								.reduce((a,b) => a+b, 0)
@@ -210,7 +210,7 @@ var TypingIndicator = (() => {
 				async patchHomeIcon(promiseState){
 					const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(/ /g, "."));
 					if(promiseState.cancelled) return;
-					const selfId = DiscordModules.UserStore.getCurrentUser().id;
+					const selfId = UserStore.getCurrentUser().id;
 					Patcher.after(Home.component.prototype, "render", (thisObject, _, returnValue) => {
 						if(!returnValue.props.children) return;
 						let children = returnValue.props.children[0] || returnValue.props.children;
@@ -220,13 +220,13 @@ var TypingIndicator = (() => {
 						children = children.props.children.props.children[1];
 						if(!children) return;
 						if(!this.settings.dms) return;
-						if(!DiscordModules.SelectedGuildStore.getGuildId()) return;
-						const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
+						if(!SelectedGuildStore.getGuildId()) return;
+						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.values(ChannelStore.getPrivateChannels())
 							.filter(c => !c.guild_id)
 							.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
-							.map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+							.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
 									.filter(uId => uId !== selfId)
-									.filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+									.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
 									.length
 							)
 							.reduce((a,b) => a+b, 0)
@@ -234,7 +234,7 @@ var TypingIndicator = (() => {
 						const wrappedCount = fluxWrapper(({count}) => {
 							return React.createElement(renderElement, {cnt: count, opacity: 1, type: "dms"});
 						});
-						children.props.children = DiscordModules.React.Children.toArray(children.props.children);
+						children.props.children = React.Children.toArray(children.props.children);
 						if(children.props.children.push)
 							children.props.children.push(React.createElement(wrappedCount));
 					});
@@ -244,19 +244,19 @@ var TypingIndicator = (() => {
 				async patchFolders(promiseState){
 					const Folder = await ReactComponents.getComponentByName("GuildFolder", "." + WebpackModules.getByProps("animationDuration", "folder", "guildIcon", "wrapper").wrapper.replace(/ /g, "."));
 					if(promiseState.cancelled) return;
-					const selfId = DiscordModules.UserStore.getCurrentUser().id;
+					const selfId = UserStore.getCurrentUser().id;
 					Patcher.after(Folder.component.prototype, "render", (thisObject, _, returnValue) => {
 						if(thisObject.props.expanded) return;
 						if(!this.settings.folders) return;
-						const fluxWrapper = Flux.connectStores([DiscordModules.UserTypingStore], ()=>({count: Object.values(DiscordModules.ChannelStore.getChannels())
+						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.values(ChannelStore.getGuildChannels())
 								.filter(c => thisObject.props.guildIds.includes(c.guild_id))
 								.filter(c => c.type != 2)
 								.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
 								.filter(c => this.settings.includeMuted || !MutedStore.isMuted(c.guild_id))
-								.filter(c => DiscordModules.SelectedGuildStore.getGuildId() != c.guild_id)
-								.map(c => Object.keys(DiscordModules.UserTypingStore.getTypingUsers(c.id))
+								.filter(c => SelectedGuildStore.getGuildId() != c.guild_id)
+								.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
 										.filter(uId => uId !== selfId)
-										.filter(uId => this.settings.includeBlocked || !DiscordModules.RelationshipStore.isBlocked(uId))
+										.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
 										.length
 								)
 								.reduce((a,b) => a+b, 0)
