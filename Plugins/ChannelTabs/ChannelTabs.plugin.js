@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.3.3",
+			version: "2.3.4",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -52,16 +52,14 @@ module.exports = (() => {
 				title: "Added",
 				type: "added",
 				items: [
-					"Some classes on bookmarks (`channelTabs-selected`, `channelTabs-unread`, `channelTabs-mention`).",
-					"Made tab bar (or fav bar if tabs are disabled) draggable on mac."
+					"Context menu entries to move bookmarks."
 				]
 			},
 			{
-				title: "Changed",
-				type: "progress",
+				title: "Fixed",
+				type: "fixed",
 				items: [
-					"Showing `1+` instead of an empty badge if the unread message count is not known.",
-					"Removed tab and bookmarks specific classes on unread/mention badges."
+					"Fixed this plugin crashing discord. This happened due to discord removing the general `getChannels` function to `getPrivateChannels` and `getGuildChannels`."
 				]
 			}
 		]
@@ -121,6 +119,7 @@ module.exports = (() => {
 			}
 			
 			
+			const mergeLists = (...items)=>items.filter(item => item.include===undefined||item.include).map(item => item.values).flat(1);
 			
 			const TabIcon = props=>!props.iconUrl ? null : React.createElement(
 				"img",
@@ -172,29 +171,42 @@ module.exports = (() => {
 							DCM.buildMenu([
 								{
 									type: "group",
-									items: [
+									items: mergeLists(
 										{
-											label: "Move left",
-											action: props.moveLeft
+											values: [
+												{
+													label: "Duplicate",
+													action: props.openInNewTab
+												},
+												{
+													label: "Add to favourites",
+													action: ()=>props.addToFavs(props.name, props.iconUrl, props.url, props.channelId)
+												}
+											]
 										},
 										{
-											label: "Move right",
-											action: props.moveRight
+											include: props.tabCount > 1,
+											values: [
+												{
+													label: "Move left",
+													action: props.moveLeft
+												},
+												{
+													label: "Move right",
+													action: props.moveRight
+												}
+											]
 										},
 										{
-											label: "Duplicate",
-											action: props.openInNewTab
-										},
-										{
-											label: "Add to favourites",
-											action: ()=>props.addToFavs(props.name, props.iconUrl, props.url, props.channelId)
-										},
-										{
-											label: "Close",
-											action: ()=>props.closeTab(props.tabIndex),
-											danger: true
+											values: [
+												{
+													label: "Close",
+													action: ()=>props.closeTab(props.tabIndex),
+													danger: true
+												}
+											]
 										}
-									].slice(props.tabCount < 2 ? 2 : 0)
+									)
 								}
 							]),
 							{
@@ -240,8 +252,8 @@ module.exports = (() => {
 						switchToTab: props.switchToTab,
 						closeTab: props.closeTab,
 						addToFavs: props.addToFavs,
-						moveLeft: ()=>props.moveLeft(tabIndex),
-						moveRight: ()=>props.moveRight(tabIndex),
+						moveLeft: ()=>props.move(tabIndex, (tabIndex + props.tabs.length - 1) % props.tabs.length),
+						moveRight: ()=>props.move(tabIndex, (tabIndex + 1) % props.tabs.length),
 						openInNewTab: ()=>props.openInNewTab(tab),
 						tabCount: props.tabs.length,
 						tabIndex,
@@ -301,21 +313,42 @@ module.exports = (() => {
 							DCM.buildMenu([
 								{
 									type: "group",
-									items: [
+									items: mergeLists(
 										{
-											label: "Open in new tab",
-											action: props.openInNewTab
+											values: [
+												{
+													label: "Open in new tab",
+													action: props.openInNewTab
+												},
+												{
+													label: "Rename",
+													action: props.rename
+												}
+											]
 										},
 										{
-											label: "Rename",
-											action: props.rename
+											include: props.favCount > 1,
+											values: [
+												{
+													label: "Move left",
+													action: props.moveLeft
+												},
+												{
+													label: "Move right",
+													action: props.moveRight
+												}
+											]
 										},
 										{
-											label: "Delete",
-											action: props.delete,
-											danger: true
+											values: [
+												{
+													label: "Delete",
+													action: props.delete,
+													danger: true
+												}
+											]
 										}
-									]
+									)
 								}
 							]),
 							{
@@ -368,7 +401,7 @@ module.exports = (() => {
 				props.favs.length > 0
 					? props.favs.map((fav, favIndex) => React.createElement(Flux.connectStores([UnreadStateStore, SelectedChannelStore], ()=>{
 							if(fav.guildId){
-								const channelIds = Object.values(ChannelStore.getChannels())
+								const channelIds = Object.values(ChannelStore.getGuildChannels())
 											.filter(channel=>channel.guild_id===fav.guildId)
 											.filter(channel=>!MutedStore.isChannelMuted(channel.guild_id, channel.id))
 											.map(channel=>channel.id);
@@ -394,9 +427,12 @@ module.exports = (() => {
 								name: fav.name,
 								iconUrl: fav.iconUrl,
 								url: fav.url,
+								favCount: props.favs.length,
 								rename: ()=>props.rename(fav.name, favIndex),
 								delete: ()=>props.delete(favIndex),
 								openInNewTab: ()=>props.openInNewTab(fav),
+								moveLeft: ()=>props.move(favIndex, (favIndex + props.favs.length - 1) % props.favs.length),
+								moveRight: ()=>props.move(favIndex, (favIndex + 1) % props.favs.length),
 								channelId: fav.channelId,
 								guildId: fav.guildId,
 								showFavUnreadBadges: props.showFavUnreadBadges,
@@ -428,6 +464,8 @@ module.exports = (() => {
 					this.renameFav = this.renameFav.bind(this);
 					this.deleteFav = this.deleteFav.bind(this);
 					this.addToFavs = this.addToFavs.bind(this);
+					this.moveTab = this.moveTab.bind(this);
+					this.moveFav = this.moveFav.bind(this);
 				}
 				switchToTab(tabIndex){
 					this.setState({
@@ -500,7 +538,7 @@ module.exports = (() => {
 						favs: this.state.favs.filter((fav, index)=>index!==favIndex)
 					}, this.props.plugin.saveSettings);
 				}
-				/*
+				/**
 				 * The guildId parameter is only passed when the guild is saved and not the channel alone.
 				 * This indicates that the currently selected channel needs to get selected instead of the
 				 * provided channel id (which should be empty when a guildId is provided)
@@ -548,22 +586,7 @@ module.exports = (() => {
 								}, this.props.plugin.saveSettings);
 							},
 							addToFavs: this.addToFavs,
-							moveLeft: tabIndex=>{
-								const tabs = this.state.tabs.filter((tab, index)=>index!==tabIndex);
-								tabs.splice((tabIndex+this.state.tabs.length-1)%this.state.tabs.length, 0, this.state.tabs[tabIndex]);
-								this.setState({
-									tabs,
-									selectedTabIndex: tabs.findIndex(tab=>tab.selected)
-								}, this.props.plugin.saveSettings);
-							},
-							moveRight: tabIndex=>{
-								const tabs = this.state.tabs.filter((tab, index)=>index!==tabIndex);
-								tabs.splice((tabIndex+1)%this.state.tabs.length, 0, this.state.tabs[tabIndex]);
-								this.setState({
-									tabs,
-									selectedTabIndex: tabs.findIndex(tab=>tab.selected)
-								}, this.props.plugin.saveSettings);
-							}
+							move: this.moveTab
 						}),
 						!this.state.showFavBar ? null : React.createElement(FavBar, {
 							favs: this.state.favs,
@@ -583,6 +606,7 @@ module.exports = (() => {
 									}]
 								}, this.props.plugin.saveSettings);
 							},
+							move: this.moveFav,
 							hideFavBar: ()=>{
 								this.setState({
 									showFavBar: false
