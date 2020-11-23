@@ -49,17 +49,10 @@ module.exports = (() => {
 		},
 		changelog: [
 			{
-				title: "Added",
-				type: "added",
-				items: [
-					"Context menu entries to move bookmarks."
-				]
-			},
-			{
 				title: "Fixed",
 				type: "fixed",
 				items: [
-					"Fixed this plugin crashing discord. This happened due to discord removing the general `getChannels` function to `getPrivateChannels` and `getGuildChannels`."
+					"Unread counts on guilds should no longer be incorrect. Apparently `hasUnread` can return true for channels you can't even see. This should no longer be a problem."
 				]
 			}
 		]
@@ -95,6 +88,8 @@ module.exports = (() => {
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
+			const PermissionUtils  = WebpackModules.getByProps("can", "canManageUser");
+			const Permissions = DiscordModules.DiscordConstants.Permissions;
 			
 			var switching = false;
 			var patches = [];
@@ -110,7 +105,7 @@ module.exports = (() => {
 							require("request").get("https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js", (error, response, body) => {
 								if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js");
 								else require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "BugReportHelper.plugin.js"), body, ()=>{
-									BdApi.Plugins.enable("BugReportHelper");
+									window.setTimeout(()=>BdApi.Plugins.enable("BugReportHelper"), 1000);
 								});
 							});
 						}
@@ -222,7 +217,7 @@ module.exports = (() => {
 					React.Fragment,
 					{},
 					React.createElement(TabMentionBadge, {mentionCount: props.mentionCount}),
-					(()=>{const c=ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
+					!props.channelId || ChannelStore.getChannel(props.channelId).isPrivate() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
 				),
 				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
@@ -403,6 +398,7 @@ module.exports = (() => {
 							if(fav.guildId){
 								const channelIds = Object.values(ChannelStore.getGuildChannels())
 											.filter(channel=>channel.guild_id===fav.guildId)
+											.filter(channel=>PermissionUtils.can(Permissions.VIEW_CHANNEL, channel))
 											.filter(channel=>!MutedStore.isChannelMuted(channel.guild_id, channel.id))
 											.map(channel=>channel.id);
 								return {
