@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.3.5",
+			version: "2.3.6",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -52,7 +52,7 @@ module.exports = (() => {
 				title: "Fixed",
 				type: "fixed",
 				items: [
-					"Unread counts on guilds should no longer be incorrect. Apparently `hasUnread` can return true for channels you can't even see. This should no longer be a problem."
+					"No more crashes when a channel gets deleted, you leave a server or you login with another account."
 				]
 			}
 		]
@@ -217,7 +217,7 @@ module.exports = (() => {
 					React.Fragment,
 					{},
 					React.createElement(TabMentionBadge, {mentionCount: props.mentionCount}),
-					!props.channelId || ChannelStore.getChannel(props.channelId).isPrivate() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
+					!props.channelId || (ChannelStore.getChannel(props.channelId)||{isPrivate:()=>true}).isPrivate() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
 				),
 				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
