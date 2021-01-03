@@ -10,6 +10,12 @@
         "title": "[something] does not work",
         "solution": "The plugin currently is in a broken state. I will rewrite it at some point in the future but I can't tell when that will be."
       }
-    ]
+    ],
+		"TypingIndicator": [
+			{
+				"title": "Indicator not working on channels",
+				"solution": "This issue is known. But the react devtools are not working so fixing it is no fun. I'll fix it but idk when."
+			}
+		]
   }
 }
