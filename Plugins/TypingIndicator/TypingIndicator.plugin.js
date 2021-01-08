@@ -14,7 +14,7 @@ var TypingIndicator = (() => {
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.4.3",
+			version: "0.4.4",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
@@ -66,7 +66,7 @@ var TypingIndicator = (() => {
 			{
 				"title": "Fixed",
 				"type": "fixed",
-				"items": ["Fixed this plugin crashing discord. This happened due to discord removing the general `getChannels` function to `getPrivateChannels` and `getGuildChannels`."]
+				"items": ["Indicator should show up on text channels in guilds again. Thanks to Strencher for helping me."]
 			}
 		]
 	};
@@ -78,42 +78,40 @@ var TypingIndicator = (() => {
 		getDescription(){return config.info.description;}
 		getVersion(){return config.info.version;}
 		load(){
-			const title = "Library Missing";
-			const ModalStack = BdApi.findModuleByProps("push", "update", "pop", "popWithKey");
-			const TextElement = BdApi.findModuleByProps("Sizes", "Weights");
-			const ConfirmationModal = BdApi.findModule(m => m.defaultProps && m.key && m.key() == "confirm-modal");
-			if (!ModalStack || !ConfirmationModal || !TextElement) return BdApi.alert(title, `The library plugin needed for ${config.info.name} is missing.<br /><br /> <a href="https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js" target="_blank">Click here to download the library!</a>`);
-			ModalStack.push(function(props) {
-				return BdApi.React.createElement(ConfirmationModal, Object.assign({
-					header: title,
-					children: [BdApi.React.createElement(TextElement, {color: TextElement.Colors.PRIMARY, children: [`The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`]})],
-					red: false,
-					confirmText: "Download Now",
-					cancelText: "Cancel",
-					onConfirm: () => {
-						require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
-							if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
-							await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
-						});
-					}
-				}, props));
-			});
+			BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
+				confirmText: "Download Now",
+				cancelText: "Cancel",
+				onConfirm: () => {
+					require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
+						if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
+						await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
+					});
+				}
+		});
 		}
 		start(){}
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const { DiscordSelectors, WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities } = Api;
+			const { WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities, Utilities } = Api;
+			const { React, ChannelStore, UserStore, UserTypingStore, RelationshipStore, SelectedGuildStore, DiscordConstants } = DiscordModules;
 			const Flux = WebpackModules.getByProps("connectStores");
-			const { React, ChannelStore, UserStore, UserTypingStore, RelationshipStore, SelectedGuildStore } = DiscordModules;
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
 			
-			if(!document.getElementById("0b53rv3r5cr1p7")){
-				let observerScript = document.createElement("script");
-				observerScript.id = "0b53rv3r5cr1p7";
-				observerScript.type = "text/javascript";
-				observerScript.src = "https://l0c4lh057.github.io/BetterDiscord/Plugins/Scripts/pluginlist.js";
-				document.head.appendChild(observerScript);
+			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
+				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
+				BdApi.showConfirmationModal("Do you want to download a helper plugin?", `Do you want to download a helper plugin that makes it easier for you to report issues? That plugin is not needed to anything else to function correctly but nice to have when reporting iissues, shortening the time until the problem gets resolved by asking you for specific information and also including additional information you did not provide.`, {
+					confirmText: "Download",
+					cancelText: "Cancel",
+					onConfirm: () => {
+						require("request").get("https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js", (error, response, body) => {
+							if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js");
+							else require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "BugReportHelper.plugin.js"), body, ()=>{
+								window.setTimeout(()=>BdApi.Plugins.enable("BugReportHelper"), 1000);
+							});
+						});
+					}
+				});
 			}
 			
 			renderElement = ({cnt,opacity,type})=>{
@@ -147,7 +145,7 @@ var TypingIndicator = (() => {
 						}
 					`);
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
-					this.patchChannelList(this.promises.state);
+					this.patchChannelList();
 					this.patchGuildList(this.promises.state);
 					this.patchHomeIcon(this.promises.state);
 					this.patchFolders(this.promises.state);
@@ -158,15 +156,14 @@ var TypingIndicator = (() => {
 					this.promises.cancel();
 				}
 				
-				async patchChannelList(promiseState){
-					const TextChannel = await ReactComponents.getComponentByName("TextChannel", DiscordSelectors.ChannelList.containerDefault);
-					if(promiseState.cancelled) return;
-					const selfId = UserStore.getCurrentUser().id;
-					Patcher.after(TextChannel.component.prototype, "render", (thisObject, _, returnValue) => {
-						let channelData = thisObject.props;
-						if(channelData.selected) return;
-						if(channelData.muted && !this.settings.includeMuted) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.keys(UserTypingStore.getTypingUsers(channelData.channel.id))
+				patchChannelList(){
+					const ChannelItem = WebpackModules.getModule(m => Object(m.default).displayName==="ChannelItem");
+					Patcher.after(ChannelItem, "default", (_, [props], returnValue) => {
+						if(props.channel.type!==DiscordConstants.ChannelTypes.GUILD_TEXT) return;
+						if(props.selected) return;
+						if(props.muted && !this.settings.includeMuted) return;
+						const selfId = UserStore.getCurrentUser().id;
+						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.keys(UserTypingStore.getTypingUsers(props.channel.id))
 							.filter(uId => uId !== selfId)
 							.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
 							.length
@@ -174,9 +171,9 @@ var TypingIndicator = (() => {
 						const wrappedCount = fluxWrapper(({count}) => {
 							return React.createElement(renderElement, {cnt: count, opacity: 0.7, type: "channel"});
 						});
-						returnValue.props.children.props.children.props ? returnValue.props.children.props.children.props.children.push(React.createElement(wrappedCount)) : returnValue.props.children.props.children.push(React.createElement(wrappedCount));
+						const itemList = Utilities.getNestedProp(returnValue, "props.children.props.children.1.props");
+						if(itemList) itemList.children = [...(Array.isArray(itemList.children) ? itemList.children : [itemList.children]), React.createElement(wrappedCount)];
 					});
-					TextChannel.forceUpdateAll();
 				}
 				
 				async patchGuildList(promiseState){
