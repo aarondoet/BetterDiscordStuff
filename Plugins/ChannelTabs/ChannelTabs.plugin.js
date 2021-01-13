@@ -42,17 +42,18 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.3.6",
+			version: "2.4.0",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "Fixed",
-				type: "fixed",
+				title: "New",
+				type: "added",
 				items: [
-					"No more crashes when a channel gets deleted, you leave a server or you login with another account."
+					"Add custom data attributes to tabs and bookmarks: `data-unread-count`, `data-unread-estimated` and `data-mention-count`",
+					"Add custom data attributes to tab and bookmark container: `data-tab-count` and `data-fav-count`"
 				]
 			}
 		]
@@ -154,6 +155,9 @@ module.exports = (() => {
 									+ (props.selected ? " channelTabs-selected" : "")
 									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
+					"data-mention-count": props.mentionCount,
+					"data-unread-count": props.unreadCount,
+					"data-unread-estimated": props.unreadEstimated,
 					onClick: ()=>{if(!props.selected) props.switchToTab(props.tabIndex);},
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
@@ -217,7 +221,7 @@ module.exports = (() => {
 					React.Fragment,
 					{},
 					React.createElement(TabMentionBadge, {mentionCount: props.mentionCount}),
-					!props.channelId || (ChannelStore.getChannel(props.channelId)||{isPrivate:()=>true}).isPrivate() ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
+					!props.channelId || (ChannelStore.getChannel(props.channelId)?.isPrivate() ?? true) ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
 				),
 				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
 			);
@@ -234,7 +238,8 @@ module.exports = (() => {
 			const TabBar = props=>React.createElement(
 				"div",
 				{
-					className: "channelTabs-tabContainer"
+					className: "channelTabs-tabContainer",
+					"data-tab-count": props.tabs.length
 				},
 				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
 					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
@@ -296,6 +301,9 @@ module.exports = (() => {
 									+ (props.selected ? " channelTabs-selected" : "")
 									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
+					"data-mention-count": props.mentionCount,
+					"data-unread-count": props.unreadCount,
+					"data-unread-estimated": props.unreadEstimated,
 					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuild(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : NavigationUtils.transitionTo(props.url),
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
@@ -367,6 +375,7 @@ module.exports = (() => {
 				"div",
 				{
 					className: "channelTabs-favContainer" + (props.favs.length == 0 ? " channelTabs-noFavs" : ""),
+					"data-fav-count": props.favs.length,
 					onContextMenu: e=>{
 						DCM.openContextMenu(
 							e,
