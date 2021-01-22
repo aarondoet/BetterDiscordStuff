@@ -142,7 +142,8 @@ var TypingIndicator = (() => {
 					tooltipProps => React.createElement(Spinner, {
 						...tooltipProps,
 						type: "pulsingEllipsis",
-						className: "ti-indicator typingindicator-" + type + (isFocused ? "" : " stop-animation"),
+						className: `ti-indicator typingindicator-${type}`,
+						animated: isFocused,
 						style: {
 							marginLeft: 5,
 							opacity: opacity
