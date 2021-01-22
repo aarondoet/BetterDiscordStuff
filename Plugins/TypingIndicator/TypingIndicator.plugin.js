@@ -4,7 +4,7 @@
  * @website https://twitter.com/l0c4lh057/
  * @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js
  * @patreon https://www.patreon.com/l0c4lh057
- * @invite acQjXZD
+ * @invite YzzeuJPpyj
  * @authorId 226677096091484160
  */
 
@@ -14,7 +14,7 @@ var TypingIndicator = (() => {
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.4.4",
+			version: "0.5.0",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
@@ -64,9 +64,9 @@ var TypingIndicator = (() => {
 		],
 		changelog:[
 			{
-				"title": "Fixed",
-				"type": "fixed",
-				"items": ["Indicator should show up on text channels in guilds again. Thanks to Strencher for helping me."]
+				"title": "New",
+				"type": "added",
+				"items": ["When hovering over the indicator you now see who is typing in there. If the user(s) is/are not cached the amount of users typing is shown."]
 			}
 		]
 	};
@@ -94,9 +94,11 @@ var TypingIndicator = (() => {
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
 			const { WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities, Utilities } = Api;
-			const { React, ChannelStore, UserStore, UserTypingStore, RelationshipStore, SelectedGuildStore, DiscordConstants } = DiscordModules;
+			const { React, ChannelStore, UserStore, UserTypingStore, RelationshipStore, SelectedGuildStore, DiscordConstants, WindowInfo } = DiscordModules;
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
+			const Spinner = WebpackModules.getByDisplayName("Spinner");
+			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
 			
 			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
 				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
@@ -114,15 +116,39 @@ var TypingIndicator = (() => {
 				});
 			}
 			
-			renderElement = ({cnt,opacity,type})=>{
-				return cnt < 1 ? null : React.createElement(WebpackModules.getByDisplayName("Spinner"), {
-					type: "pulsingEllipsis",
-					className: "ti-indicator typingindicator-" + type,
-					style: {
-						marginLeft: 5,
-						opacity: opacity
+			const renderElement = ({userIds, opacity, type, isFocused})=>{
+				userIds = [...new Set(userIds)];
+				if(userIds.length === 0) return null;
+				const usernames = userIds.map(userId => UserStore.getUser(userId)).filter(user => user).map(user => user.tag);
+				const remainingUserCount = userIds.length - usernames.length;
+				const text = (()=>{
+					if(usernames.length === 0){
+						return `${remainingUserCount} user${remainingUserCount > 1 ? "s" : ""}`;
+					}else if(userIds.length > 2){
+						const otherCount = usernames.length - 1 + remainingUserCount;
+						return `${usernames[0]} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
+					}else if(remainingUserCount === 0){
+						return usernames.join(", ");
+					}else{
+						return `${usernames.join(", ")} and ${remainingUserCount} other${remainingUserCount > 1 ? "s" : ""}`;
 					}
-				});
+				})();
+				return React.createElement(
+					Tooltip,
+					{
+						text,
+						position: type === "channel" ? "top" : "right"
+					},
+					tooltipProps => React.createElement(Spinner, {
+						...tooltipProps,
+						type: "pulsingEllipsis",
+						className: "ti-indicator typingindicator-" + type + (isFocused ? "" : " stop-animation"),
+						style: {
+							marginLeft: 5,
+							opacity: opacity
+						}
+					})
+				);
 			}
 			
 			return class TypingIndicator extends Plugin {
@@ -134,7 +160,6 @@ var TypingIndicator = (() => {
 							border-radius: 1vh;
 							background-color: #888;
 							box-shadow: 0px 0px 8px 4px #888;
-							pointer-events: none;
 							right: 14px;
 						}
 						.typingindicator-guild [class*=pulsingEllipsisItem], .typingindicator-dms [class*=pulsingEllipsisItem], .typingindicator-folder [class*=pulsingEllipsisItem] {
@@ -152,8 +177,8 @@ var TypingIndicator = (() => {
 				}
 				onStop(){
 					PluginUtilities.removeStyle("typingindicator-css");
-					Patcher.unpatchAll();
 					this.promises.cancel();
+					Patcher.unpatchAll();
 				}
 				
 				patchChannelList(){
@@ -163,13 +188,12 @@ var TypingIndicator = (() => {
 						if(props.selected) return;
 						if(props.muted && !this.settings.includeMuted) return;
 						const selfId = UserStore.getCurrentUser().id;
-						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.keys(UserTypingStore.getTypingUsers(props.channel.id))
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.keys(UserTypingStore.getTypingUsers(props.channel.id))
 							.filter(uId => uId !== selfId)
 							.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
-							.length
 						}));
-						const wrappedCount = fluxWrapper(({count}) => {
-							return React.createElement(renderElement, {cnt: count, opacity: 0.7, type: "channel"});
+						const wrappedCount = fluxWrapper(({userIds}) => {
+							return React.createElement(renderElement, {userIds, opacity: 0.7, type: "channel", isFocused: WindowInfo.isFocused()});
 						});
 						const itemList = Utilities.getNestedProp(returnValue, "props.children.props.children.1.props");
 						if(itemList) itemList.children = [...(Array.isArray(itemList.children) ? itemList.children : [itemList.children]), React.createElement(wrappedCount)];
@@ -186,18 +210,17 @@ var TypingIndicator = (() => {
 						if(!this.settings.guilds) return;
 						if(!guildData.guild) return;
 						if(MutedStore.isMuted(guildData.guildId) && !this.settings.includeMuted) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.values(ChannelStore.getGuildChannels())
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.values(ChannelStore.getGuildChannels())
 								.filter(c => c.guild_id == guildData.guildId && c.type != 2)
 								.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
 								.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
 										.filter(uId => uId !== selfId)
 										.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
-										.length
 								)
-								.reduce((a,b) => a+b, 0)
+								.reduce((a,b) => [...a, ...b], [])
 						}));
-						const wrappedCount = fluxWrapper(({count}) => {
-							return React.createElement(renderElement, {cnt: count, opacity: 1, type: "guild"});
+						const wrappedCount = fluxWrapper(({userIds}) => {
+							return React.createElement(renderElement, {userIds, opacity: 1, type: "guild", isFocused: WindowInfo.isFocused()});
 						});
 						returnValue.props.children.props.children.push(React.createElement(wrappedCount));
 					});
@@ -218,18 +241,17 @@ var TypingIndicator = (() => {
 						if(!children) return;
 						if(!this.settings.dms) return;
 						if(!SelectedGuildStore.getGuildId()) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.values(ChannelStore.getPrivateChannels())
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.values(ChannelStore.getPrivateChannels())
 							.filter(c => !c.guild_id)
 							.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
 							.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
 									.filter(uId => uId !== selfId)
 									.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
-									.length
 							)
-							.reduce((a,b) => a+b, 0)
+							.reduce((a,b) => [...a, ...b], [])
 						}));
-						const wrappedCount = fluxWrapper(({count}) => {
-							return React.createElement(renderElement, {cnt: count, opacity: 1, type: "dms"});
+						const wrappedCount = fluxWrapper(({userIds}) => {
+							return React.createElement(renderElement, {userIds, opacity: 1, type: "dms", isFocused: WindowInfo.isFocused()});
 						});
 						children.props.children = React.Children.toArray(children.props.children);
 						if(children.props.children.push)
@@ -245,7 +267,7 @@ var TypingIndicator = (() => {
 					Patcher.after(Folder.component.prototype, "render", (thisObject, _, returnValue) => {
 						if(thisObject.props.expanded) return;
 						if(!this.settings.folders) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore], ()=>({count: Object.values(ChannelStore.getGuildChannels())
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.values(ChannelStore.getGuildChannels())
 								.filter(c => thisObject.props.guildIds.includes(c.guild_id))
 								.filter(c => c.type != 2)
 								.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
@@ -254,12 +276,11 @@ var TypingIndicator = (() => {
 								.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
 										.filter(uId => uId !== selfId)
 										.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
-										.length
 								)
-								.reduce((a,b) => a+b, 0)
+								.reduce((a,b) => [...a, ...b], [])
 						}));
-						const wrappedCount = fluxWrapper(({count}) => {
-							return React.createElement(renderElement, {cnt: count, opacity: 1, type: "folder"});
+						const wrappedCount = fluxWrapper(({userIds}) => {
+							return React.createElement(renderElement, {userIds, opacity: 1, type: "folder", isFocused: WindowInfo.isFocused()});
 						});
 						returnValue.props.children.push(React.createElement(wrappedCount));
 					});
