@@ -1,4 +1,12 @@
-//META{"name":"Minespoiler","displayName":"Minespoiler","website":"https://twitter.com/l0c4lh057/","source":"https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/Minespoiler/Minespoiler.plugin.js"}*//
+/**
+ * @name Minespoiler
+ * @displayName Minespoiler
+ * @website https://twitter.com/l0c4lh057/
+ * @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/Minespoiler/Minespoiler.plugin.js
+ * @patreon https://www.patreon.com/l0c4lh057
+ * @invite YzzeuJPpyj
+ * @authorId 226677096091484160
+ */
 
 class Minespoiler {
 	

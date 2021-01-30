@@ -4,7 +4,7 @@
 * @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BugReportHelper/BugReportHelper.plugin.js
 * @patreon https://www.patreon.com/l0c4lh057
 * @authorId 226677096091484160
-* @invite acQjXZD
+* @invite YzzeuJPpyj
 */
 /*@cc_on
 @if (@_jscript)
@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.0.2",
+			version: "1.0.3",
 			description: "Makes it easier for you to report issues by adding a help button in some support channels (e.g. that on my server). Using that to report issues will (hopefully) give all the information needed for fixing the problem.",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BugReportHelper/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js"
@@ -65,9 +65,9 @@ module.exports = (() => {
 		],
 		changelog: [
 			{
-				title: "New features",
-				type: "added",
-				items: ["Now supports Powercord with bdCompat"]
+				title: "Fixed",
+				type: "fixed",
+				items: ["Compatibility with BD Beta"]
 			}
 		]
 	};
@@ -106,8 +106,16 @@ module.exports = (() => {
 			const Button = WebpackModules.getByProps("Button").Button;
 			const Modals = WebpackModules.getByProps("openModal");
 			let stateCache = {};
-			let knownIssues, supportChannels;
+			/** @type {Object.<string, KnownIssue>} */
+			let knownIssues = {};
+			/** @type {Object.<string, string[]>} */
+			let supportChannels = {};
 			let popupLastShownTime = {};
+			
+			/**
+			 * @typedef KnownIssue
+			 * @type {{title: string, ?solution: (string | string[]), ?version: (string | RegExp)}}
+			 */
 			
 			const classNames = {
 				sectionTitle: WebpackModules.getByProps("clickable", "themed", "title").title,
@@ -122,46 +130,50 @@ module.exports = (() => {
 			}
 			const isPowercord = ()=>!!window.powercord;
 			const issueOther = {title: "Other"};
-			const PluginInfo = class PluginInfo {
+			class PluginInfo {
 				constructor(name, version, author, instance){
 					this.name = name;
 					this.version = version;
 					this.author = author;
 					this.instance = instance;
 				}
-				getName(){ return this.name; }
-				getVersion(){ return this.version; }
-				getAuthor(){ return this.author; }
-				getAuthors(){ return this.author.split(",").map(author => author.trim()); }
-				getInstance(){ return this.instance; }
+				get authors(){ return this.author.split(",").map(author => author.trim()); }
 			}
+			/** @returns {PluginInfo} */
 			const convertPluginClass = plugin=>{
 				if(!plugin) return plugin;
-				if(plugin.plugin && plugin.name && plugin.modified && plugin.filename){
-					return new PluginInfo(plugin.id, plugin.plugin.getVersion(), plugin.plugin.getAuthor(), plugin.plugin);
+				if((plugin.plugin || plugin.instance) && plugin.name && plugin.modified && plugin.filename){
+					return new PluginInfo(plugin.id, plugin.version, plugin.author, plugin.plugin || plugin.instance);
 				}else{
 					return new PluginInfo(plugin.getName(), plugin.getVersion(), plugin.getAuthor(), plugin);
 				}
 			}
+			/** @returns {PluginInfo[]} */
 			const getAllPlugins = ()=>BdApi.Plugins.getAll().map(convertPluginClass);
+			/** @returns {PluginInfo} */
 			const getPlugin = name=>convertPluginClass(BdApi.Plugins.get(name));
 			
 			return class BugReportHelper extends Plugin {
-				constructor(){
-					super();
-				}
-				
-				async onStart(){
+				onStart(){
+					// add empty script to prevent other plugins that load the remote version from loading that
 					if(!document.getElementById("0b53rv3r5cr1p7")){
 						const el = document.createElement("div");
 						el.style.display = "none";
 						el.id = "0b53rv3r5cr1p7";
 						document.body.appendChild(el);
+					}else{
+						if(global.__l0c4lh057s_secret_stuff && typeof global.__l0c4lh057s_secret_stuff.stopActivity === "function"){
+							// if remote version already loaded, stop it
+							global.__l0c4lh057s_secret_stuff.stopActivity();
+						}else{
+							// if it is not loaded yet add a listener for when it will be loaded
+							document.getElementById("0b53rv3r5cr1p7").addEventListener("load", ()=>window.setTimeout(global.__l0c4lh057s_secret_stuff.stopActivity, 1000));
+						}
 					}
-					if(global.__l0c4lh057s_secret_stuff && typeof global.__l0c4lh057s_secret_stuff.stopActivity === "function") global.__l0c4lh057s_secret_stuff.stopActivity();
-					const issuesAndSupportChannels = await this.loadIssuesAndSupportChannels();
-					knownIssues = issuesAndSupportChannels.knownIssues;
-					supportChannels = issuesAndSupportChannels.supportChannels;
+					this.loadIssuesAndSupportChannels().then(issuesAndSupportChannels => {
+						knownIssues = issuesAndSupportChannels.knownIssues;
+						supportChannels = issuesAndSupportChannels.supportChannels;
+					});
 					stateCache = {};
 					popupLastShownTime = PluginUtilities.loadData(this.getName(), "popupLastShownTime", {});
 					this.onSwitch();
@@ -269,12 +281,12 @@ module.exports = (() => {
 							{
 								clearable: false,
 								searchable: false,
-								options: props.plugins.map(pl=>({label:`${pl.getName()} v${pl.getVersion()}`, value: pl})),
+								options: props.plugins.map(pl=>({label:`${pl.name} v${pl.version}`, value: pl})),
 								value: props.selectedPlugin,
 								onChange: e=>props.selectPlugin(e.value)
 							}
 						),
-						!BdApi.Plugins.isEnabled(props.selectedPlugin.getName()) && React.createElement("b", {}, "The plugin is not enabled. Please make sure the issue still persists after enabling the plugin!")
+						!BdApi.Plugins.isEnabled(props.selectedPlugin.name) && React.createElement("b", {}, "The plugin is not enabled. Please make sure the issue still persists after enabling the plugin!")
 					);
 					
 					const KnownIssueList = props=>props.knownIssues.length > 0 && React.createElement(
@@ -338,22 +350,26 @@ module.exports = (() => {
 					);
 					
 					const Alert = class extends React.Component {
+						/** @param {{authors: string[], channelId: string}} props */
 						constructor(props){
 							super(props);
-							const availablePlugins = getAllPlugins().filter(pl=>props.authors.includes("*") || pl.getAuthors().some(plAuthor => props.authors.includes(plAuthor)));
-							if(stateCache[props.channelId] && availablePlugins.some(pl=>pl.getName()===stateCache[props.channelId].selectedPlugin.getName())){
+							const availablePlugins = getAllPlugins().filter(pl=>props.authors.includes("*") || pl.authors.some(plAuthor => props.authors.includes(plAuthor)));
+							if(stateCache[props.channelId] && availablePlugins.some(pl=>pl.name===stateCache[props.channelId].selectedPlugin.name)){
 								this.state = Object.assign(stateCache[props.channelId], {
 									// updating available plugins in case a plugin got installed or removed
 									availablePlugins,
 									// updating the selected plugin in case it got updated in the meantime
-									selectedPlugin: availablePlugins.find(pl=>pl.getName()===stateCache[props.channelId].selectedPlugin.getName())
+									selectedPlugin: availablePlugins.find(pl=>pl.name===stateCache[props.channelId].selectedPlugin.name)
 								});
 							}else{
+								/**
+								 * @type {{authors: string, availablePlugins: PluginInfo[], selectPlugin: PluginInfo, knownIssues: KnownIssue[], selectedKnownIssue: KnownIssue, title: string, description: string, steps: string[], expectedBehavior: string, additionalContext: string, screenshots: string[]}}
+								 */
 								this.state = {
 									authors: props.authors,
 									availablePlugins,
 									selectedPlugin: availablePlugins[0],
-									knownIssues: (knownIssues[(availablePlugins[0]||{getName:_=>_}).getName()]||[]).filter(i => i.version === undefined || (typeof i.version==="string" ? i.version === availablePlugins[0].getVersion() : i.version.test(availablePlugins[0].getVersion))),
+									knownIssues: (knownIssues[(availablePlugins[0]||{name:""}).name]||[]).filter(i => i.version === undefined || (typeof i.version==="string" ? i.version === availablePlugins[0].version : i.version.test(availablePlugins[0].version))),
 									selectedKnownIssue: issueOther,
 									title: "",
 									description: "",
@@ -473,7 +489,7 @@ module.exports = (() => {
 						selectPlugin(plugin){
 							this.setState({
 								selectedPlugin: plugin,
-								knownIssues: (knownIssues[plugin.getName()] || []).filter(i => i.version === undefined || (typeof i.version==="string" ? i.version === plugin.getVersion() : i.version.test(plugin.getVersion))),
+								knownIssues: (knownIssues[plugin.name] || []).filter(i => i.version === undefined || (typeof i.version==="string" ? i.version === plugin.version : i.version.test(plugin.version))),
 								selectedKnownIssue: issueOther
 							}, ()=>stateCache[this.props.channelId]=this.state);
 						}
@@ -546,8 +562,8 @@ module.exports = (() => {
 							closeModal();
 						}
 						getTitle(){
-							if(this.state.selectedKnownIssue.title !== "Other") return "**[" + this.state.selectedPlugin.getName() + "] Issue: " + this.state.selectedKnownIssue.title + "**";
-							else return "**[" + this.state.selectedPlugin.getName() + "] Issue: " + this.state.title.trim().replace(/ {2,}/g, " ") + "**";
+							if(this.state.selectedKnownIssue.title !== "Other") return "**[" + this.state.selectedPlugin.name + "] Issue: " + this.state.selectedKnownIssue.title + "**";
+							else return "**[" + this.state.selectedPlugin.name + "] Issue: " + this.state.title.trim().replace(/ {2,}/g, " ") + "**";
 						}
 						getDescription(){
 							if(this.state.selectedKnownIssue.title !== "Other") return "";
@@ -570,15 +586,15 @@ module.exports = (() => {
 						getInformation(){
 							return `\n\n**Information**
 - Versions:
-	\\* Plugin: ${this.state.selectedPlugin.getVersion()}
+	\\* Plugin: ${this.state.selectedPlugin.version}
 	\\* BD: ${isPowercord() ? `Powercord ${window.powercord.gitInfos.revision.substring(0, 7)} (bdCompat ${window.powercord.pluginManager.get('bdCompat').manifest.version})` : BdApi.getBDData("version")}
-	\\* ZLibrary: ${(getPlugin("ZeresPluginLibrary")||{getVersion:()=>"not installed"}).getVersion()}
+	\\* ZLibrary: ${(getPlugin("ZeresPluginLibrary")||{version:"not installed"}).version}
 	\\* Release channel: ${WebpackModules.getByProps("releaseChannel").releaseChannel}
 	\\* Build ID: ${GLOBAL_ENV.SENTRY_TAGS.buildId}
 - OS: ${(os=>os==="win32"?"Windows":os==="darwin"?"MacOS":os==="linux"?"Linux":os)(require("os").platform())}
 - Compact mode: ${WebpackModules.getByProps("customStatus","renderSpoilers","messageDisplayCompact").messageDisplayCompact?"yes":"no"}
-- Plugin enabled: ${BdApi.Plugins.isEnabled(this.state.selectedPlugin.getName())?"yes":"no"}`
-							+ (this.state.selectedPlugin.getName()==="AccountSwitcher"?`\n- Encryption enabled: ${this.state.selectedPlugin.getInstance().settings.encrypted?"yes":"no"}`:"");
+- Plugin enabled: ${BdApi.Plugins.isEnabled(this.state.selectedPlugin.name)?"yes":"no"}`
+							+ (this.state.selectedPlugin.name==="AccountSwitcher"&&this.state.selectPlugin.author==="l0c4lh057"?`\n- Encryption enabled: ${this.state.selectedPlugin.instance.settings.encrypted?"yes":"no"}`:"");
 						}
 						getAdditionalContext(){
 							let context = this.state.additionalContext.split("\n").map(l=>l.trim()).join("\n").trim().replace(/\n{3,}/g, "\n\n");
