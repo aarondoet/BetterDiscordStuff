@@ -42,19 +42,16 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.4.0",
+			version: "2.4.1",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				title: "New",
-				type: "added",
-				items: [
-					"Add custom data attributes to tabs and bookmarks: `data-unread-count`, `data-unread-estimated` and `data-mention-count`",
-					"Add custom data attributes to tab and bookmark container: `data-tab-count` and `data-fav-count`"
-				]
+				"title": "Fixed",
+				"type": "fixed",
+				"items": ["Should not cause crashes on PTB and Canary anymore"]
 			}
 		]
 	};
@@ -84,7 +81,7 @@ module.exports = (() => {
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
 			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings } = Api;
-			const { React, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore } = DiscordModules;
+			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
@@ -115,7 +112,12 @@ module.exports = (() => {
 			}
 			
 			
-			const mergeLists = (...items)=>items.filter(item => item.include===undefined||item.include).map(item => item.values).flat(1);
+			const getGuildChannels = (...guildIds)=>{
+				const channels = ChannelStore.getGuildChannels ? Object.values(ChannelStore.getGuildChannels()) : ChannelStore.getMutableGuildChannels ? Object.values(ChannelStore.getMutableGuildChannels()) : [];
+				return channels.filter(c => guildIds.includes(c.guild_id) && c.type !== DiscordConstants.ChannelTypes.GUILD_VOICE && c.type !== DiscordConstants.ChannelTypes.GUILD_CATEGORY);
+			}
+			
+			const mergeLists = (...items)=>items.filter(item => item.include===undefined||item.include).flatMap(item => item.values);
 			
 			const TabIcon = props=>!props.iconUrl ? null : React.createElement(
 				"img",
@@ -405,10 +407,8 @@ module.exports = (() => {
 				props.favs.length > 0
 					? props.favs.map((fav, favIndex) => React.createElement(Flux.connectStores([UnreadStateStore, SelectedChannelStore], ()=>{
 							if(fav.guildId){
-								const channelIds = Object.values(ChannelStore.getGuildChannels())
-											.filter(channel=>channel.guild_id===fav.guildId)
-											.filter(channel=>PermissionUtils.can(Permissions.VIEW_CHANNEL, channel))
-											.filter(channel=>!MutedStore.isChannelMuted(channel.guild_id, channel.id))
+								const channelIds = getGuildChannels(fav.guildId)
+											.filter(channel=>(PermissionUtils.can(Permissions.VIEW_CHANNEL, channel)) && (!MutedStore.isChannelMuted(channel.guild_id, channel.id)))
 											.map(channel=>channel.id);
 								return {
 									unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||UnreadStateStore.getMentionCount(id)||(UnreadStateStore.hasUnread(id)?1:0)).reduce((a,b)=>a+b, 0),
