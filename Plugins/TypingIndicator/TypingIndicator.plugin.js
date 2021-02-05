@@ -14,7 +14,7 @@ var TypingIndicator = (() => {
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.5.0",
+			version: "0.5.1",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
@@ -64,9 +64,9 @@ var TypingIndicator = (() => {
 		],
 		changelog:[
 			{
-				"title": "New",
-				"type": "added",
-				"items": ["When hovering over the indicator you now see who is typing in there. If the user(s) is/are not cached the amount of users typing is shown."]
+				"title": "Fixed",
+				"type": "fixed",
+				"items": ["Should not cause crashes on PTB and Canary anymore", "Should work again on folders"]
 			}
 		]
 	};
@@ -182,6 +182,15 @@ var TypingIndicator = (() => {
 					Patcher.unpatchAll();
 				}
 				
+				getGuildChannels(...guildIds){
+					const channels = ChannelStore.getGuildChannels ? Object.values(ChannelStore.getGuildChannels()) : ChannelStore.getMutableGuildChannels ? Object.values(ChannelStore.getMutableGuildChannels()) : [];
+					return channels.filter(c => guildIds.includes(c.guild_id) && c.type !== DiscordConstants.ChannelTypes.GUILD_VOICE && c.type !== DiscordConstants.ChannelTypes.GUILD_CATEGORY);
+				}
+				
+				getPrivateChannels(){
+					return ChannelStore.getPrivateChannels ? Object.values(ChannelStore.getPrivateChannels()) : ChannelStore.getMutablePrivateChannels ? Object.values(ChannelStore.getMutablePrivateChannels) : [];
+				}
+				
 				patchChannelList(){
 					const ChannelItem = WebpackModules.getModule(m => Object(m.default).displayName==="ChannelItem");
 					Patcher.after(ChannelItem, "default", (_, [props], returnValue) => {
@@ -190,8 +199,7 @@ var TypingIndicator = (() => {
 						if(props.muted && !this.settings.includeMuted) return;
 						const selfId = UserStore.getCurrentUser().id;
 						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.keys(UserTypingStore.getTypingUsers(props.channel.id))
-							.filter(uId => uId !== selfId)
-							.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
+							.filter(uId => (uId !== selfId) && (this.settings.includeBlocked || !RelationshipStore.isBlocked(uId)))
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 0.7, type: "channel", isFocused: WindowInfo.isFocused()});
@@ -211,14 +219,11 @@ var TypingIndicator = (() => {
 						if(!this.settings.guilds) return;
 						if(!guildData.guild) return;
 						if(MutedStore.isMuted(guildData.guildId) && !this.settings.includeMuted) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.values(ChannelStore.getGuildChannels())
-								.filter(c => c.guild_id == guildData.guildId && c.type != 2)
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: this.getGuildChannels(guildData.guildId)
 								.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
-								.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
-										.filter(uId => uId !== selfId)
-										.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
+								.flatMap(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
+										.filter(uId => (uId !== selfId) && (this.settings.includeBlocked || !RelationshipStore.isBlocked(uId)))
 								)
-								.reduce((a,b) => [...a, ...b], [])
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 1, type: "guild", isFocused: WindowInfo.isFocused()});
@@ -242,50 +247,42 @@ var TypingIndicator = (() => {
 						if(!children) return;
 						if(!this.settings.dms) return;
 						if(!SelectedGuildStore.getGuildId()) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.values(ChannelStore.getPrivateChannels())
-							.filter(c => !c.guild_id)
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: this.getPrivateChannels()
 							.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(null, c.id))
-							.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
-									.filter(uId => uId !== selfId)
-									.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
+							.flatMap(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
+									.filter(uId => (uId !== selfId) && (this.settings.includeBlocked || !RelationshipStore.isBlocked(uId)))
 							)
-							.reduce((a,b) => [...a, ...b], [])
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 1, type: "dms", isFocused: WindowInfo.isFocused()});
 						});
 						children.props.children = React.Children.toArray(children.props.children);
-						if(children.props.children.push)
-							children.props.children.push(React.createElement(wrappedCount));
+						if(children.props.children.push) children.props.children.push(React.createElement(wrappedCount));
 					});
 					Home.forceUpdateAll();
 				}
 				
 				async patchFolders(promiseState){
-					const Folder = await ReactComponents.getComponentByName("GuildFolder", "." + WebpackModules.getByProps("animationDuration", "folder", "guildIcon", "wrapper").wrapper.replace(/ /g, "."));
-					if(promiseState.cancelled) return;
+					const Folder = WebpackModules.find(m=>m?.type?.render && (m?.type?.render||m?.type?.__powercordOriginal_render)?.toString()?.indexOf("SERVER_FOLDER")!==-1);
+					if(promiseState.cancelled || !Folder) return;
 					const selfId = UserStore.getCurrentUser().id;
-					Patcher.after(Folder.component.prototype, "render", (thisObject, _, returnValue) => {
-						if(thisObject.props.expanded) return;
+					Patcher.after(Folder.type, "render", (_, [props], returnValue) => {
+						console.log({props, returnValue});
+						if(props.expanded) return;
 						if(!this.settings.folders) return;
-						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.values(ChannelStore.getGuildChannels())
-								.filter(c => thisObject.props.guildIds.includes(c.guild_id))
-								.filter(c => c.type != 2)
-								.filter(c => this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
-								.filter(c => this.settings.includeMuted || !MutedStore.isMuted(c.guild_id))
-								.filter(c => SelectedGuildStore.getGuildId() != c.guild_id)
-								.map(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
-										.filter(uId => uId !== selfId)
-										.filter(uId => this.settings.includeBlocked || !RelationshipStore.isBlocked(uId))
+						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: this.getGuildChannels(...props.guildIds)
+								.filter(c => (this.settings.includeMuted || !MutedStore.isMuted(c.guild_id))
+								             && (this.settings.includeMuted || !MutedStore.isChannelMuted(c.guild_id, c.id))
+								             && (SelectedGuildStore.getGuildId() !== c.guild_id))
+								.flatMap(c => Object.keys(UserTypingStore.getTypingUsers(c.id))
+										.filter(uId => (uId !== selfId) && (this.settings.includeBlocked || !RelationshipStore.isBlocked(uId)))
 								)
-								.reduce((a,b) => [...a, ...b], [])
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 1, type: "folder", isFocused: WindowInfo.isFocused()});
 						});
 						returnValue.props.children.push(React.createElement(wrappedCount));
 					});
-					Folder.forceUpdateAll();
 				}
 				
 				getSettingsPanel(){
