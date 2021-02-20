@@ -42,7 +42,7 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "1.0.3",
+			version: "1.0.4",
 			description: "Makes it easier for you to report issues by adding a help button in some support channels (e.g. that on my server). Using that to report issues will (hopefully) give all the information needed for fixing the problem.",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/BugReportHelper/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js"
@@ -67,7 +67,7 @@ module.exports = (() => {
 			{
 				title: "Fixed",
 				type: "fixed",
-				items: ["Compatibility with BD Beta"]
+				items: ["No longer crashing when you have plugins using the new meta attributes instead of the functions"]
 			}
 		]
 	};
@@ -141,15 +141,16 @@ module.exports = (() => {
 			}
 			/** @returns {PluginInfo} */
 			const convertPluginClass = plugin=>{
-				if(!plugin) return plugin;
+				if(!plugin) return null;
 				if((plugin.plugin || plugin.instance) && plugin.name && plugin.modified && plugin.filename){
 					return new PluginInfo(plugin.id, plugin.version, plugin.author, plugin.plugin || plugin.instance);
 				}else{
+					if(typeof plugin.getName !== "function" || typeof plugin.getVersion !== "function" || typeof plugin.getAuthor !== "function") return null;
 					return new PluginInfo(plugin.getName(), plugin.getVersion(), plugin.getAuthor(), plugin);
 				}
 			}
 			/** @returns {PluginInfo[]} */
-			const getAllPlugins = ()=>BdApi.Plugins.getAll().map(convertPluginClass);
+			const getAllPlugins = ()=>BdApi.Plugins.getAll().map(convertPluginClass).filter(pl=>pl);
 			/** @returns {PluginInfo} */
 			const getPlugin = name=>convertPluginClass(BdApi.Plugins.get(name));
 			
