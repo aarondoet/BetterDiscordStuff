@@ -42,16 +42,26 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.4.1",
+			version: "2.5.0",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "Fixed",
-				"type": "fixed",
-				"items": ["Should not cause crashes on PTB and Canary anymore"]
+				"title": "Added",
+				"type": "added",
+				"items": ["TypingIndicator Intergration"]
+			},
+			{
+				"title": "Added",
+				"type": "added",
+				"items": ["The Ability to Show Badges even when the Tab is Selected"]
+			},
+			{
+				"title": "Tweaked",
+				"type": "added",
+				"items": ["UI Adjustments"]
 			}
 		]
 	};
@@ -80,14 +90,15 @@ module.exports = (() => {
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings } = Api;
-			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore } = DiscordModules;
+			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings, Utilities } = Api;
+			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
 			const PermissionUtils  = WebpackModules.getByProps("can", "canManageUser");
 			const Permissions = DiscordModules.DiscordConstants.Permissions;
+			const Spinner = WebpackModules.getByDisplayName("Spinner");
 			
 			var switching = false;
 			var patches = [];
@@ -144,6 +155,25 @@ module.exports = (() => {
 				},
 				"⨯"
 			);
+			const TabDock = props=>React.createElement(
+				"div",
+				{
+					className: "channelTabs-dock"
+					+ (props.selected ? " channelTabs-selected" : "")
+				}
+			);
+			const TabTypingBadge = ({isTyping})=>{
+				if (isTyping == false) return null;
+				return React.createElement(Spinner, {
+				type: "pulsingEllipsis",
+				className: `ti-indicator channelTabs-typingindicator-tab`,
+				animated: true,
+				style: {
+					marginLeft: 0,
+					opacity: 1
+				}
+			});
+			};
 			const TabUnreadBadge = props=>!props.hasUnread ? null : React.createElement("div", {
 				className: "channelTabs-unreadBadge"
 			}, props.unreadCount === 0 ? (props.mentionCount||1) + "+" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
@@ -154,6 +184,7 @@ module.exports = (() => {
 				"div",
 				{
 					className: "channelTabs-tab"
+									+ (props.selected && !props.alwaysShowTabBadges ? " channelTabs-selectedbadgeshide" : "")
 									+ (props.selected ? " channelTabs-selected" : "")
 									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
@@ -217,8 +248,10 @@ module.exports = (() => {
 						)
 					}
 				},
+				React.createElement(TabDock, {}),
 				React.createElement(TabIcon, {iconUrl: props.iconUrl}),
 				React.createElement(TabName, {name: props.name}),
+				React.createElement(TabTypingBadge, {isTyping: props.hasUsersTyping}),
 				!props.showTabUnreadBadges ? null : React.createElement(
 					React.Fragment,
 					{},
@@ -243,11 +276,12 @@ module.exports = (() => {
 					className: "channelTabs-tabContainer",
 					"data-tab-count": props.tabs.length
 				},
-				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
+				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore, UserTypingStore], ()=>({
 					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
 					unreadEstimated: UnreadStateStore.isEstimated(tab.channelId),
 					hasUnread: UnreadStateStore.hasUnread(tab.channelId),
-					mentionCount: UnreadStateStore.getMentionCount(tab.channelId)
+					mentionCount: UnreadStateStore.getMentionCount(tab.channelId),
+					hasUsersTyping: doesTabHaveTyping({channel_id: tab.channelId})
 				}))(result => React.createElement(
 					Tab,
 					{
@@ -268,7 +302,9 @@ module.exports = (() => {
 						unreadCount: result.unreadCount,
 						unreadEstimated: result.unreadEstimated,
 						hasUnread: result.hasUnread,
-						mentionCount: result.mentionCount
+						mentionCount: result.mentionCount,
+						hasUsersTyping: result.hasUsersTyping,
+						alwaysShowTabBadges: props.alwaysShowTabBadges
 					}
 				)))),
 				React.createElement(NewTab, {
@@ -299,7 +335,8 @@ module.exports = (() => {
 			const Fav = props=>React.createElement(
 				"div",
 				{
-					className: "channelTabs-fav" + (props.channelId ? " channelTabs-channel" : props.guildId ? " channelTabs-guild" : "")
+					className: "channelTabs-fav" 
+									+ (props.channelId ? " channelTabs-channel" : props.guildId ? " channelTabs-guild" : "")
 									+ (props.selected ? " channelTabs-selected" : "")
 									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
@@ -461,7 +498,8 @@ module.exports = (() => {
 						showTabBar: props.showTabBar,
 						showFavBar: props.showFavBar,
 						showTabUnreadBadges: props.showTabUnreadBadges,
-						showFavUnreadBadges: props.showFavUnreadBadges
+						showFavUnreadBadges: props.showFavUnreadBadges,
+						alwaysShowTabBadges: props.alwaysShowTabBadges
 					};
 					this.switchToTab = this.switchToTab.bind(this);
 					this.closeTab = this.closeTab.bind(this);
@@ -624,7 +662,19 @@ module.exports = (() => {
 					);
 				}
 			};
-			
+
+			const doesTabHaveTyping = ({channel_id}) => 
+			{
+				const channel = ChannelStore.getChannel(channel_id);
+				const selfId = UserStore.getCurrentUser().id;
+				if (channel)
+				{	
+					const userIds = Object.keys(UserTypingStore.getTypingUsers(channel_id)).filter(uId => (uId !== selfId));
+					const typingUsers = [...new Set(userIds)];
+					if (typingUsers) return typingUsers.length === 0 ? false : true;
+				}
+				return false;
+			};
 			
 			
 			const getCurrentName = (pathname = location.pathname)=>{
@@ -671,22 +721,34 @@ module.exports = (() => {
 					PluginUtilities.addStyle("channelTabs-style", `
 						:root {
 							--channelTabs-tabWidth: 190px;
-							--channelTabs-tabHeight: 20px;
+							--channelTabs-tabHeight: 32px;
+							--channelTabs-dockHeight: 18px;
 							--channelTabs-favHeight: 20px;
 						}
 						.channelTabs-tab {
 							display: inline-block;
 							margin: 2px 0;
 							margin-left: 4px;
-							font-size: calc(var(--channelTabs-tabHeight) - 2px);
+							font-size: calc(var(--channelTabs-tabHeight) - 14px);
 							width: var(--channelTabs-tabWidth);
 							position: relative;
 							background: none;
 							border: none;
-							padding: 6px;
+							padding: 6px 6px 6px 6px;
 							border-radius: 5px;
 							color: var(--interactive-normal);
 							height: var(--channelTabs-tabHeight);
+						}
+						.channelTabs-dock {
+							position: absolute !important;
+							right: 0px !important;
+							bottom: 0px !important;
+							float: right !important;
+							border-radius: 12px 0px 5px 0px;
+							width: calc(var(--channelTabs-tabWidth) - var(--channelTabs-tabHeight));
+							height: var(--channelTabs-dockHeight);
+							opacity: 0.5;
+							background-color: black;
 						}
 						.channelTabs-tabName {
 							width: calc(var(--channelTabs-tabWidth) - 18px);
@@ -718,14 +780,14 @@ module.exports = (() => {
 						.channelTabs-closeTab {
 							display: inline-block;
 							position: absolute;
-							right: 4px;
-							top: 5px;
+							right: 0px;
+							top: 0px;
 							width: 14px;
 							height: 14px;
-							border-radius: 7px;
+							border-radius: 0px 5px 0px 7px;
 							text-align: center;
-							line-height: 11px;
-							font-size: 15px;
+							line-height: 14px;
+							font-size: 14px;
 							background: var(--interactive-muted);
 							color: var(--background-secondary-alt);
 							cursor: pointer;
@@ -766,6 +828,7 @@ module.exports = (() => {
 						}
 						
 						.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
+						.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
 						.channelTabs-tab.channelTabs-mention:not(.channelTabs-selected) {
 							color: var(--interactive-hover);
 						}
@@ -779,6 +842,7 @@ module.exports = (() => {
 						.channelTabs-unreadBadge {
 							background-color: rgb(114, 137, 218);
 						}
+
 						.channelTabs-mentionBadge,
 						.channelTabs-unreadBadge {
 							display: inline-block;
@@ -795,15 +859,32 @@ module.exports = (() => {
 							text-align: center;
 							color: #fff;
 						}
-						.channelTabs-tab.channelTabs-selected .channelTabs-mentionBadge,
-						.channelTabs-tab.channelTabs-selected .channelTabs-unreadBadge {
-    					display: none;
+						.channelTabs-typingindicator-tab 
+						{
+							position: inherit !important;
+							right: 0px !important;
+							bottom: 0px !important;
+							float: right !important;
+							border-radius: 12px;
+							width: 32px;
+							height: 12px;
 						}
+						.channelTabs-tab:not(.channelTabs-selected) .channelTabs-typingindicator-tab {
+							background: var(--interactive-muted);
+						}
+						.channelTabs-tab:not(.channelTabs-selected):hover .channelTabs-typingindicator-tab {
+							background: var(--interactive-muted);
+						}
+						.channelTabs-tab.channelTabs-selected .channelTabs-typingindicator-tab {
+							background: var(--interactive-muted);
+						}
+
 						.channelTabs-tab .channelTabs-mentionBadge,
 						.channelTabs-tab .channelTabs-unreadBadge {
 							position: inherit !important;
-							bottom: var(--channelTabs-tabHeight) !important;
-							right: 16px !important;
+							bottom: 0px !important;
+							right: 4px !important;
+							height: 16px;
 							float: right !important;
 						}
 						.channelTabs-fav .channelTabs-mentionBadge,
@@ -888,15 +969,19 @@ module.exports = (() => {
 						NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
 						switching = false;
 					}
+					
+					UpdateBadgeStyleDisplayToggle(!this.settings.alwaysShowTabBadges);
 					document.addEventListener("keydown", this.keybindHandler);
 				}
 				
 				onStop(){
 					PluginUtilities.removeStyle("channelTabs-style");
+					PluginUtilities.removeStyle("channelTabs-hiddenBadges-style");
 					document.removeEventListener("keydown", this.keybindHandler);
 					Patcher.unpatchAll();
 					this.promises.cancel();
 					patches.forEach(patch=>patch());
+
 				}
 				
 				onSwitch(){
@@ -940,6 +1025,7 @@ module.exports = (() => {
 								showFavBar: this.settings.showFavBar,
 								showTabUnreadBadges: this.settings.showTabUnreadBadges,
 								showFavUnreadBadges: this.settings.showFavUnreadBadges,
+								alwaysShowTabBadges: this.settings.alwaysShowTabBadges,
 								tabs: this.settings.tabs,
 								favs: this.settings.favs,
 								ref: TopBarRef,
@@ -950,6 +1036,25 @@ module.exports = (() => {
 					});
 					AppView.forceUpdateAll();
 					patches.push(()=>AppView.forceUpdateAll());
+				}
+
+				UpdateBadgeStyleDisplayToggle(hideOnActive)
+				{
+					if (hideOnActive) 
+					{
+						PluginUtilities.addStyle("channelTabs-hiddenBadges-style",
+						`
+							.channelTabs-tab.channelTabs-selectedbadgeshide .channelTabs-mentionBadge,
+							.channelTabs-tab.channelTabs-selectedbadgeshide .channelTabs-unreadBadge {
+								display: none;
+							}
+						`);
+					}
+					else 
+					{
+						PluginUtilities.removeStyle("channelTabs-hiddenBadges-style");
+					}
+
 				}
 				
 				patchGuildIconContextMenu(){
@@ -1099,7 +1204,8 @@ module.exports = (() => {
 						showFavBar: true,
 						reopenLastChannel: false,
 						showTabUnreadBadges: true,
-						showFavUnreadBadges: true
+						showFavUnreadBadges: true,
+						alwaysShowTabBadges: false
 					};
 				}
 				
@@ -1157,6 +1263,14 @@ module.exports = (() => {
 								if(TopBarRef.current) TopBarRef.current.setState({
 									showFavUnreadBadges: checked
 								});
+								this.saveSettings();
+							}))
+							.append(new Settings.Switch("Show unread badges / typing indicator on Active Tabs", "Allows you to see the unread badges even if the tab is focused", this.settings.alwaysShowTabBadges, checked=>{
+								this.settings.alwaysShowTabBadges = checked;
+								if(TopBarRef.current) TopBarRef.current.setState({
+									alwaysShowTabBadges: checked
+								});
+								this.UpdateBadgeStyleDisplayToggle(!checked);
 								this.saveSettings();
 							}));
 					return panel;
