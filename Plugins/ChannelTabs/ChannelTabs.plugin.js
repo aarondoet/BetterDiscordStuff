@@ -51,12 +51,7 @@ module.exports = (() => {
 			{
 				"title": "Added",
 				"type": "added",
-				"items": ["TypingIndicator Intergration"]
-			},
-			{
-				"title": "Added",
-				"type": "added",
-				"items": ["The Ability to Show Badges even when the Tab is Selected"]
+				"items": ["TypingIndicator Intergration", "The Ability to Show Badges even when the Tab is Selected"]
 			},
 			{
 				"title": "Tweaked",
@@ -166,10 +161,9 @@ module.exports = (() => {
 				if (isTyping == false) return null;
 				return React.createElement(Spinner, {
 				type: "pulsingEllipsis",
-				className: `ti-indicator channelTabs-typingindicator-tab`,
+				className: `channelTabs-typingindicator-tab`,
 				animated: true,
 				style: {
-					marginLeft: 0,
 					opacity: 1
 				}
 			});
@@ -864,19 +858,9 @@ module.exports = (() => {
 							position: inherit !important;
 							right: 0px !important;
 							bottom: 0px !important;
+							height: 16px;
 							float: right !important;
-							border-radius: 12px;
-							width: 32px;
-							height: 12px;
-						}
-						.channelTabs-tab:not(.channelTabs-selected) .channelTabs-typingindicator-tab {
-							background: var(--interactive-muted);
-						}
-						.channelTabs-tab:not(.channelTabs-selected):hover .channelTabs-typingindicator-tab {
-							background: var(--interactive-muted);
-						}
-						.channelTabs-tab.channelTabs-selected .channelTabs-typingindicator-tab {
-							background: var(--interactive-muted);
+							text-align: center;
 						}
 
 						.channelTabs-tab .channelTabs-mentionBadge,
