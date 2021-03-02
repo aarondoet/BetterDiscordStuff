@@ -152,6 +152,8 @@ module.exports = (() => {
 			var currentGroupDragIndex = -1;
 			var currentGroupDragDestinationIndex = -1;
 
+			var currentGroupOpened = -1;
+
 			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
 				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
 				BdApi.showConfirmationModal("Do you want to download a helper plugin?", 
@@ -1036,6 +1038,7 @@ module.exports = (() => {
 					openDropdown.classList.remove('channelTabs-favGroupShow');
 				  }
 				}
+				currentGroupOpened = -1;
 			};
 
 			const mergeLists = (...items)=>
@@ -1676,7 +1679,8 @@ module.exports = (() => {
 						className: "channelTabs-favGroupBtn",
 						onClick: () => {
 							closeAllDropdowns();
-							document.getElementById("favGroup-content-" + props.groupIndex).classList.toggle("channelTabs-favGroupShow");							
+							document.getElementById("favGroup-content-" + props.groupIndex).classList.toggle("channelTabs-favGroupShow");
+							currentGroupOpened = props.groupIndex;			
 						}
 					}, 
 					props.favGroup.name,
@@ -1687,7 +1691,7 @@ module.exports = (() => {
 				React.createElement(
 					"div", 
 					{
-						className: "channelTabs-favGroup-content",
+						className: "channelTabs-favGroup-content" + (currentGroupOpened === props.groupIndex ? " channelTabs-favGroupShow" : ""),
 						id: "favGroup-content-" + props.groupIndex
 					}, 
 					React.createElement(FavItems, {group: props.favGroup, ...props})
