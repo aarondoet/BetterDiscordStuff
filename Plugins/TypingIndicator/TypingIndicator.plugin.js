@@ -14,7 +14,7 @@ var TypingIndicator = (() => {
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.5.1",
+			version: "0.5.2",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
@@ -66,7 +66,12 @@ var TypingIndicator = (() => {
 			{
 				"title": "Fixed",
 				"type": "fixed",
-				"items": ["Should not cause crashes on PTB and Canary anymore", "Should work again on folders"]
+				"items": ["Showing on the home icon again"]
+			},
+			{
+				"title": "New",
+				"type": "added",
+				"items": ["Added data attributes to the indicator to allow channel/guild specific styling using CSS (`data-guild-id`, `data-channel-id` and `data-folder-id`)"]
 			}
 		]
 	};
@@ -116,7 +121,7 @@ var TypingIndicator = (() => {
 				});
 			}
 			
-			const renderElement = ({userIds, opacity, type, isFocused})=>{
+			const renderElement = ({userIds, opacity, type, isFocused, id})=>{
 				userIds = [...new Set(userIds)];
 				if(userIds.length === 0) return null;
 				const usernames = userIds.map(userId => UserStore.getUser(userId)).filter(user => user).map(user => user.tag);
@@ -143,6 +148,7 @@ var TypingIndicator = (() => {
 						...tooltipProps,
 						type: "pulsingEllipsis",
 						className: `ti-indicator typingindicator-${type}`,
+						[`data-${type}-id`]: id,
 						animated: isFocused,
 						style: {
 							marginLeft: 5,
@@ -188,7 +194,7 @@ var TypingIndicator = (() => {
 				}
 				
 				getPrivateChannels(){
-					return ChannelStore.getPrivateChannels ? Object.values(ChannelStore.getPrivateChannels()) : ChannelStore.getMutablePrivateChannels ? Object.values(ChannelStore.getMutablePrivateChannels) : [];
+					return ChannelStore.getPrivateChannels ? Object.values(ChannelStore.getPrivateChannels()) : ChannelStore.getMutablePrivateChannels ? Object.values(ChannelStore.getMutablePrivateChannels()) : [];
 				}
 				
 				patchChannelList(){
@@ -202,7 +208,7 @@ var TypingIndicator = (() => {
 							.filter(uId => (uId !== selfId) && (this.settings.includeBlocked || !RelationshipStore.isBlocked(uId)))
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
-							return React.createElement(renderElement, {userIds, opacity: 0.7, type: "channel", isFocused: WindowInfo.isFocused()});
+							return React.createElement(renderElement, {userIds, opacity: 0.7, type: "channel", isFocused: WindowInfo.isFocused(), id: props.channel.id});
 						});
 						const itemList = Utilities.getNestedProp(returnValue, "props.children.props.children.1.props");
 						if(itemList) itemList.children = [...(Array.isArray(itemList.children) ? itemList.children : [itemList.children]), React.createElement(wrappedCount)];
@@ -226,7 +232,7 @@ var TypingIndicator = (() => {
 								)
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
-							return React.createElement(renderElement, {userIds, opacity: 1, type: "guild", isFocused: WindowInfo.isFocused()});
+							return React.createElement(renderElement, {userIds, opacity: 1, type: "guild", isFocused: WindowInfo.isFocused(), id: guildData.guild.id});
 						});
 						returnValue.props.children.props.children.push(React.createElement(wrappedCount));
 					});
@@ -267,7 +273,6 @@ var TypingIndicator = (() => {
 					if(promiseState.cancelled || !Folder) return;
 					const selfId = UserStore.getCurrentUser().id;
 					Patcher.after(Folder.type, "render", (_, [props], returnValue) => {
-						console.log({props, returnValue});
 						if(props.expanded) return;
 						if(!this.settings.folders) return;
 						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: this.getGuildChannels(...props.guildIds)
@@ -279,7 +284,7 @@ var TypingIndicator = (() => {
 								)
 						}));
 						const wrappedCount = fluxWrapper(({userIds}) => {
-							return React.createElement(renderElement, {userIds, opacity: 1, type: "folder", isFocused: WindowInfo.isFocused()});
+							return React.createElement(renderElement, {userIds, opacity: 1, type: "folder", isFocused: WindowInfo.isFocused(), id: props.folderId});
 						});
 						returnValue.props.children.push(React.createElement(wrappedCount));
 					});
