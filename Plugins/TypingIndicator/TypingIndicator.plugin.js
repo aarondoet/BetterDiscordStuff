@@ -37,7 +37,7 @@ var TypingIndicator = (() => {
 				type: "switch",
 				id: "includeBlocked",
 				name: "Include blocked users",
-				note: "With this option enabled the indicator will also show for users you have blocked",
+				note: "With this option enabled the indicator will also show for users you have blocked (default: false)",
 				value: false
 			},
 			{
