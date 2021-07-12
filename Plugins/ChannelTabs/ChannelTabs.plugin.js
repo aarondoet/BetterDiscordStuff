@@ -42,131 +42,204 @@ module.exports = (() => {
 					twitter_username: "l0c4lh057"
 				}
 			],
-			version: "2.4.1",
+			version: "2.4.2",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "Fixed",
-				"type": "fixed",
-				"items": ["Should not cause crashes on PTB and Canary anymore"]
+				"title": "Added",
+				"type": "added",
+				"items": ["Added support for multiple languages"]
 			}
 		]
 	};
-	
+
 	return !global.ZeresPluginLibrary ? class {
-		constructor(){ this._config = config; }
-		getName(){ return config.info.name; }
-		getAuthor(){ return config.info.authors.map(a => a.name).join(", "); }
-		getDescription(){ return config.info.description; }
-		getVersion(){ return config.info.version; }
-		load(){
-			BdApi.showConfirmationModal("Library plugin is needed", 
+		constructor() { this._config = config; }
+		getName() { return config.info.name; }
+		getAuthor() { return config.info.authors.map(a => a.name).join(", "); }
+		getDescription() { return config.info.description; }
+		getVersion() { return config.info.version; }
+		load() {
+			BdApi.showConfirmationModal("Library plugin is needed",
 				[`The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`], {
-					confirmText: "Download",
-					cancelText: "Cancel",
-					onConfirm: () => {
-						require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
-							if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
-							await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
-						});
-					}
+				confirmText: "Download",
+				cancelText: "Cancel",
+				onConfirm: () => {
+					require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
+						if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
+						await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
+					});
 				}
+			}
 			);
 		}
-		start(){}
-		stop(){}
+		start() { }
+		stop() { }
 	} : (([Plugin, Api]) => {
+
+		let Language_ID = "";
+		let id = ["zh-TW", "zh-CN", "ja"]
+		if (id.includes(Api.DiscordModules.UserSettingsStore.locale)) {
+			Language_ID = Api.DiscordModules.UserSettingsStore.locale
+		} else {
+			Language_ID = "en"
+		}
+
+		const Language = { //13
+			"en": [     // English
+				"You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.",
+				"Friends",
+				"Do you want to download a helper plugin?",
+				"Do you want to download a helper plugin that makes it easier for you to report issues? That plugin is not needed to anything else to function correctly but nice to have when reporting iissues, shortening the time until the problem gets resolved by asking you for specific information and also including additional information you did not provide.",
+				"Download",
+				"Cancel",
+				"Add current tab as favourite",
+				"Hide bookmarks",
+				"Duplicate",
+				"Add to favourites",
+				"Close",
+				"Move left",
+				"Move right"
+			],
+			"zh-CN": [  // Chinese (China)
+				"你还没有任何收藏夹。右键点击一个标签，将其标记为收藏夹。您可以在设置中禁用该栏。",
+				"好友",
+				"你想下载一个辅助插件吗？",
+				"你想下载一个帮助外挂，让你更容易报告问题吗？该外挂不需要任何其他功能，但很好的报告问题时，缩短时间，直到问题得到解决，通过询问你的具体资讯，也包括你没有提供的额外资讯。",
+				"下载",
+				"取消",
+				"将目前页面加入收藏夹",
+				"隐藏书签",
+				"复制",
+				"添加到收藏夹",
+				"关闭",
+				"向左移动",
+				"向右移动"
+			],
+			"zh-TW": [  // Chinese (Taiwan)
+				"你還沒有任何收藏夾。右鍵點擊一個標籤，將其標記為收藏夾。您可以在設定中停用該欄。",
+				"好友",
+				"你想下載一個輔助插件嗎？",
+				"你想下載一個幫助插件，讓你更容易報告問題嗎？該插件不需要任何其他功能，但很好的報告問題時，縮短時間，直到問題得到解決，透過詢問你的具體資訊，也包括你沒有提供的額外資訊。",
+				"下載",
+				"取消",
+				"將目前頁面加入收藏夾",
+				"隱藏書籤",
+				"複製",
+				"新增到收藏夾",
+				"關閉",
+				"向左移動",
+				"向右移動"
+			],
+			"ja": [  // Japanese
+				"あなたにはまだお気に入りがありません。タブを右クリックして、お気に入りに登録してください。このバーは、設定で無効にすることができます。",
+				"フレンズ",
+				"ヘルパー・プラグインをダウンロードしますか？",
+				"問題の報告を容易にするヘルパー・プラグインをダウンロードしませんか？このプラグインは、他の機能には必要ありませんが、問題を報告する際にあると便利です。具体的な情報を尋ねたり、提供しなかった追加情報を含めたりすることで、問題が解決するまでの時間を短縮します。",
+				"ダウンロード",
+				"キャンセル",
+				"現在のページを「お気に入り」フォルダに追加",
+				"ブックマークを隠す",
+				"レプリケート",
+				"お気に入りに追加",
+				"閉じる",
+				"左に移動",
+				"右に移動"
+			]
+		}
+
 		const plugin = (Plugin, Api) => {
+
 			const { WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings } = Api;
 			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
-			const PermissionUtils  = WebpackModules.getByProps("can", "canManageUser");
+			const PermissionUtils = WebpackModules.getByProps("can", "canManageUser");
 			const Permissions = DiscordModules.DiscordConstants.Permissions;
-			
+
 			var switching = false;
 			var patches = [];
-			
-			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
+
+			if (!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")) {
 				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
-				BdApi.showConfirmationModal("Do you want to download a helper plugin?", 
-					[`Do you want to download a helper plugin that makes it easier for you to report issues? That plugin is not needed to anything else to function correctly but nice to have when reporting iissues, shortening the time until the problem gets resolved by asking you for specific information and also including additional information you did not provide.`],
+				BdApi.showConfirmationModal(Language[Language_ID][2],
+					[Language[Language_ID][3]],
 					{
-						confirmText: "Download",
-						cancelText: "Cancel",
+						confirmText: Language[Language_ID][4],
+						cancelText: Language[Language_ID][5],
 						onConfirm: () => {
 							require("request").get("https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js", (error, response, body) => {
 								if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js");
-								else require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "BugReportHelper.plugin.js"), body, ()=>{
-									window.setTimeout(()=>BdApi.Plugins.enable("BugReportHelper"), 1000);
+								else require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "BugReportHelper.plugin.js"), body, () => {
+									window.setTimeout(() => BdApi.Plugins.enable("BugReportHelper"), 1000);
 								});
 							});
 						}
 					}
 				);
 			}
-			
-			
-			const getGuildChannels = (...guildIds)=>{
+
+
+			const getGuildChannels = (...guildIds) => {
 				const channels = ChannelStore.getGuildChannels ? Object.values(ChannelStore.getGuildChannels()) : ChannelStore.getMutableGuildChannels ? Object.values(ChannelStore.getMutableGuildChannels()) : [];
 				return channels.filter(c => guildIds.includes(c.guild_id) && c.type !== DiscordConstants.ChannelTypes.GUILD_VOICE && c.type !== DiscordConstants.ChannelTypes.GUILD_CATEGORY);
 			}
-			
-			const mergeLists = (...items)=>items.filter(item => item.include===undefined||item.include).flatMap(item => item.values);
-			
-			const TabIcon = props=>!props.iconUrl ? null : React.createElement(
+
+			const mergeLists = (...items) => items.filter(item => item.include === undefined || item.include).flatMap(item => item.values);
+
+			const TabIcon = props => !props.iconUrl ? null : React.createElement(
 				"img",
 				{
 					className: "channelTabs-tabIcon",
 					src: props.iconUrl
 				}
 			);
-			const TabName = props=>React.createElement(
+			const TabName = props => React.createElement(
 				"span",
 				{
 					className: "channelTabs-tabName"
 				},
 				props.name
 			);
-			const TabClose = props=>props.tabCount < 2 ? null : React.createElement(
+			const TabClose = props => props.tabCount < 2 ? null : React.createElement(
 				"div",
 				{
 					className: "channelTabs-closeTab",
-					onClick: e=>{
+					onClick: e => {
 						e.stopPropagation();
 						props.closeTab();
 					}
 				},
 				"⨯"
 			);
-			const TabUnreadBadge = props=>!props.hasUnread ? null : React.createElement("div", {
+			const TabUnreadBadge = props => !props.hasUnread ? null : React.createElement("div", {
 				className: "channelTabs-unreadBadge"
-			}, props.unreadCount === 0 ? (props.mentionCount||1) + "+" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
-			const TabMentionBadge = props=>props.mentionCount === 0 ? null : React.createElement("div", {
+			}, props.unreadCount === 0 ? (props.mentionCount || 1) + "+" : (props.unreadCount + (props.unreadEstimated ? "+" : "")));
+			const TabMentionBadge = props => props.mentionCount === 0 ? null : React.createElement("div", {
 				className: "channelTabs-mentionBadge"
 			}, props.mentionCount);
-			const Tab = props=>React.createElement(
+			const Tab = props => React.createElement(
 				"div",
 				{
 					className: "channelTabs-tab"
-									+ (props.selected ? " channelTabs-selected" : "")
-									+ (props.hasUnread ? " channelTabs-unread" : "")
-									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
+						+ (props.selected ? " channelTabs-selected" : "")
+						+ (props.hasUnread ? " channelTabs-unread" : "")
+						+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
 					"data-mention-count": props.mentionCount,
 					"data-unread-count": props.unreadCount,
 					"data-unread-estimated": props.unreadEstimated,
-					onClick: ()=>{if(!props.selected) props.switchToTab(props.tabIndex);},
-					onMouseUp: e=>{
-						if(e.button !== 1) return;
+					onClick: () => { if (!props.selected) props.switchToTab(props.tabIndex); },
+					onMouseUp: e => {
+						if (e.button !== 1) return;
 						e.preventDefault();
 						props.closeTab(props.tabIndex);
 					},
-					onContextMenu: e=>{
+					onContextMenu: e => {
 						DCM.openContextMenu(
 							e,
 							DCM.buildMenu([
@@ -176,12 +249,12 @@ module.exports = (() => {
 										{
 											values: [
 												{
-													label: "Duplicate",
+													label: Language[Language_ID][8],
 													action: props.openInNewTab
 												},
 												{
-													label: "Add to favourites",
-													action: ()=>props.addToFavs(props.name, props.iconUrl, props.url, props.channelId)
+													label: Language[Language_ID][9],
+													action: () => props.addToFavs(props.name, props.iconUrl, props.url, props.channelId)
 												}
 											]
 										},
@@ -189,11 +262,11 @@ module.exports = (() => {
 											include: props.tabCount > 1,
 											values: [
 												{
-													label: "Move left",
+													label: Language[Language_ID][11],
 													action: props.moveLeft
 												},
 												{
-													label: "Move right",
+													label: Language[Language_ID][12],
 													action: props.moveRight
 												}
 											]
@@ -201,8 +274,8 @@ module.exports = (() => {
 										{
 											values: [
 												{
-													label: "Close",
-													action: ()=>props.closeTab(props.tabIndex),
+													label: Language[Language_ID][10],
+													action: () => props.closeTab(props.tabIndex),
 													danger: true
 												}
 											]
@@ -217,18 +290,18 @@ module.exports = (() => {
 						)
 					}
 				},
-				React.createElement(TabIcon, {iconUrl: props.iconUrl}),
-				React.createElement(TabName, {name: props.name}),
+				React.createElement(TabIcon, { iconUrl: props.iconUrl }),
+				React.createElement(TabName, { name: props.name }),
 				!props.showTabUnreadBadges ? null : React.createElement(
 					React.Fragment,
 					{},
-					React.createElement(TabMentionBadge, {mentionCount: props.mentionCount}),
-					!props.channelId || (ChannelStore.getChannel(props.channelId)?.isPrivate() ?? true) ? null : React.createElement(TabUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount})
+					React.createElement(TabMentionBadge, { mentionCount: props.mentionCount }),
+					!props.channelId || (ChannelStore.getChannel(props.channelId)?.isPrivate() ?? true) ? null : React.createElement(TabUnreadBadge, { unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread, mentionCount: props.mentionCount })
 				),
-				React.createElement(TabClose, {tabCount: props.tabCount, closeTab: ()=>props.closeTab(props.tabIndex)})
+				React.createElement(TabClose, { tabCount: props.tabCount, closeTab: () => props.closeTab(props.tabIndex) })
 			);
-			
-			const NewTab = props=>React.createElement(
+
+			const NewTab = props => React.createElement(
 				"div",
 				{
 					className: "channelTabs-newTab",
@@ -236,14 +309,14 @@ module.exports = (() => {
 				},
 				"+"
 			);
-			
-			const TabBar = props=>React.createElement(
+
+			const TabBar = props => React.createElement(
 				"div",
 				{
 					className: "channelTabs-tabContainer",
 					"data-tab-count": props.tabs.length
 				},
-				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore], ()=>({
+				props.tabs.map((tab, tabIndex) => React.createElement(Flux.connectStores([UnreadStateStore], () => ({
 					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
 					unreadEstimated: UnreadStateStore.isEstimated(tab.channelId),
 					hasUnread: UnreadStateStore.hasUnread(tab.channelId),
@@ -254,9 +327,9 @@ module.exports = (() => {
 						switchToTab: props.switchToTab,
 						closeTab: props.closeTab,
 						addToFavs: props.addToFavs,
-						moveLeft: ()=>props.move(tabIndex, (tabIndex + props.tabs.length - 1) % props.tabs.length),
-						moveRight: ()=>props.move(tabIndex, (tabIndex + 1) % props.tabs.length),
-						openInNewTab: ()=>props.openInNewTab(tab),
+						moveLeft: () => props.move(tabIndex, (tabIndex + props.tabs.length - 1) % props.tabs.length),
+						moveRight: () => props.move(tabIndex, (tabIndex + 1) % props.tabs.length),
+						openInNewTab: () => props.openInNewTab(tab),
 						tabCount: props.tabs.length,
 						tabIndex,
 						name: tab.name,
@@ -275,44 +348,44 @@ module.exports = (() => {
 					openNewTab: props.openNewTab
 				})
 			);
-			
-			const FavIcon = props=>!props.iconUrl ? null : React.createElement(
+
+			const FavIcon = props => !props.iconUrl ? null : React.createElement(
 				"img",
 				{
 					className: "channelTabs-favIcon",
 					src: props.iconUrl
 				}
 			);
-			const FavName = props=>React.createElement(
+			const FavName = props => React.createElement(
 				"span",
 				{
 					className: "channelTabs-favName"
 				},
 				props.name
 			)
-			const FavUnreadBadge = props=>React.createElement("div", {
+			const FavUnreadBadge = props => React.createElement("div", {
 				className: "channelTabs-unreadBadge" + (!props.hasUnread ? " channelTabs-noUnread" : "")
 			}, props.unreadCount + (props.unreadEstimated ? "+" : ""));
-			const FavMentionBadge = props=>React.createElement("div", {
+			const FavMentionBadge = props => React.createElement("div", {
 				className: "channelTabs-mentionBadge" + (props.mentionCount === 0 ? " channelTabs-noMention" : "")
 			}, props.mentionCount);
-			const Fav = props=>React.createElement(
+			const Fav = props => React.createElement(
 				"div",
 				{
 					className: "channelTabs-fav" + (props.channelId ? " channelTabs-channel" : props.guildId ? " channelTabs-guild" : "")
-									+ (props.selected ? " channelTabs-selected" : "")
-									+ (props.hasUnread ? " channelTabs-unread" : "")
-									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
+						+ (props.selected ? " channelTabs-selected" : "")
+						+ (props.hasUnread ? " channelTabs-unread" : "")
+						+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
 					"data-mention-count": props.mentionCount,
 					"data-unread-count": props.unreadCount,
 					"data-unread-estimated": props.unreadEstimated,
-					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuild(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : NavigationUtils.transitionTo(props.url),
-					onMouseUp: e=>{
-						if(e.button !== 1) return;
+					onClick: () => props.guildId ? NavigationUtils.transitionToGuild(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : NavigationUtils.transitionTo(props.url),
+					onMouseUp: e => {
+						if (e.button !== 1) return;
 						e.preventDefault();
 						props.openInNewTab();
 					},
-					onContextMenu: e=>{
+					onContextMenu: e => {
 						DCM.openContextMenu(
 							e,
 							DCM.buildMenu([
@@ -363,22 +436,22 @@ module.exports = (() => {
 						)
 					}
 				},
-				React.createElement(FavIcon, {iconUrl: props.iconUrl}),
-				React.createElement(FavName, {name: props.name}),
+				React.createElement(FavIcon, { iconUrl: props.iconUrl }),
+				React.createElement(FavName, { name: props.name }),
 				!(props.showFavUnreadBadges && (props.channelId || props.guildId)) ? null : React.createElement(
 					React.Fragment,
 					{},
-					(()=>{const c=ChannelStore.getChannel(props.channelId); return c&&(c.isDM()||c.isGroupDM());})() ? null : React.createElement(FavUnreadBadge, {unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread}),
-					React.createElement(FavMentionBadge, {mentionCount: props.mentionCount})
+					(() => { const c = ChannelStore.getChannel(props.channelId); return c && (c.isDM() || c.isGroupDM()); })() ? null : React.createElement(FavUnreadBadge, { unreadCount: props.unreadCount, unreadEstimated: props.unreadEstimated, hasUnread: props.hasUnread }),
+					React.createElement(FavMentionBadge, { mentionCount: props.mentionCount })
 				)
 			);
-			
-			const FavBar = props=>React.createElement(
+
+			const FavBar = props => React.createElement(
 				"div",
 				{
 					className: "channelTabs-favContainer" + (props.favs.length == 0 ? " channelTabs-noFavs" : ""),
 					"data-fav-count": props.favs.length,
-					onContextMenu: e=>{
+					onContextMenu: e => {
 						DCM.openContextMenu(
 							e,
 							DCM.buildMenu([
@@ -386,11 +459,11 @@ module.exports = (() => {
 									type: "group",
 									items: [
 										{
-											label: "Add current tab as favourite",
-											action: ()=>props.addToFavs(getCurrentName(), getCurrentIconUrl(), location.pathname, SelectedChannelStore.getChannelId())
+											label: Language[Language_ID][6],
+											action: () => props.addToFavs(getCurrentName(), getCurrentIconUrl(), location.pathname, SelectedChannelStore.getChannelId())
 										},
 										{
-											label: "Hide bookmarks",
+											label: Language[Language_ID][7],
 											action: props.hideFavBar,
 											danger: true
 										}
@@ -405,54 +478,54 @@ module.exports = (() => {
 					}
 				},
 				props.favs.length > 0
-					? props.favs.map((fav, favIndex) => React.createElement(Flux.connectStores([UnreadStateStore, SelectedChannelStore], ()=>{
-							if(fav.guildId){
-								const channelIds = getGuildChannels(fav.guildId)
-											.filter(channel=>(PermissionUtils.can(Permissions.VIEW_CHANNEL, channel)) && (!MutedStore.isChannelMuted(channel.guild_id, channel.id)))
-											.map(channel=>channel.id);
-								return {
-									unreadCount: channelIds.map(id=>UnreadStateStore.getUnreadCount(id)||UnreadStateStore.getMentionCount(id)||(UnreadStateStore.hasUnread(id)?1:0)).reduce((a,b)=>a+b, 0),
-									unreadEstimated: channelIds.some(id=>UnreadStateStore.isEstimated(id)) || channelIds.some(id=>UnreadStateStore.getUnreadCount(id)===0&&UnreadStateStore.hasUnread(id)),
-									hasUnread: channelIds.some(id=>UnreadStateStore.hasUnread(id)),
-									mentionCount: channelIds.map(id=>UnreadStateStore.getMentionCount(id)||0).reduce((a,b)=>a+b, 0),
-									selected: SelectedGuildStore.getGuildId()===fav.guildId
-								};
-							}else{
-								return {
-									unreadCount: UnreadStateStore.getUnreadCount(fav.channelId) || UnreadStateStore.getMentionCount(fav.channelId) || (UnreadStateStore.hasUnread(fav.channelId) ? 1 : 0),
-									unreadEstimated: UnreadStateStore.isEstimated(fav.channelId) || (UnreadStateStore.hasUnread(fav.channelId) && UnreadStateStore.getUnreadCount(fav.channelId) === 0),
-									hasUnread: UnreadStateStore.hasUnread(fav.channelId),
-									mentionCount: UnreadStateStore.getMentionCount(fav.channelId),
-									selected: SelectedChannelStore.getChannelId()===fav.channelId
-								};
-							}
-						})(result => React.createElement(
-							Fav,
-							{
-								name: fav.name,
-								iconUrl: fav.iconUrl,
-								url: fav.url,
-								favCount: props.favs.length,
-								rename: ()=>props.rename(fav.name, favIndex),
-								delete: ()=>props.delete(favIndex),
-								openInNewTab: ()=>props.openInNewTab(fav),
-								moveLeft: ()=>props.move(favIndex, (favIndex + props.favs.length - 1) % props.favs.length),
-								moveRight: ()=>props.move(favIndex, (favIndex + 1) % props.favs.length),
-								channelId: fav.channelId,
-								guildId: fav.guildId,
-								showFavUnreadBadges: props.showFavUnreadBadges,
-								...result
-							}
-						))))
+					? props.favs.map((fav, favIndex) => React.createElement(Flux.connectStores([UnreadStateStore, SelectedChannelStore], () => {
+						if (fav.guildId) {
+							const channelIds = getGuildChannels(fav.guildId)
+								.filter(channel => (PermissionUtils.can(Permissions.VIEW_CHANNEL, channel)) && (!MutedStore.isChannelMuted(channel.guild_id, channel.id)))
+								.map(channel => channel.id);
+							return {
+								unreadCount: channelIds.map(id => UnreadStateStore.getUnreadCount(id) || UnreadStateStore.getMentionCount(id) || (UnreadStateStore.hasUnread(id) ? 1 : 0)).reduce((a, b) => a + b, 0),
+								unreadEstimated: channelIds.some(id => UnreadStateStore.isEstimated(id)) || channelIds.some(id => UnreadStateStore.getUnreadCount(id) === 0 && UnreadStateStore.hasUnread(id)),
+								hasUnread: channelIds.some(id => UnreadStateStore.hasUnread(id)),
+								mentionCount: channelIds.map(id => UnreadStateStore.getMentionCount(id) || 0).reduce((a, b) => a + b, 0),
+								selected: SelectedGuildStore.getGuildId() === fav.guildId
+							};
+						} else {
+							return {
+								unreadCount: UnreadStateStore.getUnreadCount(fav.channelId) || UnreadStateStore.getMentionCount(fav.channelId) || (UnreadStateStore.hasUnread(fav.channelId) ? 1 : 0),
+								unreadEstimated: UnreadStateStore.isEstimated(fav.channelId) || (UnreadStateStore.hasUnread(fav.channelId) && UnreadStateStore.getUnreadCount(fav.channelId) === 0),
+								hasUnread: UnreadStateStore.hasUnread(fav.channelId),
+								mentionCount: UnreadStateStore.getMentionCount(fav.channelId),
+								selected: SelectedChannelStore.getChannelId() === fav.channelId
+							};
+						}
+					})(result => React.createElement(
+						Fav,
+						{
+							name: fav.name,
+							iconUrl: fav.iconUrl,
+							url: fav.url,
+							favCount: props.favs.length,
+							rename: () => props.rename(fav.name, favIndex),
+							delete: () => props.delete(favIndex),
+							openInNewTab: () => props.openInNewTab(fav),
+							moveLeft: () => props.move(favIndex, (favIndex + props.favs.length - 1) % props.favs.length),
+							moveRight: () => props.move(favIndex, (favIndex + 1) % props.favs.length),
+							channelId: fav.channelId,
+							guildId: fav.guildId,
+							showFavUnreadBadges: props.showFavUnreadBadges,
+							...result
+						}
+					))))
 					: React.createElement("span", {
-							className: "channelTabs-noFavNotice"
-						}, "You don't have any favs yet. Right click a tab to mark it as favourite. You can disable this bar in the settings.")
+						className: "channelTabs-noFavNotice"
+					}, Language[Language_ID][0])
 			);
-			
-			
-			
+
+
+
 			const TopBar = class TopBar extends React.Component {
-				constructor(props){
+				constructor(props) {
 					super(props);
 					this.state = {
 						selectedTabIndex: Math.max(props.tabs.findIndex(tab => tab.selected), 0),
@@ -472,13 +545,13 @@ module.exports = (() => {
 					this.moveTab = this.moveTab.bind(this);
 					this.moveFav = this.moveFav.bind(this);
 				}
-				switchToTab(tabIndex){
+				switchToTab(tabIndex) {
 					this.setState({
 						tabs: this.state.tabs.map((tab, index) => {
-							if(index === tabIndex){
-								return Object.assign({}, tab, {selected: true});
-							}else{
-								return Object.assign({}, tab, {selected: false});
+							if (index === tabIndex) {
+								return Object.assign({}, tab, { selected: true });
+							} else {
+								return Object.assign({}, tab, { selected: false });
 							}
 						}),
 						selectedTabIndex: tabIndex
@@ -487,28 +560,28 @@ module.exports = (() => {
 					NavigationUtils.transitionTo(this.state.tabs[tabIndex].url);
 					switching = false;
 				}
-				closeTab(tabIndex){
-					if(this.state.tabs.length === 1) return;
+				closeTab(tabIndex) {
+					if (this.state.tabs.length === 1) return;
 					this.setState({
-						tabs: this.state.tabs.filter((tab, index)=>index !== tabIndex),
+						tabs: this.state.tabs.filter((tab, index) => index !== tabIndex),
 						selectedTabIndex: Math.max(0, this.state.selectedTabIndex - (this.state.selectedTabIndex >= tabIndex ? 1 : 0))
-					}, ()=>{
-						if(!this.state.tabs[this.state.selectedTabIndex].selected){
+					}, () => {
+						if (!this.state.tabs[this.state.selectedTabIndex].selected) {
 							this.switchToTab(this.state.selectedTabIndex);
 						}
 						this.props.plugin.saveSettings();
 					});
 				}
-				moveTab(fromIndex, toIndex){
-					if(fromIndex === toIndex) return;
-					const tabs = this.state.tabs.filter((tab, index)=>index !== fromIndex);
+				moveTab(fromIndex, toIndex) {
+					if (fromIndex === toIndex) return;
+					const tabs = this.state.tabs.filter((tab, index) => index !== fromIndex);
 					tabs.splice(toIndex, 0, this.state.tabs[fromIndex]);
 					this.setState({
 						tabs,
-						selectedTabIndex: tabs.findIndex(tab=>tab.selected)
+						selectedTabIndex: tabs.findIndex(tab => tab.selected)
 					}, this.props.plugin.saveSettings);
 				}
-				saveChannel(guildId, channelId, name, iconUrl){
+				saveChannel(guildId, channelId, name, iconUrl) {
 					this.setState({
 						tabs: [...this.state.tabs, {
 							url: `/channels/${guildId || "@me"}/${channelId}`,
@@ -518,19 +591,19 @@ module.exports = (() => {
 						}]
 					}, this.props.plugin.saveSettings);
 				}
-				renameFav(currentName, favIndex){
+				renameFav(currentName, favIndex) {
 					let name = currentName;
 					BdApi.showConfirmationModal(
 						"What should the new name be?",
 						React.createElement(Textbox, {
-							onChange: newContent=>name = newContent.trim()
+							onChange: newContent => name = newContent.trim()
 						}),
 						{
-							onConfirm: ()=>{
-								if(!name) return;
+							onConfirm: () => {
+								if (!name) return;
 								this.setState({
-									favs: this.state.favs.map((fav, index)=>{
-										if(index === favIndex) return Object.assign({}, fav, {name});
+									favs: this.state.favs.map((fav, index) => {
+										if (index === favIndex) return Object.assign({}, fav, { name });
 										else return Object.assign({}, fav);
 									})
 								}, this.props.plugin.saveSettings);
@@ -538,9 +611,9 @@ module.exports = (() => {
 						}
 					);
 				}
-				deleteFav(favIndex){
+				deleteFav(favIndex) {
 					this.setState({
-						favs: this.state.favs.filter((fav, index)=>index!==favIndex)
+						favs: this.state.favs.filter((fav, index) => index !== favIndex)
 					}, this.props.plugin.saveSettings);
 				}
 				/**
@@ -548,18 +621,18 @@ module.exports = (() => {
 				 * This indicates that the currently selected channel needs to get selected instead of the
 				 * provided channel id (which should be empty when a guildId is provided)
 				 */
-				addToFavs(name, iconUrl, url, channelId, guildId){
+				addToFavs(name, iconUrl, url, channelId, guildId) {
 					this.setState({
-						favs: [...this.state.favs, {name, iconUrl, url, channelId, guildId}]
+						favs: [...this.state.favs, { name, iconUrl, url, channelId, guildId }]
 					}, this.props.plugin.saveSettings);
 				}
-				moveFav(fromIndex, toIndex){
-					if(fromIndex === toIndex) return;
-					const favs = this.state.favs.filter((fav, index)=>index !== fromIndex);
+				moveFav(fromIndex, toIndex) {
+					if (fromIndex === toIndex) return;
+					const favs = this.state.favs.filter((fav, index) => index !== fromIndex);
 					favs.splice(toIndex, 0, this.state.favs[fromIndex]);
-					this.setState({favs}, this.props.plugin.saveSettings);
+					this.setState({ favs }, this.props.plugin.saveSettings);
 				}
-				render(){
+				render() {
 					return React.createElement(
 						"div",
 						{
@@ -570,24 +643,24 @@ module.exports = (() => {
 							showTabUnreadBadges: this.state.showTabUnreadBadges,
 							closeTab: this.closeTab,
 							switchToTab: this.switchToTab,
-							openNewTab: ()=>{
+							openNewTab: () => {
 								const newTabIndex = this.state.tabs.length;
 								this.setState({
-									tabs: [...this.state.tabs.map(tab=>Object.assign(tab, {selected: false})), {
+									tabs: [...this.state.tabs.map(tab => Object.assign(tab, { selected: false })), {
 										url: "/channels/@me",
 										name: "Friends",
 										selected: true,
 										channelId: undefined
 									}],
 									selectedTabIndex: newTabIndex
-								}, ()=>{
+								}, () => {
 									this.props.plugin.saveSettings();
 									this.switchToTab(newTabIndex);
 								})
 							},
-							openInNewTab: tab=>{
+							openInNewTab: tab => {
 								this.setState({
-									tabs: [...this.state.tabs, Object.assign({}, tab, {selected: false})]
+									tabs: [...this.state.tabs, Object.assign({}, tab, { selected: false })]
 								}, this.props.plugin.saveSettings);
 							},
 							addToFavs: this.addToFavs,
@@ -599,7 +672,7 @@ module.exports = (() => {
 							rename: this.renameFav,
 							delete: this.deleteFav,
 							addToFavs: this.addToFavs,
-							openInNewTab: fav=>{
+							openInNewTab: fav => {
 								const url = fav.url + (fav.guildId ? `/${fav.guildId}` : "")
 								this.setState({
 									tabs: [...this.state.tabs, {
@@ -612,10 +685,10 @@ module.exports = (() => {
 								}, this.props.plugin.saveSettings);
 							},
 							move: this.moveFav,
-							hideFavBar: ()=>{
+							hideFavBar: () => {
 								this.setState({
 									showFavBar: false
-								}, ()=>{
+								}, () => {
 									this.props.plugin.settings.showFavBar = false;
 									this.props.plugin.saveSettings();
 								});
@@ -624,50 +697,50 @@ module.exports = (() => {
 					);
 				}
 			};
-			
-			
-			
-			const getCurrentName = (pathname = location.pathname)=>{
+
+
+
+			const getCurrentName = (pathname = location.pathname) => {
 				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
-				if(cId){
+				if (cId) {
 					const channel = ChannelStore.getChannel(cId);
-					if(channel.name) return (channel.guildId ? "@" : "#") + channel.name;
-					else if(channel.rawRecipients) return "@" + channel.rawRecipients.map(u=>u.username).join(", ");
+					if (channel.name) return (channel.guildId ? "@" : "#") + channel.name;
+					else if (channel.rawRecipients) return "@" + channel.rawRecipients.map(u => u.username).join(", ");
 					else return pathname;
-				}else{
-					if(pathname === "/channels/@me") return "Friends";
-					else if(pathname.match(/^\/[a-z\-]+$/)) return pathname.substr(1).split("-").map(part => part.substr(0, 1).toUpperCase() + part.substr(1)).join(" ");
+				} else {
+					if (pathname === "/channels/@me") return Language[Language_ID][1];
+					else if (pathname.match(/^\/[a-z\-]+$/)) return pathname.substr(1).split("-").map(part => part.substr(0, 1).toUpperCase() + part.substr(1)).join(" ");
 					else return pathname;
 				}
 			};
-			
-			const getCurrentIconUrl = (pathname = location.pathname)=>{
+
+			const getCurrentIconUrl = (pathname = location.pathname) => {
 				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
-				if(cId){
+				if (cId) {
 					const channel = ChannelStore.getChannel(cId);
-					if(channel.guild_id){
+					if (channel.guild_id) {
 						const guild = GuildStore.getGuild(channel.guild_id);
 						return guild.getIconURL() || "";
-					}else{
-						if(channel.isDM()){
+					} else {
+						if (channel.isDM()) {
 							const user = UserStore.getUser(channel.getRecipientId());
 							return user.avatarURL;
-						}else if(channel.isGroupDM()){
+						} else if (channel.isGroupDM()) {
 							// TODO
 						}
 					}
 				}
 				return "";
 			};
-			
+
 			const TopBarRef = React.createRef();
-			
+
 			return class ChannelTabs extends Plugin {
-				constructor(){
+				constructor() {
 					super();
 				}
-				
-				onStart(){
+
+				onStart() {
 					PluginUtilities.addStyle("channelTabs-style", `
 						:root {
 							--channelTabs-tabWidth: 190px;
@@ -868,13 +941,13 @@ module.exports = (() => {
 					`);
 					patches = [];
 					this.loadSettings();
-					if(this.settings.tabs.length == 0) this.settings.tabs = [{
+					if (this.settings.tabs.length == 0) this.settings.tabs = [{
 						name: getCurrentName(),
 						url: location.pathname,
 						selected: true,
 						iconUrl: getCurrentIconUrl()
 					}];
-					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
+					this.promises = { state: { cancelled: false }, cancel() { this.state.cancelled = true; } };
 					this.saveSettings = this.saveSettings.bind(this);
 					this.keybindHandler = this.keybindHandler.bind(this);
 					this.onSwitch();
@@ -883,28 +956,28 @@ module.exports = (() => {
 					this.patchGroupContextMenu();
 					this.patchGuildIconContextMenu();
 					this.patchTextChannelContextMenu();
-					if(this.settings.reopenLastChannel){
+					if (this.settings.reopenLastChannel) {
 						switching = true;
-						NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
+						NavigationUtils.transitionTo((this.settings.tabs.find(tab => tab.selected) || this.settings.tabs[0]).url);
 						switching = false;
 					}
 					document.addEventListener("keydown", this.keybindHandler);
 				}
-				
-				onStop(){
+
+				onStop() {
 					PluginUtilities.removeStyle("channelTabs-style");
 					document.removeEventListener("keydown", this.keybindHandler);
 					Patcher.unpatchAll();
 					this.promises.cancel();
-					patches.forEach(patch=>patch());
+					patches.forEach(patch => patch());
 				}
-				
-				onSwitch(){
-					if(switching) return;
-					if(TopBarRef.current){
+
+				onSwitch() {
+					if (switching) return;
+					if (TopBarRef.current) {
 						TopBarRef.current.setState({
 							tabs: TopBarRef.current.state.tabs.map(tab => {
-								if(tab.selected){
+								if (tab.selected) {
 									const channelId = SelectedChannelStore.getChannelId();
 									return {
 										name: getCurrentName(),
@@ -913,14 +986,14 @@ module.exports = (() => {
 										iconUrl: getCurrentIconUrl(),
 										channelId
 									};
-								}else{
+								} else {
 									return Object.assign({}, tab);
 								}
 							})
 						}, this.saveSettings);
-					}else if(!this.settings.reopenLastChannel){
+					} else if (!this.settings.reopenLastChannel) {
 						const channelId = SelectedChannelStore.getChannelId();
-						this.settings.tabs[this.settings.tabs.findIndex(tab=>tab.selected)] = {
+						this.settings.tabs[this.settings.tabs.findIndex(tab => tab.selected)] = {
 							name: getCurrentName(),
 							url: location.pathname,
 							selected: true,
@@ -929,10 +1002,10 @@ module.exports = (() => {
 						};
 					}
 				}
-				
-				async patchAppView(promiseState){
+
+				async patchAppView(promiseState) {
 					const AppView = await ReactComponents.getComponent("Shakeable", ".app-2rEoOp");
-					if(promiseState.cancelled) return;
+					if (promiseState.cancelled) return;
 					Patcher.after(AppView.component.prototype, "render", (thisObject, _, returnValue) => {
 						returnValue.props.children = [
 							React.createElement(TopBar, {
@@ -949,13 +1022,13 @@ module.exports = (() => {
 						].flat();
 					});
 					AppView.forceUpdateAll();
-					patches.push(()=>AppView.forceUpdateAll());
+					patches.push(() => AppView.forceUpdateAll());
 				}
-				
-				patchGuildIconContextMenu(){
+
+				patchGuildIconContextMenu() {
 					const GuildContextMenu = WebpackModules.find(m => m.default && m.default.displayName === "GuildContextMenu" && m.default.name === "");
 					Patcher.after(GuildContextMenu, "default", (_, [props], returnValue) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
+						if (!this.settings.showTabBar && !this.settings.showFavBar) return;
 						const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId(props.guild.id));
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
@@ -966,15 +1039,15 @@ module.exports = (() => {
 									items: this.mergeItems([
 										{
 											label: "Open channel in new tab",
-											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
+											action: () => TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, channel.id, "#" + channel.name, props.guild.getIconURL() || "")
 										},
 										{
 											label: "Save channel as bookmark",
-											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${channel.id}`, channel.id)
+											action: () => TopBarRef.current && TopBarRef.current.addToFavs("#" + channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${channel.id}`, channel.id)
 										}],
 										[{
 											label: "Save guild as bookmark",
-											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs(props.guild.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}`, undefined, props.guild.id)
+											action: () => TopBarRef.current && TopBarRef.current.addToFavs(props.guild.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}`, undefined, props.guild.id)
 										}]
 									)
 								}
@@ -982,11 +1055,11 @@ module.exports = (() => {
 						}]))
 					});
 				}
-				
-				patchTextChannelContextMenu(){
+
+				patchTextChannelContextMenu() {
 					const [, , TextChannelContextMenu] = WebpackModules.getModules(m => m.default && m.default.displayName === "ChannelListTextChannelContextMenu");
 					Patcher.after(TextChannelContextMenu, "default", (_, [props], returnValue) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
+						if (!this.settings.showTabBar && !this.settings.showFavBar) return;
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
 							items: [
@@ -996,11 +1069,11 @@ module.exports = (() => {
 									items: this.mergeItems([
 										{
 											label: "Open in new tab",
-											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
+											action: () => TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
 										}],
 										[{
 											label: "Save bookmark",
-											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + props.channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${props.channel.id}`, props.channel.id)
+											action: () => TopBarRef.current && TopBarRef.current.addToFavs("#" + props.channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${props.channel.id}`, props.channel.id)
 										}]
 									)
 								}
@@ -1008,12 +1081,12 @@ module.exports = (() => {
 						}]))
 					});
 				}
-				
-				patchDMContextMenu(){
+
+				patchDMContextMenu() {
 					const DMContextMenu = WebpackModules.find(({ default: defaul }) => defaul && defaul.displayName === 'DMUserContextMenu');
 					Patcher.after(DMContextMenu, "default", (_, [props], returnValue) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						if(!returnValue) return;
+						if (!this.settings.showTabBar && !this.settings.showFavBar) return;
+						if (!returnValue) return;
 						returnValue.props.children.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
 							items: [
@@ -1023,11 +1096,11 @@ module.exports = (() => {
 									items: this.mergeItems(
 										[{
 											label: "Open in new tab",
-											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
+											action: () => TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
 										}],
 										[{
 											label: "Save bookmark",
-											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.user.username), props.user.avatarURL, `/channels/@me/${props.channel.id}`, props.channel.id)
+											action: () => TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.user.username), props.user.avatarURL, `/channels/@me/${props.channel.id}`, props.channel.id)
 										}]
 									)
 								}
@@ -1035,12 +1108,12 @@ module.exports = (() => {
 						}]))
 					});
 				}
-				
-				patchGroupContextMenu(){
+
+				patchGroupContextMenu() {
 					const DMContextMenu = WebpackModules.find(({ default: defaul }) => defaul && defaul.displayName === 'GroupDMContextMenu');
 					Patcher.after(DMContextMenu, "default", (thisObject, [props], returnValue) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						if(!returnValue) return;
+						if (!this.settings.showTabBar && !this.settings.showFavBar) return;
+						if (!returnValue) return;
 						returnValue.props.children.push(DCM.buildMenuChildren([{
 							type: "group",
 							items: [
@@ -1050,11 +1123,11 @@ module.exports = (() => {
 									items: this.mergeItems(
 										[{
 											label: "Open in new tab",
-											action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/)
+											action: () => TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.channel.rawRecipients.map(u => u.username).join(", ")), ""/*TODO*/)
 										}],
 										[{
 											label: "Save bookmark",
-											action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.channel.rawRecipients.map(u=>u.username).join(", ")), ""/*TODO*/, `/channels/@me/${props.channel.id}`, props.channel.id)
+											action: () => TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.channel.rawRecipients.map(u => u.username).join(", ")), ""/*TODO*/, `/channels/@me/${props.channel.id}`, props.channel.id)
 										}]
 									)
 								}
@@ -1062,36 +1135,36 @@ module.exports = (() => {
 						}]))
 					});
 				}
-				
-				mergeItems(itemsTab, itemsFav){
+
+				mergeItems(itemsTab, itemsFav) {
 					const out = [];
-					if(this.settings.showTabBar) out.push(...itemsTab);
-					if(this.settings.showFavBar) out.push(...itemsFav);
+					if (this.settings.showTabBar) out.push(...itemsTab);
+					if (this.settings.showFavBar) out.push(...itemsFav);
 					return out;
 				}
-				
-				keybindHandler(e){
+
+				keybindHandler(e) {
 					const keybinds = [
-						{altKey: false, ctrlKey: true, shiftKey: false, keyCode: 87 /*w*/, action: this.closeCurrentTab},
-						{altKey: false, ctrlKey: true, shiftKey: false, keyCode: 33 /*pg_up*/, action: this.previousTab},
-						{altKey: false, ctrlKey: true, shiftKey: false, keyCode: 34 /*pg_down*/, action: this.nextTab}
+						{ altKey: false, ctrlKey: true, shiftKey: false, keyCode: 87 /*w*/, action: this.closeCurrentTab },
+						{ altKey: false, ctrlKey: true, shiftKey: false, keyCode: 33 /*pg_up*/, action: this.previousTab },
+						{ altKey: false, ctrlKey: true, shiftKey: false, keyCode: 34 /*pg_down*/, action: this.nextTab }
 					];
 					keybinds.forEach(keybind => {
-						if(e.altKey === keybind.altKey && e.ctrlKey === keybind.ctrlKey && e.shiftKey === keybind.shiftKey && e.keyCode === keybind.keyCode) keybind.action();
+						if (e.altKey === keybind.altKey && e.ctrlKey === keybind.ctrlKey && e.shiftKey === keybind.shiftKey && e.keyCode === keybind.keyCode) keybind.action();
 					})
 				}
-				
-				nextTab(){
-					if(TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex + 1) % TopBarRef.current.state.tabs.length);
+
+				nextTab() {
+					if (TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex + 1) % TopBarRef.current.state.tabs.length);
 				}
-				previousTab(){
-					if(TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex - 1 + TopBarRef.current.state.tabs.length) % TopBarRef.current.state.tabs.length);
+				previousTab() {
+					if (TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex - 1 + TopBarRef.current.state.tabs.length) % TopBarRef.current.state.tabs.length);
 				}
-				closeCurrentTab(){
-					if(TopBarRef.current) TopBarRef.current.closeTab(TopBarRef.current.state.selectedTabIndex);
+				closeCurrentTab() {
+					if (TopBarRef.current) TopBarRef.current.closeTab(TopBarRef.current.state.selectedTabIndex);
 				}
-				
-				get defaultVariables(){
+
+				get defaultVariables() {
 					return {
 						tabs: [],
 						favs: [],
@@ -1102,63 +1175,63 @@ module.exports = (() => {
 						showFavUnreadBadges: true
 					};
 				}
-				
-				loadSettings(){
+
+				loadSettings() {
 					this.settings = PluginUtilities.loadSettings(this.getName(), this.defaultVariables);
 					this.settings.favs = this.settings.favs.map(fav => {
-						if(fav.channelId === undefined){
+						if (fav.channelId === undefined) {
 							const match = fav.url.match(/^\/channels\/[^\/]+\/(\d+)$/);
-							if(match) return Object.assign(fav, {channelId: match[1]});
+							if (match) return Object.assign(fav, { channelId: match[1] });
 						}
 						return fav;
 					});
 					this.saveSettings();
 				}
-				saveSettings(){
-					if(TopBarRef.current){
+				saveSettings() {
+					if (TopBarRef.current) {
 						this.settings.tabs = TopBarRef.current.state.tabs;
 						this.settings.favs = TopBarRef.current.state.favs;
 					}
 					PluginUtilities.saveSettings(this.getName(), this.settings);
 				}
-				
-				getSettingsPanel(){
+
+				getSettingsPanel() {
 					const panel = document.createElement("div");
 					panel.className = "form";
 					panel.style = "width:100%;";
-					new Settings.SettingGroup(this.getName(), {shown:true}).appendTo(panel)
-							.append(new Settings.Switch("Show tab bar", "Allows you to have multiple tabs like in a web browser", this.settings.showTabBar, checked=>{
-								this.settings.showTabBar = checked;
-								if(TopBarRef.current) TopBarRef.current.setState({
-									showTabBar: checked
-								});
-								this.saveSettings();
-							}))
-							.append(new Settings.Switch("Show fav bar", "Allows you to add bookmarks by right clicking a tab or the fav bar", this.settings.showFavBar, checked=>{
-								this.settings.showFavBar = checked;
-								if(TopBarRef.current) TopBarRef.current.setState({
-									showFavBar: checked
-								});
-								this.saveSettings();
-							}))
-							.append(new Settings.Switch("Reopen last channel", "When starting the plugin (or discord) the channel will be selected again instead of the friends page", this.settings.reopenLastChannel, checked=>{
-								this.settings.reopenLastChannel = checked;
-								this.saveSettings();
-							}))
-							.append(new Settings.Switch("Show unread badges on tabs", "Adds badges to tabs showing how many unread messages and mentions there are in a channel", this.settings.showTabUnreadBadges, checked=>{
-								this.settings.showTabUnreadBadges = checked;
-								if(TopBarRef.current) TopBarRef.current.setState({
-									showTabUnreadBadges: checked
-								});
-								this.saveSettings();
-							}))
-							.append(new Settings.Switch("Show unread badges on bookmarks", "Adds badges to bookmarks showing how many unread messages and mentions there are in a channel", this.settings.showFavUnreadBadges, checked=>{
-								this.settings.showFavUnreadBadges = checked;
-								if(TopBarRef.current) TopBarRef.current.setState({
-									showFavUnreadBadges: checked
-								});
-								this.saveSettings();
-							}));
+					new Settings.SettingGroup(this.getName(), { shown: true }).appendTo(panel)
+						.append(new Settings.Switch("Show tab bar ", "Allows you to have multiple tabs like in a web browser", this.settings.showTabBar, checked => {
+							this.settings.showTabBar = checked;
+							if (TopBarRef.current) TopBarRef.current.setState({
+								showTabBar: checked
+							});
+							this.saveSettings();
+						}))
+						.append(new Settings.Switch("Show fav bar", "Allows you to add bookmarks by right clicking a tab or the fav bar", this.settings.showFavBar, checked => {
+							this.settings.showFavBar = checked;
+							if (TopBarRef.current) TopBarRef.current.setState({
+								showFavBar: checked
+							});
+							this.saveSettings();
+						}))
+						.append(new Settings.Switch("Reopen last channel", "When starting the plugin (or discord) the channel will be selected again instead of the friends page", this.settings.reopenLastChannel, checked => {
+							this.settings.reopenLastChannel = checked;
+							this.saveSettings();
+						}))
+						.append(new Settings.Switch("Show unread badges on tabs", "Adds badges to tabs showing how many unread messages and mentions there are in a channel", this.settings.showTabUnreadBadges, checked => {
+							this.settings.showTabUnreadBadges = checked;
+							if (TopBarRef.current) TopBarRef.current.setState({
+								showTabUnreadBadges: checked
+							});
+							this.saveSettings();
+						}))
+						.append(new Settings.Switch("Show unread badges on bookmarks", "Adds badges to bookmarks showing how many unread messages and mentions there are in a channel", this.settings.showFavUnreadBadges, checked => {
+							this.settings.showFavUnreadBadges = checked;
+							if (TopBarRef.current) TopBarRef.current.setState({
+								showFavUnreadBadges: checked
+							});
+							this.saveSettings();
+						}));
 					return panel;
 				}
 			}
