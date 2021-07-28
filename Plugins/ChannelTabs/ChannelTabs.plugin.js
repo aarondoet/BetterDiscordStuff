@@ -3142,7 +3142,7 @@ module.exports = (() => {
 						showActiveTabMentionBadges: false,
 						showActiveTabTypingBadge: false,
 						showEmptyActiveTabBadges: false,
-						compactStyle: false,
+						compactStyle: true,
 						privacyMode: false,
 						showFavGroupUnreadBadges: true,
 						showFavGroupMentionBadges: true,
