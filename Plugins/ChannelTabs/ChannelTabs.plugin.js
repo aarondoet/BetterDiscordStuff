@@ -2328,6 +2328,7 @@ module.exports = (() => {
 				}
 				
 				onStart(){
+					if(!UserStore.getCurrentUser()) return setTimeout(this.start, 1000)
 					patches = [];
 					this.loadSettings();
 					this.applyStyle();
@@ -3161,7 +3162,7 @@ module.exports = (() => {
 					}
 					else 
 					{
-						const user_id = UserStore.getCurrentUser().id;
+						const user_id = UserStore.getCurrentUser()?.id;
 						return this.getName() + "_new" + (user_id != null ? "_" + user_id : "");
 					}
 				}
