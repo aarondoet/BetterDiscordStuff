@@ -2328,7 +2328,7 @@ module.exports = (() => {
 				}
 				
 				onStart(){
-					if(!UserStore.getCurrentUser()) return setTimeout(this.start, 1000)
+					if(!UserStore.getCurrentUser()) return setTimeout(this.onStart, 1000)
 					patches = [];
 					this.loadSettings();
 					this.applyStyle();
