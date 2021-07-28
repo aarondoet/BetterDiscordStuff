@@ -3169,7 +3169,7 @@ module.exports = (() => {
 				
 				loadSettings()
 				{					
-					if (Utilities.fileExists(this.getSettingsPath()))
+					if (!Utilities.fileExists(this.getSettingsPath()) && Utilities.fileExists(this.getSettingsPath(true)))
 					{
 						this.settings = PluginUtilities.loadSettings(this.getSettingsPath(true), this.defaultVariables);
 					}
