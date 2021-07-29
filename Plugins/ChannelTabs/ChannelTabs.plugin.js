@@ -49,7 +49,7 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.2",
+			version: "2.5.3",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -84,7 +84,7 @@ module.exports = (() => {
 				"items": [
 					"Guild Context Menus not Working",
 					"Minor Naming Inconsistencies",
-					"Should hopefully load your settings correctly again now (from the previous update just a moment ago)"
+					"Actually load settings correctly now???"
 				]
 			}
 		]
@@ -3169,7 +3169,7 @@ module.exports = (() => {
 				
 				loadSettings()
 				{					
-					if (!Utilities.fileExists(this.getSettingsPath()) && Utilities.fileExists(this.getSettingsPath(true)))
+					if (Object.keys(PluginUtilities.loadSettings(this.getSettingsPath())).length === 0)
 					{
 						this.settings = PluginUtilities.loadSettings(this.getSettingsPath(true), this.defaultVariables);
 					}
