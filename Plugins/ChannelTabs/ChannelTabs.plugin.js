@@ -49,7 +49,7 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.3",
+			version: "2.5.4",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -1088,22 +1088,19 @@ module.exports = (() => {
 				if(cId)
 				{
 					const channel = ChannelStore.getChannel(cId);
-					if(channel.guild_id)
+					if(channel?.guild_id)
 					{
 						return "none";
 					}
-					else
+					else if(channel?.isDM())
 					{
-						if(channel.isDM())
-						{
-							const user = UserStore.getUser(channel.getRecipientId());
-							const status = UserStatusStore.getStatus(user.id);
-							return status;
-						}
-						else if(channel.isGroupDM())
-						{
-							return "none";
-						}
+						const user = UserStore.getUser(channel.getRecipientId());
+						const status = UserStatusStore.getStatus(user.id);
+						return status;
+					}
+					else if(channel?.isGroupDM())
+					{
+						return "none";
 					}
 				}
 				return "none";
@@ -1169,8 +1166,8 @@ module.exports = (() => {
 				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
 				if(cId){
 					const channel = ChannelStore.getChannel(cId);
-					if(channel.name) return (channel.guildId ? "@" : "#") + channel.name;
-					else if(channel.rawRecipients) return "@" + channel.rawRecipients.map(u=>u.username).join(", ");
+					if(channel?.name) return (channel.guildId ? "@" : "#") + channel.name;
+					else if(channel?.rawRecipients) return "@" + channel.rawRecipients.map(u=>u.username).join(", ");
 					else return pathname;
 				}else{
 					if(pathname === "/channels/@me") return "Friends";
@@ -1184,17 +1181,16 @@ module.exports = (() => {
 				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
 				if(cId){
 					const channel = ChannelStore.getChannel(cId);
+					if(!channel) return "";
 					if(channel.guild_id){
 						const guild = GuildStore.getGuild(channel.guild_id);
 						return guild.getIconURL() || DefaultUserIconBlue;
-					}else{
-						if(channel.isDM()){
-							const user = UserStore.getUser(channel.getRecipientId());
-							return user.avatarURL;
-						}else if(channel.isGroupDM()){
-							// TODO
-							return DefaultUserIconGreen;
-						}
+					}else if(channel.isDM()){
+						const user = UserStore.getUser(channel.getRecipientId());
+						return user.avatarURL;
+					}else if(channel.isGroupDM()){
+						// TODO
+						return DefaultUserIconGreen;
 					}
 				}
 				return DefaultUserIconGrey;
@@ -2328,7 +2324,10 @@ module.exports = (() => {
 				}
 				
 				onStart(){
-					if(!UserStore.getCurrentUser()) return setTimeout(this.onStart, 1000)
+					//console.warn("CT Start");
+					if(!BdApi.Plugins.isEnabled(config.info.name)) return;
+					if(!UserStore.getCurrentUser()) return setTimeout(this.onStart, 1000);
+					//console.warn(UserStore.getCurrentUser());
 					patches = [];
 					this.loadSettings();
 					this.applyStyle();
@@ -3065,6 +3064,7 @@ module.exports = (() => {
 
 				onSwitch(){
 					if(switching) return;
+					//console.log(this);
 					if(TopBarRef.current){
 						TopBarRef.current.setState({
 							tabs: TopBarRef.current.state.tabs.map(tab => {
