@@ -49,7 +49,7 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.4",
+			version: "2.5.5",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -84,7 +84,7 @@ module.exports = (() => {
 				"items": [
 					"Guild Context Menus not Working",
 					"Minor Naming Inconsistencies",
-					"Actually load settings correctly now???"
+					"**NEW: Now also works with Powercord/bdCompat**"
 				]
 			}
 		]
@@ -2323,10 +2323,10 @@ module.exports = (() => {
 					super();
 				}
 				
-				onStart(){
+				onStart(isRetry = false){
 					//console.warn("CT Start");
-					if(!BdApi.Plugins.isEnabled(config.info.name)) return;
-					if(!UserStore.getCurrentUser()) return setTimeout(this.onStart, 1000);
+					if(isRetry && !BdApi.Plugins.isEnabled(config.info.name)) return;
+					if(!UserStore.getCurrentUser()) return setTimeout(()=>this.onStart(true), 1000);
 					//console.warn(UserStore.getCurrentUser());
 					patches = [];
 					this.loadSettings();
