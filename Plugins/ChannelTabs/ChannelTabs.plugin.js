@@ -49,7 +49,7 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.5",
+			version: "2.5.6",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -65,7 +65,7 @@ module.exports = (() => {
 					"Toolbar Quick Settings",
 					"Favorite Bar Groups",
 					"Privacy Mode",
-					"Draging Items"
+					"Dragging Items"
 				]
 			},
 			{
@@ -84,7 +84,7 @@ module.exports = (() => {
 				"items": [
 					"Guild Context Menus not Working",
 					"Minor Naming Inconsistencies",
-					"**NEW: Now also works with Powercord/bdCompat**"
+					"**NEW: Fixed PFPs for DMs and group DMs**"
 				]
 			}
 		]
@@ -1187,10 +1187,10 @@ module.exports = (() => {
 						return guild.getIconURL() || DefaultUserIconBlue;
 					}else if(channel.isDM()){
 						const user = UserStore.getUser(channel.getRecipientId());
-						return user.avatarURL;
+						return user.getAvatarURL();
 					}else if(channel.isGroupDM()){
-						// TODO
-						return DefaultUserIconGreen;
+						if(channel.icon) return `https://cdn.discordapp.com/channel-icons/${channel.id}/${channel.icon}.webp`;
+						else return DefaultUserIconGreen;
 					}
 				}
 				return DefaultUserIconGrey;
