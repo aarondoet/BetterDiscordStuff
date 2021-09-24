@@ -8,13 +8,13 @@
  * @authorId 226677096091484160
  */
 
-var TypingIndicator = (() => {
+module.exports = (() => {
 	const config = {
 		info:{
 			name: "TypingIndicator",
 			authors: [{name: "l0c4lh057", github_username: "l0c4lh057", twitter_username: "l0c4lh057", discord_id: "226677096091484160"}],
 			description: "Shows an indicator in the guild/channel list when someone is typing there",
-			version: "0.5.2",
+			version: "0.5.3",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/TypingIndicator/TypingIndicator.plugin.js"
 		},
@@ -66,12 +66,12 @@ var TypingIndicator = (() => {
 			{
 				"title": "Fixed",
 				"type": "fixed",
-				"items": ["Showing on the home icon again"]
+				"items": ["Showing on guild icons again. Thanks to Discord for breaking it and to @Strencher#1044 for helping me fix it."]
 			},
 			{
-				"title": "New",
-				"type": "added",
-				"items": ["Added data attributes to the indicator to allow channel/guild specific styling using CSS (`data-guild-id`, `data-channel-id` and `data-folder-id`)"]
+				"title": "Changed",
+				"type": "changed",
+				"items": ["Updated the indicator style on guilds"]
 			}
 		]
 	};
@@ -80,7 +80,7 @@ var TypingIndicator = (() => {
 		constructor(){this._config = config;}
 		getName(){return config.info.name;}
 		getAuthor(){return config.info.authors.map(a => a.name).join(", ");}
-		getDescription(){ return config.info.description + " **Install [ZeresPluginLibrary](https://betterdiscord.app/Download?id=9) and restart discord to use this plugin!**"; }
+		getDescription(){return config.info.description + " **Install [ZeresPluginLibrary](https://betterdiscord.app/Download?id=9) and restart discord to use this plugin!**";}
 		getVersion(){return config.info.version;}
 		load(){
 			BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
@@ -98,7 +98,7 @@ var TypingIndicator = (() => {
 		stop(){}
 	} : (([Plugin, Api]) => {
 		const plugin = (Plugin, Api) => {
-			const { WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities, Utilities } = Api;
+			const { WebpackModules, DiscordModules, Patcher, ReactComponents, PluginUtilities, Utilities, ReactTools } = Api;
 			const { React, ChannelStore, UserStore, UserTypingStore, RelationshipStore, SelectedGuildStore, DiscordConstants, WindowInfo } = DiscordModules;
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
@@ -164,16 +164,19 @@ var TypingIndicator = (() => {
 						.typingindicator-guild, .typingindicator-dms, .typingindicator-folder {
 							position: absolute;
 							bottom: 0;
-							border-radius: 1vh;
-							background-color: #888;
-							box-shadow: 0px 0px 8px 4px #888;
+							padding: 3px;
+							border-radius: 6px;
+							background-color: var(--background-tertiary);
 							right: 14px;
 						}
-						.typingindicator-guild [class*=pulsingEllipsisItem], .typingindicator-dms [class*=pulsingEllipsisItem], .typingindicator-folder [class*=pulsingEllipsisItem] {
-							background-color: white;
-						}
-						.typingindicator-channel span[class*="pulsingEllipsisItem"] {
+						.ti-indicator span.pulsingEllipsisItem-32hhWL {
 							background-color: var(--channels-default);
+						}
+						.ti-indicator .pulsingEllipsis-3YiXRF {
+							width: 22px;
+						}
+						.ti-indicator .pulsingEllipsisItem-32hhWL:nth-of-type(3) {
+							margin-right: 0;
 						}
 					`);
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
@@ -203,7 +206,8 @@ var TypingIndicator = (() => {
 						if(props.channel.type!==DiscordConstants.ChannelTypes.GUILD_TEXT) return;
 						if(props.selected) return;
 						if(props.muted && !this.settings.includeMuted) return;
-						const selfId = UserStore.getCurrentUser().id;
+						const selfId = UserStore.getCurrentUser()?.id;
+						if(!selfId) return setTimeout(()=>this.patchChannelList(), 100);
 						const fluxWrapper = Flux.connectStores([UserTypingStore, WindowInfo], ()=>({userIds: Object.keys(UserTypingStore.getTypingUsers(props.channel.id))
 							.filter(uId => (uId !== selfId) && (this.settings.includeBlocked || !RelationshipStore.isBlocked(uId)))
 						}));
@@ -215,12 +219,43 @@ var TypingIndicator = (() => {
 					});
 				}
 				
-				async patchGuildList(promiseState){
-					const Guild = await ReactComponents.getComponentByName("Guild", "." + WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(" ", "."));
+				onAdded(selector, callback) {
+					if (document.body.querySelector(selector)) return callback(document.body.querySelector(selector));
+					const observer = new MutationObserver((mutations) => {
+					for (let m = 0; m < mutations.length; m++) {
+						for (let i = 0; i < mutations[m].addedNodes.length; i++) {
+							const mutation = mutations[m].addedNodes[i];
+							if (mutation.nodeType === 3) continue; // ignore text
+							const directMatch = mutation.matches(selector) && mutation;
+							const childrenMatch = mutation.querySelector(selector);
+							if (directMatch || childrenMatch) {
+								observer.disconnect();
+								return callback(directMatch ?? childrenMatch);
+								}
+							}
+						}
+					});
+					observer.observe(document.body, {subtree: true, childList: true});
+					return () => {observer.disconnect();};
+				}
+				
+				async forceUpdateGuilds(promiseState) {
+					const guildClasses = WebpackModules.getByProps("downloadProgressCircle", "guilds");
+					if(!guildClasses) return;
+					const guilds = await new Promise((resolve) => this.onAdded(`.${guildClasses.guilds}`, resolve));
 					if(promiseState.cancelled) return;
-					const selfId = UserStore.getCurrentUser().id;
-					Patcher.after(Guild.component.prototype, "render", (thisObject, _, returnValue) => {
-						let guildData = thisObject.props;
+					const instance = ReactTools.getOwnerInstance(guilds);
+					if(!instance) return;
+					instance.forceUpdate();
+				}
+				
+				patchGuildList(promiseState){
+					const GuildComponents = WebpackModules.getByProps("HubGuild");
+					if (!GuildComponents || typeof GuildComponents.default !== "function") return console.error("[TypingIndicator] Could not find Guild components");
+					const selfId = UserStore.getCurrentUser()?.id;
+					if(!selfId) return setTimeout(()=>this.patchGuildList(promiseState), 100);
+					Patcher.after(GuildComponents, "default", (_, [args], returnValue)=>{
+						let guildData = returnValue.props;
 						if(guildData.selected) return;
 						if(!this.settings.guilds) return;
 						if(!guildData.guild) return;
@@ -234,15 +269,18 @@ var TypingIndicator = (() => {
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 1, type: "guild", isFocused: WindowInfo.isFocused(), id: guildData.guild.id});
 						});
-						returnValue.props.children.props.children.push(React.createElement(wrappedCount));
+						Patcher.after(returnValue, "type", (_, [args], returnValue)=>{
+							returnValue.props.children.props.children.push(React.createElement(wrappedCount));
+						})
 					});
-					Guild.forceUpdateAll();
+					this.forceUpdateGuilds(promiseState);
 				}
 				
 				async patchHomeIcon(promiseState){
 					const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(/ /g, "."));
 					if(promiseState.cancelled) return;
-					const selfId = UserStore.getCurrentUser().id;
+					const selfId = UserStore.getCurrentUser()?.id;
+					if(!selfId) return setTimeout(()=>this.patchHomeIcon(promiseState), 100);
 					Patcher.after(Home.component.prototype, "render", (thisObject, _, returnValue) => {
 						if(!returnValue.props.children) return;
 						let children = returnValue.props.children[0] || returnValue.props.children;
@@ -271,7 +309,8 @@ var TypingIndicator = (() => {
 				async patchFolders(promiseState){
 					const Folder = WebpackModules.find(m=>m?.type?.render && (m?.type?.render||m?.type?.__powercordOriginal_render)?.toString()?.indexOf("SERVER_FOLDER")!==-1);
 					if(promiseState.cancelled || !Folder) return;
-					const selfId = UserStore.getCurrentUser().id;
+					const selfId = UserStore.getCurrentUser()?.id;
+					if(!selfId) return setTimeout(()=>this.patchFolders(promiseState), 100);
 					Patcher.after(Folder.type, "render", (_, [props], returnValue) => {
 						if(props.expanded) return;
 						if(!this.settings.folders) return;
