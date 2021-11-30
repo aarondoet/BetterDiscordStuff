@@ -59,8 +59,8 @@ module.exports = (() => {
 				"title": "NEW",
 				"type": "added",
 				"items": [
-					"Now more consistant with Discord's design.",
-					"The tab bar camoflagues with Discord's Windows title bar."
+					"Now more consistent with Discord's design.",
+					"The tab bar now camouflages with Discord's Windows title bar."
 				]
 			},
 			{
