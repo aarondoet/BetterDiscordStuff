@@ -49,7 +49,7 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.6",
+			version: "2.5.7",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -59,32 +59,15 @@ module.exports = (() => {
 				"title": "NEW",
 				"type": "added",
 				"items": [
-					"TypingIndicator Intergration",
-					"Compact & Cozy Modes",
-					"Tabs/Favs User Status Indicators",
-					"Toolbar Quick Settings",
-					"Favorite Bar Groups",
-					"Privacy Mode",
-					"Dragging Items"
+					"Now more consistant with Discord's design.",
+					"The tab bar camoflagues with Discord's Windows title bar."
 				]
 			},
 			{
-				"title": "Added",
-				"type": "added",
+				"title": "Credits",
+				"type": "credits",
 				"items": [
-					"More Control Over the Badge Visibility",
-					"Always Focus when Opening in New Tab Option",
-					"Multi-User Support",
-					
-				]
-			},
-			{
-				"title": "Fixed",
-				"type": "fixed",
-				"items": [
-					"Guild Context Menus not Working",
-					"Minor Naming Inconsistencies",
-					"**NEW: Fixed PFPs for DMs and group DMs**"
+					"By https://github.com/christiankek",
 				]
 			}
 		]
@@ -2415,7 +2398,7 @@ module.exports = (() => {
 						background: var(--background-secondary);
 						border: none;
 						padding: 6px 6px 6px 6px;
-						border-radius: 5px;
+						border-radius: 4px;
 						color: var(--interactive-normal);
 						height: var(--channelTabs-tabHeight);
 					}
@@ -2426,7 +2409,7 @@ module.exports = (() => {
 
 					.channelTabs-tabContainer {
 						min-height: calc(var(--channelTabs-tabHeight) + 16px);
-						background: var(--background-secondary-alt);
+						background: rgb(var(--background-tertiary));
 						position: relative;
 					}
 					.channelTabs-tab:not(.channelTabs-selected):hover {
@@ -2463,14 +2446,14 @@ module.exports = (() => {
 						height: 40px;
 						position: relative;
 						display: inline-block;
-						background: var(--background-floating);
+						background: rgb(var(--background-tertiary));
 						width: 40px;
 						float: right;
-						border-radius: 0% 0% 0% 25%;
+						border-radius: 0% 0% 0% 0%;
 					}
 
 					#channelTabs-settingsMenu:hover {
-						background: var(--background-secondary);
+						background: var(--background-modifier-hover);
 					}
 					
 					.channelTabs-settingsIcon {
@@ -2571,11 +2554,11 @@ module.exports = (() => {
 						background: var(--interactive-normal);
 					}
 					.channelTabs-tab:not(.channelTabs-selected):hover .channelTabs-closeTab:hover {
-						background: red;
+						background: hsl(359, calc(var(--saturation-factor, 1)*82.6%), 59.4%);
 						color: white;
 					}
 					.channelTabs-tab.channelTabs-selected .channelTabs-closeTab:hover {
-						background: red;
+						background: hsl(359, calc(var(--saturation-factor, 1)*82.6%), 59.4%);
 						color: white;
 					}
 					
