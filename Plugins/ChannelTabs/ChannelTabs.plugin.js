@@ -49,25 +49,18 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.7",
+			version: "2.5.8",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "NEW",
-				"type": "added",
+				"title": "Fixed",
+				"type": "fixed",
 				"items": [
-					"Now more consistent with Discord's design.",
-					"The tab bar now camouflages with Discord's Windows title bar."
-				]
-			},
-			{
-				"title": "Credits",
-				"type": "credits",
-				"items": [
-					"By https://github.com/christiankek",
+					"The plugin now works again",
+					"Context menus are still broken, but at least everything else should work again now"
 				]
 			}
 		]
@@ -137,25 +130,6 @@ module.exports = (() => {
 			var currentGroupDragDestinationIndex = -1;
 
 			var currentGroupOpened = -1;
-
-			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
-				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
-				BdApi.showConfirmationModal("Do you want to download a helper plugin?", 
-					[`Do you want to download a helper plugin that makes it easier for you to report issues? That plugin is not needed to anything else to function correctly but nice to have when reporting iissues, shortening the time until the problem gets resolved by asking you for specific information and also including additional information you did not provide.`],
-					{
-						confirmText: "Download",
-						cancelText: "Cancel",
-						onConfirm: () => {
-							require("request").get("https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js", (error, response, body) => {
-								if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/BugReportHelper/BugReportHelper.plugin.js");
-								else require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "BugReportHelper.plugin.js"), body, ()=>{
-									window.setTimeout(()=>BdApi.Plugins.enable("BugReportHelper"), 1000);
-								});
-							});
-						}
-					}
-				);
-			};
 
 			//#endregion
 			
@@ -2320,7 +2294,7 @@ module.exports = (() => {
 					this.keybindHandler = this.keybindHandler.bind(this);
 					this.onSwitch();
 					this.patchAppView(this.promises.state);
-					this.patchContextMenus();
+					//this.patchContextMenus();
 					this.ifReopenLastChannelDefault();
 					document.addEventListener("keydown", this.keybindHandler);
 					window.onclick = (event) => this.clickHandler(event);
@@ -2948,7 +2922,7 @@ module.exports = (() => {
 				
 				async patchAppView(promiseState)
 				{
-					const AppView = await ReactComponents.getComponent("Shakeable", ".app-2rEoOp");
+					const AppView = await ReactComponents.getComponent("Shakeable", ".app-2CXKsg");
 					if(promiseState.cancelled) return;
 					Patcher.after(AppView.component.prototype, "render", (thisObject, _, returnValue) => {
 						returnValue.props.children = [
@@ -2984,6 +2958,7 @@ module.exports = (() => {
 							returnValue.props.children
 						].flat();
 					});
+					AppView.selector = ".app-2CXKsg"; // dirty fix for AppView.selector still being the old one, breaking forceUpdateAll()
 					AppView.forceUpdateAll();
 					patches.push(()=>AppView.forceUpdateAll());
 				}
