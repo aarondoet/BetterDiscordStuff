@@ -2354,6 +2354,14 @@ module.exports = (() => {
 							color: transparent;
 							text-shadow: 0 0 7px var(--interactive-normal);
 						}
+						
+						.channelTabs-tabIcon  {
+							filter: blur(3px)
+						} 
+                        
+            .channelTabs-noneIcon {
+							filter: blur(3px)
+						}
 					`;
 		
 					const BaseStyle = `
