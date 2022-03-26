@@ -2320,8 +2320,8 @@ module.exports = (() => {
 						:root {	
 							--channelTabs-tabHeight: 22px;
 							--channelTabs-tabTextSize: 15px;
-                            --channelTabs-favHeight: 22px;
-                            --channelTabs-macHeight: initial;
+							--channelTabs-favHeight: 22px;
+							--channelTabs-macHeight: initial;
 						}
 					`;
 
@@ -2329,8 +2329,8 @@ module.exports = (() => {
 						:root {	
 							--channelTabs-tabHeight: 32px;
 							--channelTabs-tabTextSize: 18px;
-                            --channelTabs-favHeight: 28px;
-                            --channelTabs-macHeight: 41px;
+							--channelTabs-favHeight: 28px;
+							--channelTabs-macHeight: 41px;
 						}
 					`;
 
@@ -2339,7 +2339,7 @@ module.exports = (() => {
 							--channelTabs-tabWidth: 224px;
 							--channelTabs-tabStatusBorderThickness: 2px;
 							--channelTabs-favStatusBorderThickness: 2px;
-                            --channelTabs-winButtonWidth: 84px;
+							--channelTabs-winButtonWidth: 84px;
 						}
 					`;
 
@@ -2349,18 +2349,18 @@ module.exports = (() => {
 						}
 
 						.channelTabs-tabName {
-                            color: transparent;
+							color: transparent;
 							background-color: var(--interactive-normal);
-                            opacity: 0.5;
+							opacity: 0.5;
 						}
-
-                        .channelTabs-selected .channelTabs-tabName {
-                            background-color: var(--interactive-active);
-                        }
+						
+						.channelTabs-selected .channelTabs-tabName {
+							background-color: var(--interactive-active);
+						}
 						
 						.channelTabs-favName {
 							background-color: var(--interactive-normal);
-                            opacity: 0.5;
+							opacity: 0.5;
 						}
 					`;
 		
@@ -2370,99 +2370,99 @@ module.exports = (() => {
 					//#region Tab Base/Container
 					*/
 
-                    .platform-win .titleBar-1it3bQ {
-                        position: absolute;
-                        right: 0;
-                        height: calc(var(--channelTabs-tabHeight) + 10px);
-                        z-index: unset;
-                        -webkit-app-region: unset;
-                        padding: unset;
-                        background: unset;
-                        box-shadow: unset;
-                    }
-
-                    .platform-win .withFrame-2dL45i {
-                        margin-top: unset;
-                    }
-
-                    .winButton-3UMjdg {
-                        top: unset;
-                        height: calc(var(--channelTabs-tabHeight) + 10px);
-                        z-index: 9999;
-                    }
-
-                    .platform-win .wordmark-2u86JB {
-                        display: none;
-                    }
-
-                    .platform-osx .wrapper-1_HaEi {
-                        margin-top: 0;
-                    }
-
-                    .platform-osx .sidebar-1tnWFu {
-                        border-radius: 8px 0 0;
-                        overflow: hidden;
-                    }
-
-                    .macButtons-eIdy0e {
-                        height: var(--channelTabs-macHeight);
-                    }
-
-                    .platform-osx #channelTabs-container>#channelTabs-settingsMenu+div,
-                    .platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-                        padding: 7px 72px 3px 0;
-                        margin-left: 72px;
-                        -webkit-app-region: drag;
-                    }
-
-                    html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div,
-                    html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-                        padding: 7px 72px 3px 8px;
-                        margin-right: var(--channelTabs-winButtonWidth);
-                        -webkit-app-region: drag;
-                    }
-
-                    .platform-osx #channelTabs-container>#channelTabs-settingsMenu+div>*,
-                    .platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
-                    html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div>*,
-                    html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
-                    .menu-1QACrS {
-                        -webkit-app-region: no-drag;
-                    }
-
-                    #channelTabs-container {
+					.platform-win .titleBar-1it3bQ {
+						position: absolute;
+						right: 0;
+						height: calc(var(--channelTabs-tabHeight) + 10px);
+						z-index: unset;
+						-webkit-app-region: unset;
+						padding: unset;
+						background: unset;
+						box-shadow: unset;
+					}
+					
+					.platform-win .withFrame-2dL45i {
+						margin-top: unset;
+					}
+					
+					.winButton-3UMjdg {
+						top: unset;
+						height: calc(var(--channelTabs-tabHeight) + 10px);
+						z-index: 9999;
+					}
+					
+					.platform-win .wordmark-2u86JB {
+						display: none;
+					}
+					
+					.platform-osx .wrapper-1_HaEi {
+						margin-top: 0;
+					}
+					
+					.platform-osx .sidebar-1tnWFu {
+						border-radius: 8px 0 0;
+						overflow: hidden;
+					}
+					
+					.macButtons-eIdy0e {
+						height: var(--channelTabs-macHeight);
+					}
+					
+					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div,
+					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
+						padding: 7px 72px 3px 0;
+						margin-left: 72px;
+						-webkit-app-region: drag;
+					}
+					
+					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div,
+					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
+						padding: 7px 72px 3px 8px;
+						margin-right: var(--channelTabs-winButtonWidth);
+						-webkit-app-region: drag;
+					}
+					
+					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div>*,
+					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
+					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div>*,
+					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
+					.menu-1QACrS {
+						-webkit-app-region: no-drag;
+					}
+					
+					#channelTabs-container {
 						z-index: 1000;
 					}
-
-                    .channelTabs-tabContainer {
-                        display: flex;
-                        align-items: center;
-                        padding: 0 8px 3px 8px;
-                    }
+					
+					.channelTabs-tabContainer {
+						display: flex;
+						align-items: center;
+						padding: 0 8px 3px 8px;
+					}
 
 					.channelTabs-tab {
 						display: flex;
 						align-items: center;
-                        min-width: 0;
-                        border-radius: 4px;
-                        height: var(--channelTabs-tabHeight);
-                        flex: 0 1 var(--channelTabs-tabWidth);
+						min-width: 0;
+						border-radius: 4px;
+						height: var(--channelTabs-tabHeight);
+						flex: 0 1 var(--channelTabs-tabWidth);
 					}
-
-                    .channelTabs-tab>div:first-child {
-                        display: flex;
-                        width: calc(100% - 14px);
-                        align-items: center;
-                        margin-right: unset;
-                    }
-
-                    .channelTabs-tab:not(.channelTabs-selected):hover {
-                        background: var(--background-modifier-hover);
-                    }
-
-                    .channelTabs-tab.channelTabs-selected {
-                        background: var(--background-modifier-selected);
-                    }
+					
+					.channelTabs-tab>div:first-child {
+						display: flex;
+						width: calc(100% - 14px);
+						align-items: center;
+						margin-right: unset;
+					}
+					
+					.channelTabs-tab:not(.channelTabs-selected):hover {
+						background: var(--background-modifier-hover);
+					}
+					
+					.channelTabs-tab.channelTabs-selected {
+						background: var(--background-modifier-selected);
+					}
 
 					.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
 					.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
@@ -2481,19 +2481,19 @@ module.exports = (() => {
 					/*
 					//#region Quick Settings
 					*/
-
-                    .platform-osx #channelTabs-settingsMenu {
-                        margin-right: 0;
-                    }
+					
+					.platform-osx #channelTabs-settingsMenu {
+						margin-right: 0;
+					}
 
 					#channelTabs-settingsMenu {
-                        position: relative;
+						position: relative;
 						display: inline-block;
-                        float: right;
-                        width: 20px;
-                        height: calc(var(--channelTabs-tabHeight) + 10px);
-                        margin-right: var(--channelTabs-winButtonWidth);
-                        z-index: 9999;
+						float: right;
+						width: 20px;
+						height: calc(var(--channelTabs-tabHeight) + 10px);
+						margin-right: var(--channelTabs-winButtonWidth);
+						z-index: 9999;
 					}
 
 					#channelTabs-settingsMenu:hover {
@@ -2518,17 +2518,17 @@ module.exports = (() => {
 					*/
 
 					.channelTabs-tabName {
-                        margin: 0 6px 0 0;
-                        font-size: 12px;
-                        color: var(--interactive-normal);
-                        overflow: hidden;
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
-                    }
-
-                    .channelTabs-selected .channelTabs-tabName {
-                        color: var(--interactive-active);
-                    }
+						margin: 0 6px 0 0;
+						font-size: 12px;
+						color: var(--interactive-normal);
+						overflow: hidden;
+						white-space: nowrap;
+						text-overflow: ellipsis;
+					}
+					
+					.channelTabs-selected .channelTabs-tabName {
+						color: var(--interactive-active);
+					}
 
 					/*
 					//#endregion
@@ -2539,10 +2539,10 @@ module.exports = (() => {
 					*/
 
 					.channelTabs-tabIcon {
-                        border-radius: 50%;
-                        height: 20px;
-                        margin: 0 6px;
-                    }
+						border-radius: 50%;
+						height: 20px;
+						margin: 0 6px;
+					}
 
 					.channelTabs-tabIcon.channelTabs-onlineIcon {
 						border: var(--channelTabs-tabStatusBorderThickness) solid rgb(67, 181, 129);
@@ -2569,37 +2569,37 @@ module.exports = (() => {
 					*/
 
 					.channelTabs-closeTab {
-                        position: relative;
-                        width: 14px;
-                        height: 14px;
-                        font-size: 14px;
-                        line-height: 12px;
-                        right: 6px;
-                        text-align: center;
-                        border-radius: 50%;
-                        color: var(--interactive-normal);
-                        cursor: pointer;
-                    }
+						position: relative;
+						width: 14px;
+						height: 14px;
+						font-size: 14px;
+						line-height: 12px;
+						right: 6px;
+						text-align: center;
+						border-radius: 50%;
+						color: var(--interactive-normal);
+						cursor: pointer;
+					}
 					
 					.channelTabs-newTab {
-                        flex-shrink: 0;
-                        width: 18px;
-                        height: 18px;
-                        margin: 0 6px 0 6px;
-                        font-size: 18px;
-                        font-weight: 700;
-                        font-family: Whitney,"Helvetica Neue",Helvetica,Arial,sans-serif;
-                        text-align: center;
-                        border-radius: 50%;
-                        cursor: pointer;
-                        color: var(--interactive-normal);
+						flex-shrink: 0;
+						width: 18px;
+						height: 18px;
+						margin: 0 6px 0 6px;
+						font-size: 18px;
+						font-weight: 700;
+						font-family: Whitney,"Helvetica Neue",Helvetica,Arial,sans-serif;
+						text-align: center;
+						border-radius: 50%;
+						cursor: pointer;
+						color: var(--interactive-normal);
 					}
-
-                    .channelTabs-closeTab:hover,
-                    .channelTabs-newTab:hover {
-                        background: var(--background-modifier-selected);
-                        color: var(--interactive-hover);
-                    }
+					
+					.channelTabs-closeTab:hover,
+					.channelTabs-newTab:hover {
+						background: var(--background-modifier-selected);
+						color: var(--interactive-hover);
+					}
 
 					/*
 					//#endregion
@@ -2732,9 +2732,9 @@ module.exports = (() => {
 						display: none;
 					}
 					
-                    .channelTabs-fav>div:nth-last-child(2) {
-                        margin-right: 6px;
-                    }
+					.channelTabs-fav>div:nth-last-child(2) {
+						margin-right: 6px;
+					}
 
 					/*
 					//#endregion
@@ -2746,44 +2746,44 @@ module.exports = (() => {
 
 					.channelTabs-favContainer {
 						display: flex;
-                        align-items: center;
-                        padding: 0 8px 3px 8px;
+						align-items: center;
+						padding: 0 8px 3px 8px;
 					}
 
 					.channelTabs-fav {
 						display: flex;
 						align-items: center;
-                        min-width: 0;
-                        border-radius: 4px;
-                        height: var(--channelTabs-favHeight);
-                        flex: 0 1 1;
-                        max-width: var(--channelTabs-tabWidth);
+						min-width: 0;
+						border-radius: 4px;
+						height: var(--channelTabs-favHeight);
+						flex: 0 1 1;
+						max-width: var(--channelTabs-tabWidth);
 					}
 
 					.channelTabs-fav:hover {
-                        background: var(--background-modifier-hover);
-                    }
+						background: var(--background-modifier-hover);
+					}
 
 					.channelTabs-favIcon {
 						border-radius: 50%;
-                        height: 20px;
-                        margin: 0 6px;
+						height: 20px;
+						margin: 0 6px;
 					}
 
 					.channelTabs-favIcon ~ .channelTabs-favName {
 						margin: 0 6px 0 0;
-                        font-size: 12px;
-                        color: var(--interactive-normal);
-                        overflow: hidden;
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
+						font-size: 12px;
+						color: var(--interactive-normal);
+						overflow: hidden;
+						white-space: nowrap;
+						text-overflow: ellipsis;
 					}
 					
 					.channelTabs-noFavNotice {
-                        color: var(--text-muted);
-                        font-size: 14px;
-                        padding: 2px;
-                    }
+						color: var(--text-muted);
+						font-size: 14px;
+						padding: 2px;
+					}
 
 					.channelTabs-favIcon.channelTabs-onlineIcon {
 						border: var(--channelTabs-favStatusBorderThickness) solid rgb(67, 181, 129);
@@ -2820,22 +2820,22 @@ module.exports = (() => {
 					.channelTabs-favGroupBtn {
 						display: flex;
 						align-items: center;
-                        min-width: 0;
-                        border-radius: 4px;
-                        height: var(--channelTabs-favHeight);
-                        flex: 0 1 1;
-                        max-width: var(--channelTabs-tabWidth);
-                        padding: 0 6px;
-                        font-size: 12px;
-                        color: var(--interactive-normal);
-                        overflow: hidden;
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
+						min-width: 0;
+						border-radius: 4px;
+						height: var(--channelTabs-favHeight);
+						flex: 0 1 1;
+						max-width: var(--channelTabs-tabWidth);
+						padding: 0 6px;
+						font-size: 12px;
+						color: var(--interactive-normal);
+						overflow: hidden;
+						white-space: nowrap;
+						text-overflow: ellipsis;
 					}
-
-                    .channelTabs-favGroupBtn>:first-child {
-                        margin-left: 6px;
-                    }
+					
+					.channelTabs-favGroupBtn>:first-child {
+						margin-left: 6px;
+					}
 
 					.channelTabs-favGroup:hover .channelTabs-favGroupBtn {
 						background: var(--background-modifier-hover);
