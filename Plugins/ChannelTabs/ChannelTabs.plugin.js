@@ -1252,6 +1252,7 @@ module.exports = (() => {
 					"div",
 					{},
 					React.createElement(TabIcon, {iconUrl: props.iconUrl, currentStatus: props.currentStatus }),
+					React.createElement(TabName, {name: props.name}),
 					React.createElement(
 						"div",
 						{
@@ -1272,9 +1273,7 @@ module.exports = (() => {
 						   {className: "channelTabs-gridItemTR"},
 						   !(props.selected ? props.showActiveTabMentionBadges : props.showTabMentionBadges) ? null : !(props.selected ? props.showEmptyActiveTabBadges : props.showEmptyTabBadges) && (props.mentionCount === 0) ? null : React.createElement(TabMentionBadge, {viewMode: "alt", mentionCount: props.mentionCount})
 					   ),
-					   React.createElement("div", {className: "channelTabs-gridItemBL"})
-					   ),
-					React.createElement(TabName, {name: props.name})
+					   React.createElement("div", {className: "channelTabs-gridItemBL"}))
 				)
 			};
 
@@ -2340,6 +2339,9 @@ module.exports = (() => {
 							--channelTabs-tabStatusBorderThickness: 2px;
 							--channelTabs-favStatusBorderThickness: 2px;
 							--channelTabs-winButtonWidth: 84px;
+							--channelTabs-paddingTop: 8px;
+							--channelTabs-paddingBottom: 4px;
+							--channelTabs-containerSpacing: 3px;
 						}
 					`;
 
@@ -2373,7 +2375,6 @@ module.exports = (() => {
 					.platform-win .titleBar-1it3bQ {
 						position: absolute;
 						right: 0;
-						height: calc(var(--channelTabs-tabHeight) + 10px);
 						z-index: unset;
 						-webkit-app-region: unset;
 						padding: unset;
@@ -2387,7 +2388,7 @@ module.exports = (() => {
 					
 					.winButton-3UMjdg {
 						top: unset;
-						height: calc(var(--channelTabs-tabHeight) + 10px);
+						height: calc(var(--channelTabs-tabHeight) + var(--channelTabs-paddingTop) + var(--channelTabs-paddingBottom));
 						z-index: 9999;
 					}
 					
@@ -2410,16 +2411,29 @@ module.exports = (() => {
 					
 					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div,
 					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						padding: 7px 72px 3px 0;
+						padding-top: var(--channelTabs-paddingTop);
+						padding-left: 0;
+						padding-right: 72px;
 						margin-left: 72px;
 						-webkit-app-region: drag;
 					}
 					
 					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div,
 					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						padding: 7px 72px 3px 8px;
+						padding-top: var(--channelTabs-paddingTop);
+						padding-left: 8px;
+						padding-right: 72px;
 						margin-right: var(--channelTabs-winButtonWidth);
 						-webkit-app-region: drag;
+					}
+					
+					#channelTabs-container>#channelTabs-settingsMenu+div+.channelTabs-favContainer,
+					#channelTabs-container>:first-child:not(#channelTabs-settingsMenu)+.channelTabs-favContainer {
+						padding-top: var(--channelTabs-containerSpacing);
+					}
+
+					#channelTabs-settingsMenu~div:last-child {
+						padding-bottom: var(--channelTabs-paddingBottom);
 					}
 					
 					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div>*,
@@ -2437,7 +2451,6 @@ module.exports = (() => {
 					.channelTabs-tabContainer {
 						display: flex;
 						align-items: center;
-						padding: 0 8px 3px 8px;
 					}
 
 					.channelTabs-tab {
@@ -2491,7 +2504,7 @@ module.exports = (() => {
 						display: inline-block;
 						float: right;
 						width: 20px;
-						height: calc(var(--channelTabs-tabHeight) + 10px);
+						height: calc(var(--channelTabs-tabHeight) + var(--channelTabs-paddingTop) + var(--channelTabs-paddingBottom));
 						margin-right: var(--channelTabs-winButtonWidth);
 						z-index: 9999;
 					}
@@ -2518,8 +2531,9 @@ module.exports = (() => {
 					*/
 
 					.channelTabs-tabName {
-						margin: 0 6px 0 0;
+						margin: 0 6px 1px 0;
 						font-size: 12px;
+						line-height: normal;
 						color: var(--interactive-normal);
 						overflow: hidden;
 						white-space: nowrap;
@@ -2574,6 +2588,7 @@ module.exports = (() => {
 						height: 14px;
 						font-size: 14px;
 						line-height: 12px;
+						font-family: Whitney,"Helvetica Neue",Helvetica,Arial,sans-serif;
 						right: 6px;
 						text-align: center;
 						border-radius: 50%;
@@ -2706,6 +2721,10 @@ module.exports = (() => {
 					.channelTabs-fav .channelTabs-noTyping {
 						display: none;
 					}
+					
+					.channelTabs-fav>div:nth-last-child(2) {
+						margin-right: 6px;
+					}
 
 					.channelTabs-favGroupBtn .channelTabs-noMention,
 					.channelTabs-favGroupBtn .channelTabs-noUnread {
@@ -2731,10 +2750,6 @@ module.exports = (() => {
 					.channelTabs-favGroupBtn .channelTabs-noTyping {
 						display: none;
 					}
-					
-					.channelTabs-fav>div:nth-last-child(2) {
-						margin-right: 6px;
-					}
 
 					/*
 					//#endregion
@@ -2747,7 +2762,7 @@ module.exports = (() => {
 					.channelTabs-favContainer {
 						display: flex;
 						align-items: center;
-						padding: 0 8px 3px 8px;
+						padding: 0 8px 0 8px;
 					}
 
 					.channelTabs-fav {
@@ -2771,8 +2786,9 @@ module.exports = (() => {
 					}
 
 					.channelTabs-favIcon ~ .channelTabs-favName {
-						margin: 0 6px 0 0;
+						margin: 0 6px 1px 0;
 						font-size: 12px;
+						line-height: normal;
 						color: var(--interactive-normal);
 						overflow: hidden;
 						white-space: nowrap;
@@ -2845,16 +2861,11 @@ module.exports = (() => {
 						z-index: 1001;
 						display: none;
 						position: absolute;
-						background-color: var(--background-tertiary);
-						border-radius: 4px;
 						min-width: max-content;
-						background: var(--background-floating);
+						background-color: var(--background-floating);
 						-webkit-box-shadow: var(--elevation-high);
 						box-shadow: var(--elevation-high);
-					}
-
-					.channelTabs-favGroup-content .channelTabs-fav {
-						display: block;
+						border-radius: 4px;
 					}
 
 					.channelTabs-favGroupShow {
