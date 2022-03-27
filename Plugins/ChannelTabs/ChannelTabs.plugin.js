@@ -2318,7 +2318,6 @@ module.exports = (() => {
 					const CompactVariables = `
 						:root {	
 							--channelTabs-tabHeight: 22px;
-							--channelTabs-tabTextSize: 15px;
 							--channelTabs-favHeight: 22px;
 							--channelTabs-macHeight: initial;
 						}
@@ -2327,7 +2326,6 @@ module.exports = (() => {
 					const CozyVariables = `
 						:root {	
 							--channelTabs-tabHeight: 32px;
-							--channelTabs-tabTextSize: 18px;
 							--channelTabs-favHeight: 28px;
 							--channelTabs-macHeight: 41px;
 						}
@@ -2346,11 +2344,11 @@ module.exports = (() => {
 					`;
 
 					const PrivacyStyle = `
-						.channelTabs-favGroupBtn {
+						#app-mount .channelTabs-favGroupBtn {
 							color: transparent !important;
 						}
 
-						.channelTabs-tabName {
+						#app-mount .channelTabs-tabName {
 							color: transparent;
 							background-color: var(--interactive-normal);
 							opacity: 0.5;
@@ -2360,7 +2358,8 @@ module.exports = (() => {
 							background-color: var(--interactive-active);
 						}
 						
-						.channelTabs-favName {
+						#app-mount .channelTabs-favName {
+							color: transparent;
 							background-color: var(--interactive-normal);
 							opacity: 0.5;
 						}
@@ -2400,7 +2399,7 @@ module.exports = (() => {
 						margin-top: 0;
 					}
 					
-					.platform-osx .sidebar-1tnWFu {
+					html:not(.platform-win) .sidebar-1tnWFu {
 						border-radius: 8px 0 0;
 						overflow: hidden;
 					}
@@ -2408,23 +2407,28 @@ module.exports = (() => {
 					.macButtons-eIdy0e {
 						height: var(--channelTabs-macHeight);
 					}
-					
-					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div,
-					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
+
+					#channelTabs-container>#channelTabs-settingsMenu+div,
+					#channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
 						padding-top: var(--channelTabs-paddingTop);
-						padding-left: 0;
 						padding-right: 72px;
-						margin-left: 72px;
 						-webkit-app-region: drag;
 					}
 					
 					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div,
 					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						padding-top: var(--channelTabs-paddingTop);
 						padding-left: 8px;
-						padding-right: 72px;
+					}
+					
+					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div,
+					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
+						padding-left: 0;
+						margin-left: 72px;
+					}
+					
+					.platform-win #channelTabs-container>#channelTabs-settingsMenu+div,
+					.platform-win #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
 						margin-right: var(--channelTabs-winButtonWidth);
-						-webkit-app-region: drag;
 					}
 					
 					#channelTabs-container>#channelTabs-settingsMenu+div+.channelTabs-favContainer,
@@ -2436,8 +2440,8 @@ module.exports = (() => {
 						padding-bottom: var(--channelTabs-paddingBottom);
 					}
 					
-					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div>*,
-					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
+					html:not(.platform-win) #channelTabs-container>#channelTabs-settingsMenu+div>*,
+					html:not(.platform-win) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
 					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div>*,
 					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
 					.menu-1QACrS {
@@ -2495,7 +2499,7 @@ module.exports = (() => {
 					//#region Quick Settings
 					*/
 					
-					.platform-osx #channelTabs-settingsMenu {
+					html:not(.platform-win) #channelTabs-settingsMenu {
 						margin-right: 0;
 					}
 
@@ -2559,19 +2563,19 @@ module.exports = (() => {
 					}
 
 					.channelTabs-tabIcon.channelTabs-onlineIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid rgb(67, 181, 129);
+						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(139, calc(var(--saturation-factor, 1) * 47.3%), 43.9%);
 					}
 
 					.channelTabs-tabIcon.channelTabs-idleIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid rgb(250, 166, 26);
+						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(38, calc(var(--saturation-factor, 1) * 95.7%), 54.1%);
 					}
 
 					.channelTabs-tabIcon.channelTabs-doNotDisturbIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid rgb(216, 68, 68);
+						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
 					}
 
 					.channelTabs-tabIcon.channelTabs-offlineIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid rgb(111, 121, 134);
+						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(214, calc(var(--saturation-factor, 1) * 9.9%), 50.4%);
 					}
 
 					/*
@@ -2651,7 +2655,6 @@ module.exports = (() => {
 						text-align: center;
 						color: #fff;
 					}
-					
 
 					.channelTabs-mentionBadge {
 						background-color: rgb(240, 71, 71);
@@ -2678,7 +2681,6 @@ module.exports = (() => {
 						float: right;
 					}
 
-
 					.channelTabs-tab .channelTabs-mentionBadge,
 					.channelTabs-tab .channelTabs-unreadBadge,
 					.channelTabs-tab .channelTabs-typingBadge {
@@ -2690,7 +2692,6 @@ module.exports = (() => {
 						right: calc(0px - var(--channelTabs-tabStatusBorderThickness));
 						bottom: calc(0px - var(--channelTabs-tabStatusBorderThickness));
 					}
-					
 
 					.channelTabs-tab .channelTabs-noMention,
 					.channelTabs-tab .channelTabs-noUnread {
@@ -2711,6 +2712,7 @@ module.exports = (() => {
 						vertical-align: bottom;
 						float: right;
 						margin-left: 2px;
+						margin-right: 6px;
 					}
 				
 					.channelTabs-fav .channelTabs-noMention,
@@ -2802,27 +2804,19 @@ module.exports = (() => {
 					}
 
 					.channelTabs-favIcon.channelTabs-onlineIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid rgb(67, 181, 129);
-						left: var(--channelTabs-favStatusBorderThickness);
-						top: var(--channelTabs-favStatusBorderThickness);
+						border: var(--channelTabs-favStatusBorderThickness) solid hsl(139, calc(var(--saturation-factor, 1) * 47.3%), 43.9%);
 					}
 
 					.channelTabs-favIcon.channelTabs-idleIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid rgb(250, 166, 26);
-						left: var(--channelTabs-favStatusBorderThickness);
-						top: var(--channelTabs-favStatusBorderThickness);
+						border: var(--channelTabs-favStatusBorderThickness) solid hsl(38, calc(var(--saturation-factor, 1) * 95.7%), 54.1%);
 					}
 
 					.channelTabs-favIcon.channelTabs-doNotDisturbIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid rgb(216, 68, 68);
-						left: var(--channelTabs-favStatusBorderThickness);
-						top: var(--channelTabs-favStatusBorderThickness);
+						border: var(--channelTabs-favStatusBorderThickness) solid hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
 					}
 
 					.channelTabs-favIcon.channelTabs-offlineIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid rgb(111, 121, 134);
-						left: var(--channelTabs-favStatusBorderThickness);
-						top: var(--channelTabs-favStatusBorderThickness);
+						border: var(--channelTabs-favStatusBorderThickness) solid hsl(214, calc(var(--saturation-factor, 1) * 9.9%), 50.4%);
 					}
 
 					/*
