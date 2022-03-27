@@ -2470,7 +2470,7 @@ module.exports = (() => {
 						display: flex;
 						width: calc(100% - 14px);
 						align-items: center;
-						margin-right: unset;
+						margin-right: unset !important;
 					}
 					
 					.channelTabs-tab:not(.channelTabs-selected):hover {
@@ -2588,6 +2588,7 @@ module.exports = (() => {
 
 					.channelTabs-closeTab {
 						position: relative;
+						flex-shrink: 0;
 						width: 14px;
 						height: 14px;
 						font-size: 14px;
