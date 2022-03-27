@@ -49,18 +49,18 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.8",
+			version: "2.5.9",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "Fixed",
-				"type": "fixed",
+				"title": "NEW LOOK",
+				"type": "added",
 				"items": [
-					"The plugin now works again",
-					"Context menus are still broken, but at least everything else should work again now"
+					"Tabs squish n' squash like a normal browser!",
+					"Looks a bit closer to a native look."
 				]
 			}
 		]
