@@ -2436,7 +2436,7 @@ module.exports = (() => {
 						padding-top: var(--channelTabs-containerSpacing);
 					}
 
-					#channelTabs-settingsMenu~div:last-child {
+					#channelTabs-container>div:last-child {
 						padding-bottom: var(--channelTabs-paddingBottom);
 					}
 					
