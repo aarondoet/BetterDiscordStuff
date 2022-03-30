@@ -49,18 +49,26 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.5.9",
+			version: "2.6.0",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
+				"title": "Fixed",
+				"type": "fixed",
+				"items": [
+					"Force updating the AppView works again, meaning the top bar should always show up. Thanks to eternal#1000 for the fix!"
+				]
+			},
+			{
 				"title": "NEW LOOK",
 				"type": "added",
 				"items": [
 					"Tabs squish n' squash like a normal browser!",
-					"Looks a bit closer to a native look."
+					"Looks a bit closer to a native look.",
+					"Thank you Disease#3749"
 				]
 			}
 		]
@@ -93,8 +101,8 @@ module.exports = (() => {
 
 			//#region Module/Variable Definitions
 
-			const { InternalUtilities, WebpackModules, PluginUtilities, DiscordModules, DiscordClassModules, Patcher, DCM, ReactComponents, Settings, Utilities, Modals } = Api;
-			const { React, ReactDOM, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore, DiscordAPI } = DiscordModules;
+			const { WebpackModules, PluginUtilities, DiscordModules, Patcher, DCM, ReactComponents, ReactTools, Settings, Modals } = Api;
+			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore } = DiscordModules;
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
 			const Flux = WebpackModules.getByProps("connectStores");
@@ -2956,9 +2964,13 @@ module.exports = (() => {
 							returnValue.props.children
 						].flat();
 					});
-					AppView.selector = ".app-2CXKsg"; // dirty fix for AppView.selector still being the old one, breaking forceUpdateAll()
-					AppView.forceUpdateAll();
-					patches.push(()=>AppView.forceUpdateAll());
+					const forceUpdate = ()=>{
+						const { app } = WebpackModules.getByProps("app", "layers") || {};
+						const query = document.querySelector(`.${app}`);
+						if(query) ReactTools.getOwnerInstance(query)?.forceUpdate?.();
+					};
+					forceUpdate();
+					patches.push(()=>forceUpdate());
 				}
 				
 				patchContextMenus()
