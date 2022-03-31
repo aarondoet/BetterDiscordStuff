@@ -49,26 +49,17 @@ module.exports = (() => {
 					twitter_username: "carter5467_99"
 				}
 			],
-			version: "2.6.0",
+			version: "2.6.1",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "Fixed",
+				"title": "Squashed the squish",
 				"type": "fixed",
 				"items": [
-					"Force updating the AppView works again, meaning the top bar should always show up. Thanks to eternal#1000 for the fix!"
-				]
-			},
-			{
-				"title": "NEW LOOK",
-				"type": "added",
-				"items": [
-					"Tabs squish n' squash like a normal browser!",
-					"Looks a bit closer to a native look.",
-					"Thank you Disease#3749"
+					"Tabs now have a minimum width before moving to a new row."
 				]
 			}
 		]
@@ -113,11 +104,11 @@ module.exports = (() => {
 			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
 			const UserStatusStore = DiscordModules.UserStatusStore;
 
-			const DefaultUserIconGrey = "https://discordapp.com/assets/322c936a8c8be1b803cd94861bdfa868.png";
-			const DefaultUserIconGreen = "https://discordapp.com/assets/dd4dbc0016779df1378e7812eabaa04d.png";
-			const DefaultUserIconBlue = "https://discordapp.com/assets/6debd47ed13483642cf09e832ed0bc1b.png";
-			const DefaultUserIconRed = "https://discordapp.com/assets/1cbd08c76f8af6dddce02c5138971129.png";
-			const DefaultUserIconYellow = "https://discordapp.com/assets/0e291f67c9274a1abdddeb3fd919cbaa.png";
+			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
+			const DefaultUserIconGreen = "https://cdn.discordapp.com/embed/avatars/1.png";
+			const DefaultUserIconBlue = "https://cdn.discordapp.com/embed/avatars/2.png";
+			const DefaultUserIconRed = "https://cdn.discordapp.com/embed/avatars/3.png";
+			const DefaultUserIconYellow = "https://cdn.discordapp.com/embed/avatars/4.png";
 
 			const SettingsMenuIcon = `<svg class="channelTabs-settingsIcon" aria-hidden="false" viewBox="0 0 80 80">
 			<rect fill="var(--interactive-normal)" x="20" y="15" width="50" height="10"></rect>
@@ -1136,6 +1127,7 @@ module.exports = (() => {
 					else return pathname;
 				}else{
 					if(pathname === "/channels/@me") return "Friends";
+					else if(pathname.startsWith("/channels/@favorites")) return "Favorites";
 					else if(pathname.match(/^\/[a-z\-]+$/)) return pathname.substr(1).split("-").map(part => part.substr(0, 1).toUpperCase() + part.substr(1)).join(" ");
 					else return pathname;
 				}
@@ -1149,10 +1141,10 @@ module.exports = (() => {
 					if(!channel) return "";
 					if(channel.guild_id){
 						const guild = GuildStore.getGuild(channel.guild_id);
-						return guild.getIconURL() || DefaultUserIconBlue;
+						return guild.getIconURL(40, false) || DefaultUserIconBlue;
 					}else if(channel.isDM()){
 						const user = UserStore.getUser(channel.getRecipientId());
-						return user.getAvatarURL();
+						return user.getAvatarURL(null, 40, false);
 					}else if(channel.isGroupDM()){
 						if(channel.icon) return `https://cdn.discordapp.com/channel-icons/${channel.id}/${channel.icon}.webp`;
 						else return DefaultUserIconGreen;
@@ -1188,13 +1180,24 @@ module.exports = (() => {
 			const TabIcon = props=>React.createElement(
 				"img",
 				{
-					className: "channelTabs-tabIcon" 
+					className: "channelTabs-tabIcon",
+					src: !props.iconUrl ? DefaultUserIconGrey :props.iconUrl
+				}
+			);
+
+			const TabStatus = props=>React.createElement(
+				"rect",
+				{
+						width: 6,
+						height: 6,
+						x: 14,
+						y: 14,
+					className: "channelTabs-tabStatus"
 					+ (props.currentStatus == "online" ? " channelTabs-onlineIcon" : "")
 					+ (props.currentStatus == "idle" ? " channelTabs-idleIcon" : "")
 					+ (props.currentStatus == "dnd" ? " channelTabs-doNotDisturbIcon" : "")
 					+ (props.currentStatus == "offline" ? " channelTabs-offlineIcon" : "")
-					+ (props.currentStatus == "none" ? " channelTabs-noneIcon" : ""),
-					src: (props.iconUrl != null ? props.iconUrl : DefaultUserIconGrey)
+					+ (props.currentStatus == "none" ? " channelTabs-noneIcon" : "")
 				}
 			);
 
@@ -1259,7 +1262,17 @@ module.exports = (() => {
 				return React.createElement(
 					"div",
 					{},
-					React.createElement(TabIcon, {iconUrl: props.iconUrl, currentStatus: props.currentStatus }),
+					React.createElement("svg", {
+							className: "channelTabs-tabIconWrapper",
+							width: "20",
+							height: "20",
+							viewBox: "0 0 20 20"
+						},
+						props.currentStatus === "none" 
+						? React.createElement("foreignObject", { x: 0, y: 0, width: 20, height: 20 }, React.createElement(TabIcon, { iconUrl: props.iconUrl })) 
+						: React.createElement("foreignObject", { x: 0, y: 0, width: 20, height: 20, mask: "url(#svg-mask-avatar-status-round-20)" }, React.createElement(TabIcon, { iconUrl: props.iconUrl })),
+						props.currentStatus === "none" ? null : React.createElement(TabStatus, { currentStatus: props.currentStatus })
+					),
 					React.createElement(TabName, {name: props.name}),
 					React.createElement(
 						"div",
@@ -1288,13 +1301,18 @@ module.exports = (() => {
 			const CompactTab = (props)=>{
 				return React.createElement(
 					"div",
-					{
-						style: 
-						{
-							"margin-right": "8px"	
-						}
-					},
-					React.createElement(TabIcon, {iconUrl: props.iconUrl, currentStatus: props.currentStatus}),
+					{},
+					React.createElement("svg", {
+							className: "channelTabs-tabIconWrapper",
+							width: "20",
+							height: "20",
+							viewBox: "0 0 20 20"
+						},
+						props.currentStatus === "none" 
+						? React.createElement("foreignObject", { x: 0, y: 0, width: 20, height: 20 }, React.createElement(TabIcon, { iconUrl: props.iconUrl })) 
+						: React.createElement("foreignObject", { x: 0, y: 0, width: 20, height: 20, mask: "url(#svg-mask-avatar-status-round-20)" }, React.createElement(TabIcon, { iconUrl: props.iconUrl })),
+						props.currentStatus === "none" ? null : React.createElement(TabStatus, { currentStatus: props.currentStatus })
+					),
 					React.createElement(TabName, {name: props.name}),
 					!(props.selected ? props.showActiveTabTypingBadge : props.showTabTypingBadge) ? null : React.createElement(
 					   React.Fragment,
@@ -1400,13 +1418,24 @@ module.exports = (() => {
 			const FavIcon = props=>React.createElement(
 				"img",
 				{
-					className: "channelTabs-favIcon"
+					className: "channelTabs-favIcon",
+					src: !props.iconUrl ? DefaultUserIconGrey :props.iconUrl
+				}
+			);
+
+			const FavStatus = props=>React.createElement(
+				"rect",
+				{
+						width: 6,
+						height: 6,
+						x: 14,
+						y: 14,
+					className: "channelTabs-favStatus"
 					+ (props.currentStatus == "online" ? " channelTabs-onlineIcon" : "")
 					+ (props.currentStatus == "idle" ? " channelTabs-idleIcon" : "")
 					+ (props.currentStatus == "dnd" ? " channelTabs-doNotDisturbIcon" : "")
 					+ (props.currentStatus == "offline" ? " channelTabs-offlineIcon" : "")
-					+ (props.currentStatus == "none" ? " channelTabs-noneIcon" : ""),
-					src: !props.iconUrl ? DefaultUserIconGrey :props.iconUrl
+					+ (props.currentStatus == "none" ? " channelTabs-noneIcon" : "")
 				}
 			);
 
@@ -1503,7 +1532,19 @@ module.exports = (() => {
 					},
 				},
 
-				React.createElement(FavIcon, {iconUrl: props.iconUrl, currentStatus: props.currentStatus}),
+
+				React.createElement("svg", {
+						className: "channelTabs-favIconWrapper",
+						width: "20",
+						height: "20",
+						viewBox: "0 0 20 20"
+					},
+					props.currentStatus === "none" 
+					? React.createElement("foreignObject", { x: 0, y: 0, width: 20, height: 20 }, React.createElement(FavIcon, { iconUrl: props.iconUrl })) 
+					: React.createElement("foreignObject", { x: 0, y: 0, width: 20, height: 20, mask: "url(#svg-mask-avatar-status-round-20)" }, React.createElement(FavIcon, { iconUrl: props.iconUrl })),
+					props.currentStatus === "none" ? null : React.createElement(FavStatus, { currentStatus: props.currentStatus })
+				),
+
 				React.createElement(FavName, {name: props.name}),
 				!(props.showFavUnreadBadges && (props.channelId || props.guildId)) ? null : React.createElement(
 					React.Fragment,
@@ -2327,7 +2368,8 @@ module.exports = (() => {
 						:root {	
 							--channelTabs-tabHeight: 22px;
 							--channelTabs-favHeight: 22px;
-							--channelTabs-macHeight: initial;
+							--channelTabs-tabNameFontSize: 12px;
+							--channelTabs-openTabSize: 18px;
 						}
 					`;
 
@@ -2335,19 +2377,25 @@ module.exports = (() => {
 						:root {	
 							--channelTabs-tabHeight: 32px;
 							--channelTabs-favHeight: 28px;
-							--channelTabs-macHeight: 41px;
+							--channelTabs-tabNameFontSize: 13px;
+							--channelTabs-openTabSize: 24px;
 						}
 					`;
 
 					const ConstantVariables = `
 						:root {	
 							--channelTabs-tabWidth: 224px;
-							--channelTabs-tabStatusBorderThickness: 2px;
-							--channelTabs-favStatusBorderThickness: 2px;
-							--channelTabs-winButtonWidth: 84px;
-							--channelTabs-paddingTop: 8px;
-							--channelTabs-paddingBottom: 4px;
-							--channelTabs-containerSpacing: 3px;
+							--channelTabs-tabMinWidth: 100px;
+							--channelTabs-tabMinWidth: 100px;
+
+							--channelTabs-background: transparent;
+
+							--channelTabs-tabBackground: transparent;
+							--channelTabs-tabBackgroundHover: var(--background-modifier-hover);
+							--channelTabs-tabBackgroundSelected: var(--background-modifier-selected);
+
+							--channelTabs-favBackground: transparent;
+							--channelTabs-favBackgroundHover: var(--background-modifier-hover);
 						}
 					`;
 
@@ -2379,114 +2427,74 @@ module.exports = (() => {
 					//#region Tab Base/Container
 					*/
 
-					.platform-win .titleBar-1it3bQ {
-						position: absolute;
-						right: 0;
-						z-index: unset;
-						-webkit-app-region: unset;
-						padding: unset;
-						background: unset;
-						box-shadow: unset;
-					}
-					
-					.platform-win .withFrame-2dL45i {
-						margin-top: unset;
-					}
-					
-					.winButton-3UMjdg {
-						top: unset;
-						height: calc(var(--channelTabs-tabHeight) + var(--channelTabs-paddingTop) + var(--channelTabs-paddingBottom));
-						z-index: 9999;
-					}
-					
-					.platform-win .wordmark-2u86JB {
-						display: none;
-					}
-					
+					/*
+					//#macos
+					*/
+
 					.platform-osx .wrapper-1_HaEi {
 						margin-top: 0;
+						padding-top: 0;
 					}
-					
+
 					html:not(.platform-win) .sidebar-1tnWFu {
 						border-radius: 8px 0 0;
 						overflow: hidden;
 					}
-					
-					.macButtons-eIdy0e {
-						height: var(--channelTabs-macHeight);
-					}
 
-					#channelTabs-container>#channelTabs-settingsMenu+div,
-					#channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						padding-top: var(--channelTabs-paddingTop);
-						padding-right: 72px;
+					.platform-osx #channelTabs-container {
+						padding-top: calc(4px + 32px);
 						-webkit-app-region: drag;
 					}
-					
-					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div,
-					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						padding-left: 8px;
-					}
-					
-					.platform-osx #channelTabs-container>#channelTabs-settingsMenu+div,
-					.platform-osx #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						padding-left: 0;
-						margin-left: 72px;
-					}
-					
-					.platform-win #channelTabs-container>#channelTabs-settingsMenu+div,
-					.platform-win #channelTabs-container>:first-child:not(#channelTabs-settingsMenu) {
-						margin-right: var(--channelTabs-winButtonWidth);
-					}
-					
-					#channelTabs-container>#channelTabs-settingsMenu+div+.channelTabs-favContainer,
-					#channelTabs-container>:first-child:not(#channelTabs-settingsMenu)+.channelTabs-favContainer {
-						padding-top: var(--channelTabs-containerSpacing);
-					}
 
-					#channelTabs-container>div:last-child {
-						padding-bottom: var(--channelTabs-paddingBottom);
-					}
-					
-					html:not(.platform-win) #channelTabs-container>#channelTabs-settingsMenu+div>*,
-					html:not(.platform-win) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
-					html:not(.platform-osx) #channelTabs-container>#channelTabs-settingsMenu+div>*,
-					html:not(.platform-osx) #channelTabs-container>:first-child:not(#channelTabs-settingsMenu)>*,
-					.menu-1QACrS {
+					.platform-osx #channelTabs-container>* {
 						-webkit-app-region: no-drag;
 					}
-					
+
+					/*
+					//#endregion
+					*/
+
 					#channelTabs-container {
 						z-index: 1000;
+						padding: 4px 8px 1px 8px;
+						background: var(--channelTabs-background);
 					}
 					
 					.channelTabs-tabContainer {
 						display: flex;
 						align-items: center;
+						flex-wrap:wrap;
+					}
+
+					#channelTabs-container>div:not(.channelTabs-tabContainer):last-child {
+						padding-top: 4px;
+						border-top: 1px solid var(--background-modifier-accent);
 					}
 
 					.channelTabs-tab {
 						display: flex;
 						align-items: center;
-						min-width: 0;
-						border-radius: 4px;
 						height: var(--channelTabs-tabHeight);
-						flex: 0 1 var(--channelTabs-tabWidth);
+						background: var(--channelTabs-tabBackground);
+						border-radius: 4px;
+						min-width: var(--channelTabs-tabMinWidth);
+						max-width: var(--channelTabs-tabWidth);
+						flex: 1 1 var(--channelTabs-tabMinWidth);
+						margin-bottom: 3px;
 					}
 					
 					.channelTabs-tab>div:first-child {
 						display: flex;
 						width: calc(100% - 14px);
 						align-items: center;
-						margin-right: unset !important;
 					}
 					
 					.channelTabs-tab:not(.channelTabs-selected):hover {
-						background: var(--background-modifier-hover);
+						background: var(--channelTabs-tabBackgroundHover);
 					}
 					
 					.channelTabs-tab.channelTabs-selected {
-						background: var(--background-modifier-selected);
+						background: var(--channelTabs-tabBackgroundSelected);
 					}
 
 					.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
@@ -2512,13 +2520,11 @@ module.exports = (() => {
 					}
 
 					#channelTabs-settingsMenu {
-						position: relative;
-						display: inline-block;
-						float: right;
+						position: absolute;
+						right:0;
 						width: 20px;
-						height: calc(var(--channelTabs-tabHeight) + var(--channelTabs-paddingTop) + var(--channelTabs-paddingBottom));
-						margin-right: var(--channelTabs-winButtonWidth);
-						z-index: 9999;
+						height: 20px;
+						z-index: 1000;
 					}
 
 					#channelTabs-settingsMenu:hover {
@@ -2542,9 +2548,10 @@ module.exports = (() => {
 					//#region Tab Name
 					*/
 
-					.channelTabs-tabName {
-						margin: 0 6px 1px 0;
-						font-size: 12px;
+					.channelTabs-tab .channelTabs-tabName {
+						margin-right: 6px;
+						margin-bottom: 1px;
+						font-size: var(--channelTabs-tabNameFontSize);
 						line-height: normal;
 						color: var(--interactive-normal);
 						overflow: hidden;
@@ -2552,7 +2559,7 @@ module.exports = (() => {
 						text-overflow: ellipsis;
 					}
 					
-					.channelTabs-selected .channelTabs-tabName {
+					.channelTabs-tab.channelTabs-selected .channelTabs-tabName {
 						color: var(--interactive-active);
 					}
 
@@ -2565,25 +2572,33 @@ module.exports = (() => {
 					*/
 
 					.channelTabs-tabIcon {
-						border-radius: 50%;
 						height: 20px;
+						border-radius: 50%;
+					}
+
+					.channelTabs-tabIconWrapper {
 						margin: 0 6px;
+						flex-shrink: 0;
 					}
 
-					.channelTabs-tabIcon.channelTabs-onlineIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(139, calc(var(--saturation-factor, 1) * 47.3%), 43.9%);
+					.channelTabs-onlineIcon {
+						fill: hsl(139, calc(var(--saturation-factor, 1) * 47.3%), 43.9%);
+						mask: url(#svg-mask-status-online);
 					}
 
-					.channelTabs-tabIcon.channelTabs-idleIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(38, calc(var(--saturation-factor, 1) * 95.7%), 54.1%);
+					.channelTabs-idleIcon {
+						fill: hsl(38, calc(var(--saturation-factor, 1) * 95.7%), 54.1%);
+						mask: url(#svg-mask-status-idle);
 					}
 
-					.channelTabs-tabIcon.channelTabs-doNotDisturbIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
+					.channelTabs-doNotDisturbIcon {
+						fill: hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
+						mask: url(#svg-mask-status-dnd);
 					}
 
-					.channelTabs-tabIcon.channelTabs-offlineIcon {
-						border: var(--channelTabs-tabStatusBorderThickness) solid hsl(214, calc(var(--saturation-factor, 1) * 9.9%), 50.4%);
+					.channelTabs-offlineIcon {
+						fill: hsl(214, calc(var(--saturation-factor, 1) * 9.9%), 50.4%);
+						mask: url(#svg-mask-status-offline);
 					}
 
 					/*
@@ -2611,11 +2626,11 @@ module.exports = (() => {
 					
 					.channelTabs-newTab {
 						flex-shrink: 0;
-						width: 18px;
-						height: 18px;
-						margin: 0 6px 0 6px;
-						font-size: 18px;
-						font-weight: 700;
+						width: var(--channelTabs-openTabSize);
+						height: var(--channelTabs-openTabSize);
+						margin: 0 6px 3px 6px;
+						font-size: var(--channelTabs-openTabSize);
+						font-weight: 500;
 						font-family: Whitney,"Helvetica Neue",Helvetica,Arial,sans-serif;
 						text-align: center;
 						border-radius: 50%;
@@ -2623,10 +2638,13 @@ module.exports = (() => {
 						color: var(--interactive-normal);
 					}
 					
-					.channelTabs-closeTab:hover,
 					.channelTabs-newTab:hover {
 						background: var(--background-modifier-selected);
-						color: var(--interactive-hover);
+						color: white;
+					}
+					.channelTabs-closeTab:hover {
+						background: hsl(359,calc(var(--saturation-factor, 1)*82.6%),59.4%);
+						color: white;
 					}
 
 					/*
@@ -2636,6 +2654,11 @@ module.exports = (() => {
 					/*
 					//#region Badges
 					*/
+
+					.channelTabs-gridContainer {
+						display: flex;
+						margin-right: 6px;
+					}
 
 					.channelTabs-mentionBadge,
 					.channelTabs-unreadBadge {
@@ -2666,10 +2689,10 @@ module.exports = (() => {
 					}
 
 					.channelTabs-mentionBadge {
-						background-color: rgb(240, 71, 71);
+						background-color: hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
 					}
 					.channelTabs-unreadBadge {
-						background-color: rgb(114, 137, 218);
+						background-color: hsl(235, calc(var(--saturation-factor, 1) * 86%), 65%);
 					}
 
 					.channelTabs-typingBadge {
@@ -2677,7 +2700,7 @@ module.exports = (() => {
 					}
 
 					.channelTabs-classicBadgeAlignment {
-						margin-right: 4px;
+						margin-right: 6px;
 						display: inline-block;
 						float: right;
 					}
@@ -2694,12 +2717,6 @@ module.exports = (() => {
 					.channelTabs-tab .channelTabs-unreadBadge,
 					.channelTabs-tab .channelTabs-typingBadge {
 						height: 16px;
-					}
-
-					.channelTabs-typingBadgeAlignment {
-						position: absolute;
-						right: calc(0px - var(--channelTabs-tabStatusBorderThickness));
-						bottom: calc(0px - var(--channelTabs-tabStatusBorderThickness));
 					}
 
 					.channelTabs-tab .channelTabs-noMention,
@@ -2733,8 +2750,8 @@ module.exports = (() => {
 						display: none;
 					}
 					
-					.channelTabs-fav>div:nth-last-child(2) {
-						margin-right: 6px;
+					.channelTabs-fav .channelTabs-favName + div {
+						margin-left: 6px;
 					}
 
 					.channelTabs-favGroupBtn .channelTabs-noMention,
@@ -2773,7 +2790,7 @@ module.exports = (() => {
 					.channelTabs-favContainer {
 						display: flex;
 						align-items: center;
-						padding: 0 8px 0 8px;
+						flex-wrap:wrap;
 					}
 
 					.channelTabs-fav {
@@ -2782,23 +2799,30 @@ module.exports = (() => {
 						min-width: 0;
 						border-radius: 4px;
 						height: var(--channelTabs-favHeight);
-						flex: 0 1 1;
+						background: var(--channelTabs-favBackground);
+						flex: 0 0 1;
 						max-width: var(--channelTabs-tabWidth);
+						margin-bottom: 3px;
+						padding-left: 6px;
+						padding-right: 6px;
 					}
 
 					.channelTabs-fav:hover {
-						background: var(--background-modifier-hover);
+						background: var(--channelTabs-favBackgroundHover);
+					}
+
+					.channelTabs-favIconWrapper {
+						margin-right: 6px;
 					}
 
 					.channelTabs-favIcon {
-						border-radius: 50%;
 						height: 20px;
-						margin: 0 6px;
+						border-radius: 50%;
 					}
 
-					.channelTabs-favIcon ~ .channelTabs-favName {
-						margin: 0 6px 1px 0;
-						font-size: 12px;
+					.channelTabs-favName {
+						margin-bottom: 1px;
+						font-size: var(--channelTabs-tabNameFontSize);
 						line-height: normal;
 						color: var(--interactive-normal);
 						overflow: hidden;
@@ -2810,22 +2834,6 @@ module.exports = (() => {
 						color: var(--text-muted);
 						font-size: 14px;
 						padding: 2px;
-					}
-
-					.channelTabs-favIcon.channelTabs-onlineIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid hsl(139, calc(var(--saturation-factor, 1) * 47.3%), 43.9%);
-					}
-
-					.channelTabs-favIcon.channelTabs-idleIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid hsl(38, calc(var(--saturation-factor, 1) * 95.7%), 54.1%);
-					}
-
-					.channelTabs-favIcon.channelTabs-doNotDisturbIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
-					}
-
-					.channelTabs-favIcon.channelTabs-offlineIcon {
-						border: var(--channelTabs-favStatusBorderThickness) solid hsl(214, calc(var(--saturation-factor, 1) * 9.9%), 50.4%);
 					}
 
 					/*
@@ -2850,6 +2858,7 @@ module.exports = (() => {
 						overflow: hidden;
 						white-space: nowrap;
 						text-overflow: ellipsis;
+						margin-bottom: 3px;
 					}
 					
 					.channelTabs-favGroupBtn>:first-child {
@@ -2869,6 +2878,11 @@ module.exports = (() => {
 						-webkit-box-shadow: var(--elevation-high);
 						box-shadow: var(--elevation-high);
 						border-radius: 4px;
+						padding: 4px;
+					}
+					
+					.channelTabs-favGroup-content>:last-child {
+						margin-bottom: 0;
 					}
 
 					.channelTabs-favGroupShow {
