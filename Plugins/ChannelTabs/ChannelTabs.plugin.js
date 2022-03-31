@@ -2386,7 +2386,6 @@ module.exports = (() => {
 						:root {	
 							--channelTabs-tabWidth: 224px;
 							--channelTabs-tabMinWidth: 100px;
-							--channelTabs-tabMinWidth: 100px;
 
 							--channelTabs-background: transparent;
 
@@ -2833,7 +2832,7 @@ module.exports = (() => {
 					.channelTabs-noFavNotice {
 						color: var(--text-muted);
 						font-size: 14px;
-						padding: 2px;
+						padding: 3px;
 					}
 
 					/*
@@ -3116,7 +3115,7 @@ module.exports = (() => {
 						showFavUnreadBadges: true,
 						showFavMentionBadges: true,
 						showFavTypingBadge: true,
-						showEmptyFavBadges: true,
+						showEmptyFavBadges: false,
 						showTabUnreadBadges: true,
 						showTabMentionBadges: true,
 						showTabTypingBadge: true,
@@ -3125,12 +3124,12 @@ module.exports = (() => {
 						showActiveTabMentionBadges: false,
 						showActiveTabTypingBadge: false,
 						showEmptyActiveTabBadges: false,
-						compactStyle: true,
+						compactStyle: false,
 						privacyMode: false,
 						showFavGroupUnreadBadges: true,
 						showFavGroupMentionBadges: true,
 						showFavGroupTypingBadge: true,
-						showEmptyFavGroupBadges: true,
+						showEmptyFavGroupBadges: false,
 						showQuickSettings: true,
 						alwaysFocusNewTabs: false
 					};
