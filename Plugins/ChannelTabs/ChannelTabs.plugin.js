@@ -56,10 +56,28 @@ module.exports = (() => {
 		},
 		changelog: [
 			{
-				"title": "Squashed the squish",
-				"type": "fixed",
+				"title": "Improvements",
+				"type": "improved",
 				"items": [
-					"Tabs now have a minimum width before moving to a new row."
+					"**Tab overflow on minimum width.** Tabs now have a minimum width and can overflow into a new row, preventing the tabs from being squished to oblivion. You can adjust the minimum value in Appearance settings.",
+					"**Standard status indicators.** The old status borders got replaced with ones like in the member list and user pop-out, you can revert this change in Appearance settings.",
+					"**New default icons.** The updated equivalent, no more blank icon issues.",
+					"**Sharper icons.** They're tiny, but better."
+				]
+			},
+			{
+				"title": "New stuff",
+				"type": "added",
+				"items": [
+					"**Navigation buttons.** Left, Right, and Close buttons for when you don't feel like pressing a shortcut key.",
+					"**Support for the Favorites experiment.** It may not officially be a feature yet, but the support is there."
+				]
+			},
+			{
+				"title": "Check settings!!!",
+				"type": "progress",
+				"items": [
+					"**Be aware of a Compact mode and Cozy mode.** For when your tabs look comically thin, they are in the settings."
 				]
 			}
 		]
@@ -616,6 +634,54 @@ module.exports = (() => {
 													}
 												},
 												{
+													label: "Radial Status Indicators",
+													type: "toggle",
+													id: "radialStatusMode",
+													checked: () => TopBarRef.current.state.radialStatusMode,
+													action: () => {
+														instance.setState({
+															radialStatusMode: !instance.state.radialStatusMode
+														}, ()=>{
+															instance.props.plugin.settings.radialStatusMode = !instance.props.plugin.settings.radialStatusMode;
+															instance.props.plugin.removeStyle();
+															instance.props.plugin.applyStyle();
+															instance.props.plugin.saveSettings();
+														});
+													}
+												},
+												{
+													id: "tabWidthMinSubText",
+													disabled: true,
+													render: () => {
+														return React.createElement("div", {style: { "color": "var(--text-muted)", "padding": "8px", "font-size": "12px",  "white-space": "pre-wrap" }},
+														"Minimum tab width: " + instance.props.plugin.settings.tabWidthMin + "px");
+													}
+												},
+												{
+													id: "tabWidthMin",
+													render: () => {
+														return React.createElement("div",
+															{
+																className: "channelTabs-sliderContainer"
+															},
+															React.createElement("input", {
+																className: "channelTabs-slider",
+																type: "range",
+																min: 50,
+																max: 220,
+																step: 10,
+																defaultValue: instance.props.plugin.settings.tabWidthMin,
+																onChange: ({target}) => (
+																	instance.props.plugin.settings.tabWidthMin = target.value,
+																	instance.props.plugin.saveSettings(),
+																	document.documentElement.style.setProperty("--channelTabs-tabWidthMin", instance.props.plugin.settings.tabWidthMin + "px")
+																),
+																onClick: () => instance.props.plugin.applyStyle("channelTabs-style-constants")
+															})
+														)
+													}
+												},
+												{
 													type: "separator"
 												},
 												{
@@ -662,7 +728,23 @@ module.exports = (() => {
 															instance.props.plugin.saveSettings();
 														});
 													}
-												}		
+												},
+												{
+													label: "Show Navigation Buttons",
+													type: "toggle",
+													id: "showNavButtons",
+													checked: () => TopBarRef.current.state.showNavButtons,
+													action: () => {
+														instance.setState({
+															showNavButtons: !instance.state.showNavButtons
+														}, ()=>{
+															instance.props.plugin.settings.showNavButtons = !instance.props.plugin.settings.showNavButtons;
+															instance.props.plugin.removeStyle();
+															instance.props.plugin.applyStyle();
+															instance.props.plugin.saveSettings();
+														});
+													}
+												}
 											]
 										},
 										{
@@ -985,7 +1067,7 @@ module.exports = (() => {
 
 			//#region Global Common Functions
 
-			const closeAllDropdowns = () => 
+			const closeAllDropdowns = () =>
 			{
 				var dropdowns = document.getElementsByClassName("channelTabs-favGroup-content");
 				var i;
@@ -1040,7 +1122,7 @@ module.exports = (() => {
 
 			const getCurrentUserStatus = (pathname = location.pathname)=>
 			{
-				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
+				const cId = (pathname.match(/^\/channels\/(\d+|@me|@favorites)\/(\d+)/) || [])[2];
 				if(cId)
 				{
 					const channel = ChannelStore.getChannel(cId);
@@ -1119,7 +1201,7 @@ module.exports = (() => {
 
 			const getCurrentName = (pathname = location.pathname)=>
 			{
-				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
+				const cId = (pathname.match(/^\/channels\/(\d+|@me|@favorites)\/(\d+)/) || [])[2];
 				if(cId){
 					const channel = ChannelStore.getChannel(cId);
 					if(channel?.name) return (channel.guildId ? "@" : "#") + channel.name;
@@ -1127,7 +1209,6 @@ module.exports = (() => {
 					else return pathname;
 				}else{
 					if(pathname === "/channels/@me") return "Friends";
-					else if(pathname.startsWith("/channels/@favorites")) return "Favorites";
 					else if(pathname.match(/^\/[a-z\-]+$/)) return pathname.substr(1).split("-").map(part => part.substr(0, 1).toUpperCase() + part.substr(1)).join(" ");
 					else return pathname;
 				}
@@ -1135,7 +1216,7 @@ module.exports = (() => {
 
 			const getCurrentIconUrl = (pathname = location.pathname)=>
 			{
-				const cId = (pathname.match(/^\/channels\/(\d+|@me)\/(\d+)/) || [])[2];
+				const cId = (pathname.match(/^\/channels\/(\d+|@me|@favorites)\/(\d+)/) || [])[2];
 				if(cId){
 					const channel = ChannelStore.getChannel(cId);
 					if(!channel) return "";
@@ -1218,7 +1299,7 @@ module.exports = (() => {
 						props.closeTab();
 					}
 				},
-				"⨯"
+				React.createElement(WebpackModules.getByDisplayName("PlusAlt"), {})
 			);
 
 			const TabUnreadBadge = props=>React.createElement("div", {
@@ -1575,7 +1656,7 @@ module.exports = (() => {
 					className: "channelTabs-newTab",
 					onClick: props.openNewTab
 				},
-				"+"
+				React.createElement(WebpackModules.getByDisplayName("PlusAlt"), {})
 			);		
 
 			//#endregion
@@ -1765,12 +1846,43 @@ module.exports = (() => {
 						
 			//#region FavBar/TopBar/TabBar Definitions
 
+			function nextTab(){
+				if(TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex + 1) % TopBarRef.current.state.tabs.length);
+			}
+
+			function previousTab(){
+				if(TopBarRef.current) TopBarRef.current.switchToTab((TopBarRef.current.state.selectedTabIndex - 1 + TopBarRef.current.state.tabs.length) % TopBarRef.current.state.tabs.length);
+			}
+
+			function closeCurrentTab(){
+				if(TopBarRef.current) TopBarRef.current.closeTab(TopBarRef.current.state.selectedTabIndex);
+			}
+
 			const TabBar = props=>React.createElement(
 				"div",
 				{
 					className: "channelTabs-tabContainer",
 					"data-tab-count": props.tabs.length
 				},
+				React.createElement("div", {
+					className: "channelTabs-tabNav"
+				},
+					React.createElement("div", {
+						className: "channelTabs-tabNavLeft",
+						onClick: () =>{ previousTab() }
+					},
+					React.createElement(WebpackModules.getByDisplayName("DropdownArrow"), { open:false })),
+					React.createElement("div", {
+						className: "channelTabs-tabNavRight",
+						onClick: () =>{ nextTab() }
+					},
+					React.createElement(WebpackModules.getByDisplayName("DropdownArrow"), { open:false })),
+					React.createElement("div", {
+						className: "channelTabs-tabNavClose",
+						onClick: () =>{ closeCurrentTab() }
+					},
+					React.createElement(WebpackModules.getByDisplayName("DropdownButton"), { open:true }))
+				),
 				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore, UserTypingStore, UserStatusStore], ()=>({
 					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
 					unreadEstimated: UnreadStateStore.isEstimated(tab.channelId),
@@ -1860,6 +1972,7 @@ module.exports = (() => {
 						addFavGroup: props.addFavGroup,
 						compactStyle: props.compactStyle,
 						showQuickSettings: props.showQuickSettings,
+						showNavButtons: props.showNavButtons,
 						alwaysFocusNewTabs: props.alwaysFocusNewTabs
 					};
 					this.switchToTab = this.switchToTab.bind(this);
@@ -2275,6 +2388,8 @@ module.exports = (() => {
 							showEmptyActiveTabBadges: this.state.showEmptyActiveTabBadges,
 							compactStyle: this.state.compactStyle,
 							privacyMode: this.state.privacyMode,
+							radialStatusMode: this.state.radialStatusMode,
+							tabWidthMin: this.state.tabWidthMin,
 							closeTab: this.closeTab,
 							switchToTab: this.switchToTab,
 							openNewTab: this.openNewTab,
@@ -2290,6 +2405,7 @@ module.exports = (() => {
 							showFavTypingBadge: this.state.showFavTypingBadge,
 							showEmptyFavBadges: this.state.showEmptyFavBadges,
 							privacyMode: this.state.privacyMode,
+							radialStatusMode: this.state.radialStatusMode,
 							showFavGroupUnreadBadges: this.state.showFavGroupUnreadBadges,
 							showFavGroupMentionBadges: this.state.showFavGroupMentionBadges,
 							showFavGroupTypingBadge: this.state.showFavGroupTypingBadge,
@@ -2321,7 +2437,7 @@ module.exports = (() => {
 			//#region Plugin Decleration
 
 			return class ChannelTabs extends Plugin 
-			{				
+			{
 				//#region Start/Stop Functions
 
 				constructor(){
@@ -2384,8 +2500,8 @@ module.exports = (() => {
 
 					const ConstantVariables = `
 						:root {	
-							--channelTabs-tabWidth: 224px;
-							--channelTabs-tabMinWidth: 100px;
+							--channelTabs-tabWidth: 220px;
+							--channelTabs-tabWidthMin: ${this.settings.tabWidthMin}px;
 
 							--channelTabs-background: transparent;
 
@@ -2409,7 +2525,7 @@ module.exports = (() => {
 							opacity: 0.5;
 						}
 						
-						.channelTabs-selected .channelTabs-tabName {
+						#app-mount .channelTabs-selected .channelTabs-tabName {
 							background-color: var(--interactive-active);
 						}
 						
@@ -2419,6 +2535,91 @@ module.exports = (() => {
 							opacity: 0.5;
 						}
 					`;
+
+					const RadialStatusStyle = `
+						.channelTabs-tabIconWrapper,
+						.channelTabs-favIconWrapper {
+							overflow: visible;
+						}
+
+						.channelTabs-tabIconWrapper img[src*="com/avatars/"],
+						.channelTabs-favIconWrapper img[src*="com/avatars/"] {
+							-webkit-clip-path: inset(1px round 50%);
+							clip-path: inset(2px round 50%);
+						}
+						
+						.channelTabs-tabIconWrapper rect,
+						.channelTabs-favIconWrapper rect {
+							x: 0;
+							y: 0;
+							rx: 50%;
+							ry: 50%;
+							-webkit-mask: none;
+							mask: none;
+							fill: none;
+							height: 20px;
+							width: 20px;
+							stroke-width: 2px;
+						}
+						
+						.channelTabs-onlineIcon {
+							stroke: hsl(139, calc(var(--saturation-factor, 1) * 47.3%), 43.9%);
+						}
+						
+						.channelTabs-idleIcon {
+							stroke: hsl(38, calc(var(--saturation-factor, 1) * 95.7%), 54.1%);
+						}
+						
+						.channelTabs-doNotDisturbIcon {
+							stroke: hsl(359, calc(var(--saturation-factor, 1) * 82.6%), 59.4%);
+						}
+						
+						.channelTabs-offlineIcon {
+							stroke: hsl(214, calc(var(--saturation-factor, 1) * 9.9%), 50.4%);
+						}
+					`;
+
+					const tabNavStyle = `
+						.channelTabs-tabContainer .channelTabs-tabNav {
+							display:flex;
+						}
+						
+						.channelTabs-tabContainer:not([data-tab-count="1"]) .channelTabs-tabNav>div:hover {
+							color: var(--interactive-hover);
+							background-color: var(--background-modifier-selected);
+						}
+						
+						.channelTabs-tabContainer[data-tab-count="1"] .channelTabs-tabNav>div {
+							color: var(--text-muted);
+						}
+						
+						.channelTabs-tabNav>div {
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							height: var(--channelTabs-tabHeight);
+							width: 32px;
+							border-radius: 4px;
+							margin: 0 3px 3px 0;
+							color: var(--interactive-normal);
+						}
+
+						.channelTabs-tabNav>div:last-child {
+							margin-right: 6px;
+						}
+						
+						.channelTabs-tabNavLeft svg {
+							transform: rotate(90deg);
+						}
+						
+						.channelTabs-tabNavRight svg {
+							transform: rotate(-90deg);
+						}
+
+						.channelTabs-tabNavClose svg {
+							right:2px;
+						}
+					`;
 		
 					const BaseStyle = `
 
@@ -2426,9 +2627,24 @@ module.exports = (() => {
 					//#region Tab Base/Container
 					*/
 
+					.channelTabs-tabNav {
+						display:none;
+					}
+
 					/*
 					//#macos
 					*/
+
+					.platform-osx .typeMacOS-3V4xXE {
+						position: relative;
+						width: 100%;
+						-webkit-app-region: drag;
+					}
+
+					.platform-osx .typeMacOS-3V4xXE>*,
+					.platform-osx .menu-1QACrS {
+						-webkit-app-region: no-drag;
+					}
 
 					.platform-osx .wrapper-1_HaEi {
 						margin-top: 0;
@@ -2438,15 +2654,6 @@ module.exports = (() => {
 					html:not(.platform-win) .sidebar-1tnWFu {
 						border-radius: 8px 0 0;
 						overflow: hidden;
-					}
-
-					.platform-osx #channelTabs-container {
-						padding-top: calc(4px + 32px);
-						-webkit-app-region: drag;
-					}
-
-					.platform-osx #channelTabs-container>* {
-						-webkit-app-region: no-drag;
 					}
 
 					/*
@@ -2465,7 +2672,7 @@ module.exports = (() => {
 						flex-wrap:wrap;
 					}
 
-					#channelTabs-container>div:not(.channelTabs-tabContainer):last-child {
+					#channelTabs-container>:not(#channelTabs-settingsMenu)+div {
 						padding-top: 4px;
 						border-top: 1px solid var(--background-modifier-accent);
 					}
@@ -2476,9 +2683,9 @@ module.exports = (() => {
 						height: var(--channelTabs-tabHeight);
 						background: var(--channelTabs-tabBackground);
 						border-radius: 4px;
-						min-width: var(--channelTabs-tabMinWidth);
 						max-width: var(--channelTabs-tabWidth);
-						flex: 1 1 var(--channelTabs-tabMinWidth);
+						min-width: var(--channelTabs-tabWidthMin);
+						flex: 1 1 var(--channelTabs-tabWidthMin);
 						margin-bottom: 3px;
 					}
 					
@@ -2549,7 +2756,6 @@ module.exports = (() => {
 
 					.channelTabs-tab .channelTabs-tabName {
 						margin-right: 6px;
-						margin-bottom: 1px;
 						font-size: var(--channelTabs-tabNameFontSize);
 						line-height: normal;
 						color: var(--interactive-normal);
@@ -2610,29 +2816,30 @@ module.exports = (() => {
 
 					.channelTabs-closeTab {
 						position: relative;
-						flex-shrink: 0;
-						width: 14px;
 						height: 14px;
-						font-size: 14px;
-						line-height: 12px;
-						font-family: Whitney,"Helvetica Neue",Helvetica,Arial,sans-serif;
+						width: 14px;
+						flex-shrink: 0;
 						right: 6px;
-						text-align: center;
 						border-radius: 50%;
 						color: var(--interactive-normal);
 						cursor: pointer;
 					}
+
+					.channelTabs-closeTab svg {
+						height: 100%;
+						width: 100%;
+						transform:  rotate(45deg);
+					}
 					
 					.channelTabs-newTab {
+						display:flex;
+						align-items: center;
+						justify-content: center;
 						flex-shrink: 0;
-						width: var(--channelTabs-openTabSize);
 						height: var(--channelTabs-openTabSize);
+						width: 24px;
 						margin: 0 6px 3px 6px;
-						font-size: var(--channelTabs-openTabSize);
-						font-weight: 500;
-						font-family: Whitney,"Helvetica Neue",Helvetica,Arial,sans-serif;
-						text-align: center;
-						border-radius: 50%;
+						border-radius: 4px;
 						cursor: pointer;
 						color: var(--interactive-normal);
 					}
@@ -2641,6 +2848,7 @@ module.exports = (() => {
 						background: var(--background-modifier-selected);
 						color: white;
 					}
+
 					.channelTabs-closeTab:hover {
 						background: hsl(359,calc(var(--saturation-factor, 1)*82.6%),59.4%);
 						color: white;
@@ -2820,7 +3028,6 @@ module.exports = (() => {
 					}
 
 					.channelTabs-favName {
-						margin-bottom: 1px;
 						font-size: var(--channelTabs-tabNameFontSize);
 						line-height: normal;
 						color: var(--interactive-normal);
@@ -2888,6 +3095,24 @@ module.exports = (() => {
 						display:block;
 					}
 
+					.channelTabs-sliderContainer {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						padding: 13px 0;
+						background: var(--slider-background-normal);
+						border-radius: var(--slider-background-radius);
+						margin: 2px 6px 12px 6px;
+					}
+					
+					.channelTabs-sliderContainer:hover {
+						background: var(--slider-background-hover);
+					}
+					
+					.channelTabs-sliderContainer input {
+						height: 6px;
+					}
+
 					/*
 					//#endregion
 					*/
@@ -2896,6 +3121,8 @@ module.exports = (() => {
 					if (this.settings.compactStyle === true) PluginUtilities.addStyle("channelTabs-style-compact", CompactVariables);
 					if (this.settings.compactStyle === false) PluginUtilities.addStyle("channelTabs-style-cozy", CozyVariables);
 					if (this.settings.privacyMode === true) PluginUtilities.addStyle("channelTabs-style-private", PrivacyStyle);
+					if (this.settings.radialStatusMode === true) PluginUtilities.addStyle("channelTabs-style-radialstatus", RadialStatusStyle);
+					if (this.settings.showNavButtons === true) PluginUtilities.addStyle("channelTabs-style-tabnav", tabNavStyle);
 					PluginUtilities.addStyle("channelTabs-style-constants", ConstantVariables);
 					PluginUtilities.addStyle("channelTabs-style", BaseStyle);
 				}
@@ -2905,6 +3132,8 @@ module.exports = (() => {
 					PluginUtilities.removeStyle("channelTabs-style-compact");
 					PluginUtilities.removeStyle("channelTabs-style-cozy");
 					PluginUtilities.removeStyle("channelTabs-style-private");
+					PluginUtilities.removeStyle("channelTabs-style-radialstatus");
+					PluginUtilities.removeStyle("channelTabs-style-tabnav");
 					PluginUtilities.removeStyle("channelTabs-style-constants");
 					PluginUtilities.removeStyle("channelTabs-style");
 				}
@@ -2966,7 +3195,10 @@ module.exports = (() => {
 								showEmptyFavGroupBadges: this.settings.showEmptyFavGroupBadges,
 								compactStyle: this.settings.compactStyle,
 								privacyMode: this.settings.privacyMode,
+								radialStatusMode: this.settings.radialStatusMode,
+								tabWidthMin: this.settings.tabWidthMin,
 								showQuickSettings: this.settings.showQuickSettings,
+								showNavButtons: this.settings.showNavButtons,
 								alwaysFocusNewTabs: this.settings.alwaysFocusNewTabs,
 								tabs: this.settings.tabs,
 								favs: this.settings.favs,
@@ -3126,11 +3358,14 @@ module.exports = (() => {
 						showEmptyActiveTabBadges: false,
 						compactStyle: false,
 						privacyMode: false,
+						radialStatusMode: false,
+						tabWidthMin: 100,
 						showFavGroupUnreadBadges: true,
 						showFavGroupMentionBadges: true,
 						showFavGroupTypingBadge: true,
 						showEmptyFavGroupBadges: false,
 						showQuickSettings: true,
+						showNavButtons: true,
 						alwaysFocusNewTabs: false
 					};
 				}
@@ -3217,6 +3452,15 @@ module.exports = (() => {
 							});
 							this.saveSettings();
 						}))
+						.append(new Settings.Switch("Show Navigation Buttons", "Click to go back and forward", this.settings.showNavButtons, checked=>{
+							this.settings.showNavButtons = checked;
+							if(TopBarRef.current) TopBarRef.current.setState({
+								showNavButtons: checked
+							});
+							this.removeStyle();
+							this.applyStyle();
+							this.saveSettings();
+						}))
 						.append(new Settings.Switch("Use Compact Look", "", this.settings.compactStyle, checked=>{
 							this.settings.compactStyle = checked;
 							if(TopBarRef.current) TopBarRef.current.setState({
@@ -3234,7 +3478,30 @@ module.exports = (() => {
 							this.removeStyle();
 							this.applyStyle();
 							this.saveSettings();
-						}));
+						}))
+						.append(new Settings.Switch("Use Radial Status Indicators", "Changes the status indicator into a circular border", this.settings.radialStatusMode, checked=>{
+							this.settings.radialStatusMode = checked;
+							if(TopBarRef.current) TopBarRef.current.setState({
+								radialStatusMode: checked
+							});
+							this.removeStyle();
+							this.applyStyle();
+							this.saveSettings();
+						}))
+						.append(new Settings.Slider("Minimum Tab Width", "Set the limit on how small a tab can be before overflowing to a new row", 
+							58, 220,
+							this.settings.tabWidthMin,
+							value => (
+								this.settings.tabWidthMin = Math.round(value), 
+								this.saveSettings(),
+								document.documentElement.style.setProperty("--channelTabs-tabWidthMin", this.settings.tabWidthMin + "px")
+							),
+							{
+								defaultValue: 100,
+								markers: [60, 85, 100, 125, 150, 175, 200, 220],
+								units: 'px'
+							}
+						));
 
 					//#endregion
 
