@@ -69,15 +69,17 @@ module.exports = (() => {
 				"title": "New stuff",
 				"type": "added",
 				"items": [
-					"**Navigation buttons.** Left, Right, and Close buttons for when you don't feel like pressing a shortcut key.",
+					"**Minimize tabs.** Right click a tab then select *Minimize tab*. No words needed. Literally.",
+					"**Navigation buttons.** Left, Right, and Close buttons for when you don't feel like pressing a shortcut key. This can be disabled in Appearance settings. *(Psst... Right click the close button to make a new tab.)*",
 					"**Support for the Favorites experiment.** It may not officially be a feature yet, but the support is there."
 				]
 			},
 			{
-				"title": "Check settings!!!",
+				"title": "It's not supposed to be thin!",
 				"type": "progress",
 				"items": [
-					"**Be aware of a Compact mode and Cozy mode.** For when your tabs look comically thin, they are in the settings."
+					"**Be aware of a Compact mode and Cozy mode.** For when your tabs look comically thin, they are in the settings.",
+					"**Some configs may reset.** If this happens to you, I'm sorry."
 				]
 			}
 		]
@@ -265,6 +267,12 @@ module.exports = (() => {
 										{
 											label: "Add to favourites",
 											action: ()=>props.addToFavs(props.name, props.iconUrl, props.url, props.channelId)
+										},
+										{
+											label: "Minimize tab",
+											type: "toggle",
+											checked: () => props.minimized,
+											action: ()=> props.minimizeTab(props.tabIndex)
 										}
 										
 									]
@@ -363,6 +371,12 @@ module.exports = (() => {
 										{
 											label: "Rename",
 											action: props.rename
+										},
+										{
+											label: "Minimize favourite",
+											type: "toggle",
+											checked: () => props.minimized,
+											action: ()=> props.minimizeFav(props.favIndex)
 										},
 										{
 											type : "separator"
@@ -1299,7 +1313,7 @@ module.exports = (() => {
 						props.closeTab();
 					}
 				},
-				React.createElement(WebpackModules.getByDisplayName("PlusAlt"), {})
+				React.createElement(WebpackModules.getByDisplayName("Close"), {})
 			);
 
 			const TabUnreadBadge = props=>React.createElement("div", {
@@ -1418,6 +1432,7 @@ module.exports = (() => {
 				{
 					className: "channelTabs-tab"
 									+ (props.selected ? " channelTabs-selected" : "")
+									+ (props.minimized ? " channelTabs-minimized" : "")
 									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
 					"data-mention-count": props.mentionCount,
@@ -1561,6 +1576,7 @@ module.exports = (() => {
 					className: "channelTabs-fav" 
 									+ (props.channelId ? " channelTabs-channel" : props.guildId ? " channelTabs-guild" : "")
 									+ (props.selected ? " channelTabs-selected" : "")
+									+ (props.minimized ? " channelTabs-minimized" : "")
 									+ (props.hasUnread ? " channelTabs-unread" : "")
 									+ (props.mentionCount > 0 ? " channelTabs-mention" : ""),
 					"data-mention-count": props.mentionCount,
@@ -1691,6 +1707,8 @@ module.exports = (() => {
 										openInNewTab: ()=>props.openInNewTab(fav),
 										moveLeft: ()=>props.move(favIndex, (favIndex + props.favs.length - 1) % props.favs.length),
 										moveRight: ()=>props.move(favIndex, (favIndex + 1) % props.favs.length),
+										minimizeFav: props.minimizeFav,
+										minimized: fav.minimized,
 										moveToFavGroup: props.moveToFavGroup,
 										moveFav: props.move,
 										favIndex,
@@ -1879,7 +1897,8 @@ module.exports = (() => {
 					React.createElement(WebpackModules.getByDisplayName("DropdownArrow"), { open:false })),
 					React.createElement("div", {
 						className: "channelTabs-tabNavClose",
-						onClick: () =>{ closeCurrentTab() }
+						onClick: () =>{ closeCurrentTab() },
+						onContextMenu: props.openNewTab
 					},
 					React.createElement(WebpackModules.getByDisplayName("DropdownButton"), { open:true }))
 				),
@@ -1896,6 +1915,7 @@ module.exports = (() => {
 						switchToTab: props.switchToTab,
 						closeTab: props.closeTab,
 						addToFavs: props.addToFavs,
+						minimizeTab: props.minimizeTab,
 						moveLeft: ()=>props.move(tabIndex, (tabIndex + props.tabs.length - 1) % props.tabs.length),
 						moveRight: ()=>props.move(tabIndex, (tabIndex + 1) % props.tabs.length),
 						openInNewTab: ()=>props.openInNewTab(tab),
@@ -1907,6 +1927,7 @@ module.exports = (() => {
 						currentStatus: result.currentStatus,
 						url: tab.url,
 						selected: tab.selected,
+						minimized: tab.minimized,
 						channelId: tab.channelId,
 						unreadCount: result.unreadCount,
 						unreadEstimated: result.unreadEstimated,
@@ -1934,7 +1955,7 @@ module.exports = (() => {
 				{
 					className: "channelTabs-favContainer" + (props.favs.length == 0 ? " channelTabs-noFavs" : ""),
 					"data-fav-count": props.favs.length,
-					onContextMenu: e=>{CreateFavBarContextMenu(props,  e);}
+					onContextMenu: e=>{CreateFavBarContextMenu(props, e);}
 				},
 				React.createElement(FavFolders, props),
 				props.favs.length > 0 ? React.createElement(FavItems, {group: null, ...props}) : React.createElement(NoFavItemsPlaceholder, {}),
@@ -1981,6 +2002,8 @@ module.exports = (() => {
 					this.renameFav = this.renameFav.bind(this);
 					this.deleteFav = this.deleteFav.bind(this);
 					this.addToFavs = this.addToFavs.bind(this);
+					this.minimizeTab = this.minimizeTab.bind(this);
+					this.minimizeFav = this.minimizeFav.bind(this);
 					this.moveTab = this.moveTab.bind(this);
 					this.moveFav = this.moveFav.bind(this);
 					this.addFavGroup = this.addFavGroup.bind(this);
@@ -1998,6 +2021,15 @@ module.exports = (() => {
 				//#endregion
 
 				//#region Tab Functions
+
+				minimizeTab(tabIndex){
+					this.setState({
+						tabs: this.state.tabs.map((tab, index) => {
+							if(index == tabIndex) return Object.assign({}, tab, {minimized: !tab.minimized});
+							else return Object.assign({}, tab); // or return tab;
+						})
+					}, this.props.plugin.saveSettings);
+				}
 
 				switchToTab(tabIndex){
 					this.setState({
@@ -2112,6 +2144,15 @@ module.exports = (() => {
 							}
 						}
 					);
+				}
+
+				minimizeFav(favIndex){
+					this.setState({
+						favs: this.state.favs.map((fav, index) => {
+							if(index == favIndex) return Object.assign({}, fav, {minimized: !fav.minimized});
+							else return Object.assign({}, fav); // or return tab;
+						})
+					}, this.props.plugin.saveSettings);
 				}
 
 				deleteFav(favIndex){
@@ -2260,6 +2301,7 @@ module.exports = (() => {
 								name,
 								iconUrl,
 								channelId,
+								minimized,
 								groupId: -1
 							}],
 							selectedTabIndex: newTabIndex
@@ -2277,6 +2319,7 @@ module.exports = (() => {
 								name,
 								iconUrl,
 								channelId,
+								minimized,
 								groupId: -1
 							}]
 						}, this.props.plugin.saveSettings);
@@ -2395,6 +2438,7 @@ module.exports = (() => {
 							openNewTab: this.openNewTab,
 							openInNewTab: this.openTabInNewTab,
 							addToFavs: this.addToFavs,
+							minimizeTab: this.minimizeTab,
 							move: this.moveTab
 						}),
 						!this.state.showFavBar ? null : React.createElement(FavBar, {
@@ -2413,6 +2457,7 @@ module.exports = (() => {
 							rename: this.renameFav,
 							delete: this.deleteFav,
 							addToFavs: this.addToFavs,
+							minimizeFav: this.minimizeFav,
 							openInNewTab: this.openFavInNewTab,
 							move: this.moveFav,
 							moveFavGroup: this.moveFavGroup,
@@ -2779,6 +2824,7 @@ module.exports = (() => {
 					.channelTabs-tabIcon {
 						height: 20px;
 						border-radius: 50%;
+						-webkit-user-drag: none;
 					}
 
 					.channelTabs-tabIconWrapper {
@@ -2816,11 +2862,11 @@ module.exports = (() => {
 
 					.channelTabs-closeTab {
 						position: relative;
-						height: 14px;
-						width: 14px;
+						height: 16px;
+						width: 16px;
 						flex-shrink: 0;
 						right: 6px;
-						border-radius: 50%;
+						border-radius: 4px;
 						color: var(--interactive-normal);
 						cursor: pointer;
 					}
@@ -2828,7 +2874,7 @@ module.exports = (() => {
 					.channelTabs-closeTab svg {
 						height: 100%;
 						width: 100%;
-						transform:  rotate(45deg);
+						transform: scale(0.85);
 					}
 					
 					.channelTabs-newTab {
@@ -3018,16 +3064,14 @@ module.exports = (() => {
 						background: var(--channelTabs-favBackgroundHover);
 					}
 
-					.channelTabs-favIconWrapper {
-						margin-right: 6px;
-					}
-
 					.channelTabs-favIcon {
 						height: 20px;
 						border-radius: 50%;
+						-webkit-user-drag: none;
 					}
 
 					.channelTabs-favName {
+						margin-left: 6px;
 						font-size: var(--channelTabs-tabNameFontSize);
 						line-height: normal;
 						color: var(--interactive-normal);
@@ -3111,6 +3155,17 @@ module.exports = (() => {
 					
 					.channelTabs-sliderContainer input {
 						height: 6px;
+					}
+
+					.channelTabs-minimized {
+						--channelTabs-tabWidth: fit-content;
+						--channelTabs-tabWidthMin: fit-content;
+					}
+					
+					.channelTabs-tab.channelTabs-minimized>div>:first-child~*,
+					.channelTabs-fav.channelTabs-minimized>svg:first-child~*,
+					.channelTabs-tab.channelTabs-minimized>.channelTabs-closeTab {
+						display:none;
 					}
 
 					/*
@@ -3289,7 +3344,8 @@ module.exports = (() => {
 										selected: true,
 										currentStatus: getCurrentUserStatus(location.pathname),
 										iconUrl: getCurrentIconUrl(location.pathname),
-										channelId: channelId
+										channelId: channelId,
+										minimized: this.settings.tabs[this.settings.tabs.findIndex(tab=>tab.selected)].minimized
 									};
 								}else{
 									return Object.assign({}, tab);
@@ -3304,7 +3360,8 @@ module.exports = (() => {
 							selected: true,
 							currentStatus: getCurrentUserStatus(location.pathname),
 							iconUrl: getCurrentIconUrl(location.pathname),
-							channelId: channelId
+							channelId: channelId,
+							minimized: this.settings.tabs[this.settings.tabs.findIndex(tab=>tab.selected)].minimized
 						};
 					}
 				}
