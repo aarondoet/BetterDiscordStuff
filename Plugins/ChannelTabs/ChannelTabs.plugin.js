@@ -122,6 +122,9 @@ module.exports = (() => {
 			const Permissions = DiscordModules.DiscordConstants.Permissions;
 			const Spinner = WebpackModules.getByDisplayName("Spinner");
 			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
+			const Close = WebpackModules.getByDisplayName("Close");
+			const PlusAlt = WebpackModules.getByDisplayName("PlusAlt");
+			const DropdownArrow = WebpackModules.getByDisplayName("DropdownArrow");
 			const UserStatusStore = DiscordModules.UserStatusStore;
 
 			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
@@ -1313,7 +1316,7 @@ module.exports = (() => {
 						props.closeTab();
 					}
 				},
-				React.createElement(WebpackModules.getByDisplayName("Close"), {})
+				React.createElement(Close, {})
 			);
 
 			const TabUnreadBadge = props=>React.createElement("div", {
@@ -1672,7 +1675,7 @@ module.exports = (() => {
 					className: "channelTabs-newTab",
 					onClick: props.openNewTab
 				},
-				React.createElement(WebpackModules.getByDisplayName("PlusAlt"), {})
+				React.createElement(PlusAlt, {})
 			);		
 
 			//#endregion
@@ -1889,18 +1892,18 @@ module.exports = (() => {
 						className: "channelTabs-tabNavLeft",
 						onClick: () =>{ previousTab() }
 					},
-					React.createElement(WebpackModules.getByDisplayName("DropdownArrow"), { open:false })),
+					React.createElement(DropdownArrow, { open:false })),
 					React.createElement("div", {
 						className: "channelTabs-tabNavRight",
 						onClick: () =>{ nextTab() }
 					},
-					React.createElement(WebpackModules.getByDisplayName("DropdownArrow"), { open:false })),
+					React.createElement(DropdownArrow, { open:false })),
 					React.createElement("div", {
 						className: "channelTabs-tabNavClose",
 						onClick: () =>{ closeCurrentTab() },
 						onContextMenu: props.openNewTab
 					},
-					React.createElement(WebpackModules.getByDisplayName("DropdownButton"), { open:true }))
+					React.createElement(Close, {}))
 				),
 				props.tabs.map((tab, tabIndex)=>React.createElement(Flux.connectStores([UnreadStateStore, UserTypingStore, UserStatusStore], ()=>({
 					unreadCount: UnreadStateStore.getUnreadCount(tab.channelId),
@@ -2663,6 +2666,7 @@ module.exports = (() => {
 
 						.channelTabs-tabNavClose svg {
 							right:2px;
+							transform: scale(0.75)
 						}
 					`;
 		
