@@ -69,8 +69,8 @@ module.exports = (() => {
 				"title": "New stuff",
 				"type": "added",
 				"items": [
-					"**Minimize tabs.** Right click a tab then select *Minimize tab*. No words needed. Literally.",
-					"**Navigation buttons.** Left, Right, and Close buttons for when you don't feel like pressing a shortcut key. This can be disabled in Appearance settings. *(Psst... Right click the close button to make a new tab.)*",
+					"**Minimize tabs.** Right click a tab then select *Minimize tab*.",
+					"**Navigation buttons.** LeftClick: Left/Right/Close, RightClick: Back/Forward/NewTab. Back/Forward navigation as LeftClick can be enabled in Behavior settings, with RightClick being the alternate. The navigation buttons can be disabled in Appearance settings.",
 					"**Support for the Favorites experiment.** It may not officially be a feature yet, but the support is there."
 				]
 			},
@@ -126,6 +126,7 @@ module.exports = (() => {
 			const PlusAlt = WebpackModules.getByDisplayName("PlusAlt");
 			const DropdownArrow = WebpackModules.getByDisplayName("DropdownArrow");
 			const UserStatusStore = DiscordModules.UserStatusStore;
+			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
 
 			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
 			const DefaultUserIconGreen = "https://cdn.discordapp.com/embed/avatars/1.png";
@@ -778,6 +779,20 @@ module.exports = (() => {
 															alwaysFocusNewTabs: !instance.state.alwaysFocusNewTabs
 														}, ()=>{
 															instance.props.plugin.settings.alwaysFocusNewTabs = !instance.props.plugin.settings.alwaysFocusNewTabs;
+															instance.props.plugin.saveSettings();
+														});
+													}
+												},
+												{
+													label: "Primary Forward/Back Navigation",
+													type: "toggle",
+													id: "useStandardNav",
+													checked: () => TopBarRef.current.state.useStandardNav,
+													action: () => {
+														instance.setState({
+															useStandardNav: !instance.state.useStandardNav
+														}, ()=>{
+															instance.props.plugin.settings.useStandardNav = !instance.props.plugin.settings.useStandardNav;
 															instance.props.plugin.saveSettings();
 														});
 													}
@@ -1890,12 +1905,14 @@ module.exports = (() => {
 				},
 					React.createElement("div", {
 						className: "channelTabs-tabNavLeft",
-						onClick: () =>{ previousTab() }
+						onClick: () =>{ TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_BACK.action() : previousTab(); },
+						onContextMenu: () =>{ !TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_BACK.action() : previousTab(); }
 					},
 					React.createElement(DropdownArrow, { open:false })),
 					React.createElement("div", {
 						className: "channelTabs-tabNavRight",
-						onClick: () =>{ nextTab() }
+						onClick: () =>{ TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_FORWARD.action() : nextTab(); },
+						onContextMenu: () =>{ !TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_FORWARD.action() : nextTab(); }
 					},
 					React.createElement(DropdownArrow, { open:false })),
 					React.createElement("div", {
@@ -1997,7 +2014,8 @@ module.exports = (() => {
 						compactStyle: props.compactStyle,
 						showQuickSettings: props.showQuickSettings,
 						showNavButtons: props.showNavButtons,
-						alwaysFocusNewTabs: props.alwaysFocusNewTabs
+						alwaysFocusNewTabs: props.alwaysFocusNewTabs,
+						useStandardNav: props.useStandardNav
 					};
 					this.switchToTab = this.switchToTab.bind(this);
 					this.closeTab = this.closeTab.bind(this);
@@ -3259,6 +3277,7 @@ module.exports = (() => {
 								showQuickSettings: this.settings.showQuickSettings,
 								showNavButtons: this.settings.showNavButtons,
 								alwaysFocusNewTabs: this.settings.alwaysFocusNewTabs,
+								useStandardNav: this.settings.useStandardNav,
 								tabs: this.settings.tabs,
 								favs: this.settings.favs,
 								favGroups: this.settings.favGroups,
@@ -3427,7 +3446,8 @@ module.exports = (() => {
 						showEmptyFavGroupBadges: false,
 						showQuickSettings: true,
 						showNavButtons: true,
-						alwaysFocusNewTabs: false
+						alwaysFocusNewTabs: false,
+						useStandardNav: false
 					};
 				}
 
@@ -3513,7 +3533,7 @@ module.exports = (() => {
 							});
 							this.saveSettings();
 						}))
-						.append(new Settings.Switch("Show Navigation Buttons", "Click to go back and forward", this.settings.showNavButtons, checked=>{
+						.append(new Settings.Switch("Show Navigation Buttons", "Click to go the left or right tab, this behavior can be changed in Behavior settings", this.settings.showNavButtons, checked=>{
 							this.settings.showNavButtons = checked;
 							if(TopBarRef.current) TopBarRef.current.setState({
 								showNavButtons: checked
@@ -3568,10 +3588,19 @@ module.exports = (() => {
 
 					//#region Behavior Settings
 					new Settings.SettingGroup("Behavior").appendTo(panel)
+
 						.append(new Settings.Switch("Always Auto Focus New Tabs", "Forces all newly created tabs to bring themselves to focus", this.settings.alwaysFocusNewTabs, checked=>{
 							this.settings.alwaysFocusNewTabs = checked;
 							if(TopBarRef.current) TopBarRef.current.setState({
 								alwaysFocusNewTabs: checked
+							});
+							this.saveSettings();
+						}))
+						
+						.append(new Settings.Switch("Primary Forward/Back Navigation", "Instead of scrolling down the row, use the previous and next buttons to navigate between pages", this.settings.useStandardNav, checked=>{
+							this.settings.useStandardNav = checked;
+							if(TopBarRef.current) TopBarRef.current.setState({
+								useStandardNav: checked
 							});
 							this.saveSettings();
 						}));
