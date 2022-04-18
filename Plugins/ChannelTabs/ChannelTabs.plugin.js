@@ -60,9 +60,9 @@ module.exports = (() => {
 				"type": "improved",
 				"items": [
 					"**Tab overflow on minimum width.** Tabs now have a minimum width and can overflow into a new row, preventing the tabs from being squished to oblivion. You can adjust the minimum value in Appearance settings.",
-					"**Standard status indicators.** The old status borders got replaced with ones like in the member list and user pop-out, you can revert this change in Appearance settings.",
-					"**New default icons.** The updated equivalent, no more blank icon issues.",
-					"**Sharper icons.** They're tiny, but better."
+					"**Standard status indicators.** You can revert to radial indicators in Appearance settings.",
+					"**New default icons.** Fixes blank icon issues.",
+					"**Sharper icons.**"
 				]
 			},
 			{
@@ -70,15 +70,15 @@ module.exports = (() => {
 				"type": "added",
 				"items": [
 					"**Minimize tabs.** Right click a tab then select *Minimize tab*.",
-					"**Navigation buttons.** LeftClick: Left/Right/Close, RightClick: Back/Forward/NewTab. Back/Forward navigation as LeftClick can be enabled in Behavior settings, with RightClick being the alternate. The navigation buttons can be disabled in Appearance settings.",
-					"**Support for the Favorites experiment.** It may not officially be a feature yet, but the support is there."
+					"**Navigation buttons.** LeftClick: Back/Forward/Close, RightClick: LeftTab/RightTab/NewTab. Alternate left and right arrows can be enabled in Behavior settings. The navigation buttons can be disabled in Appearance settings.",
+					"**Support for Favorites experiment.**"
 				]
 			},
 			{
-				"title": "It's not supposed to be thin!",
+				"title": "Very thin tabs aren't the only option!",
 				"type": "progress",
 				"items": [
-					"**Be aware of a Compact mode and Cozy mode.** For when your tabs look comically thin, they are in the settings.",
+					"**There's a Compact mode and Cozy mode.** For when your tabs look comically thin, they are in Appearance settings.",
 					"**Some configs may reset.** If this happens to you, I'm sorry."
 				]
 			}
@@ -120,13 +120,15 @@ module.exports = (() => {
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
 			const PermissionUtils  = WebpackModules.getByProps("can", "canManageUser");
 			const Permissions = DiscordModules.DiscordConstants.Permissions;
+			const UserStatusStore = DiscordModules.UserStatusStore;
 			const Spinner = WebpackModules.getByDisplayName("Spinner");
 			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
+			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
+
 			const Close = WebpackModules.getByDisplayName("Close");
 			const PlusAlt = WebpackModules.getByDisplayName("PlusAlt");
-			const DropdownArrow = WebpackModules.getByDisplayName("DropdownArrow");
-			const UserStatusStore = DiscordModules.UserStatusStore;
-			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
+			const LeftCaret = WebpackModules.getByDisplayName("LeftCaret");
+			const RightCaret = WebpackModules.getByDisplayName("RightCaret");
 
 			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
 			const DefaultUserIconGreen = "https://cdn.discordapp.com/embed/avatars/1.png";
@@ -1362,7 +1364,7 @@ module.exports = (() => {
 							className: `channelTabs-typingBadge`,
 							animated: isTyping,
 							style: {
-								opacity: 1
+								opacity: 0.7
 							}
 						})
 					)
@@ -1908,13 +1910,13 @@ module.exports = (() => {
 						onClick: () =>{ TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_BACK.action() : previousTab(); },
 						onContextMenu: () =>{ !TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_BACK.action() : previousTab(); }
 					},
-					React.createElement(DropdownArrow, { open:false })),
+					React.createElement(LeftCaret, {})),
 					React.createElement("div", {
 						className: "channelTabs-tabNavRight",
 						onClick: () =>{ TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_FORWARD.action() : nextTab(); },
 						onContextMenu: () =>{ !TopBarRef.current.state.useStandardNav ? NavShortcuts.NAVIGATE_FORWARD.action() : nextTab(); }
 					},
-					React.createElement(DropdownArrow, { open:false })),
+					React.createElement(RightCaret, {})),
 					React.createElement("div", {
 						className: "channelTabs-tabNavClose",
 						onClick: () =>{ closeCurrentTab() },
@@ -2568,15 +2570,6 @@ module.exports = (() => {
 						:root {	
 							--channelTabs-tabWidth: 220px;
 							--channelTabs-tabWidthMin: ${this.settings.tabWidthMin}px;
-
-							--channelTabs-background: transparent;
-
-							--channelTabs-tabBackground: transparent;
-							--channelTabs-tabBackgroundHover: var(--background-modifier-hover);
-							--channelTabs-tabBackgroundSelected: var(--background-modifier-selected);
-
-							--channelTabs-favBackground: transparent;
-							--channelTabs-favBackgroundHover: var(--background-modifier-hover);
 						}
 					`;
 
@@ -2648,15 +2641,33 @@ module.exports = (() => {
 					const tabNavStyle = `
 						.channelTabs-tabContainer .channelTabs-tabNav {
 							display:flex;
+							margin: 0 6px 3px 0;
 						}
 						
-						.channelTabs-tabContainer:not([data-tab-count="1"]) .channelTabs-tabNav>div:hover {
+						.channelTabs-tabNavClose svg {
+							transform: scale(0.75);
+						}
+						
+						.channelTabs-tabNavLeft svg,
+						.channelTabs-tabNavRight svg {
+							transform: scale(0.6);
+						}
+						
+						/* if clickable */
+						.channelTabs-tabContainer .channelTabs-tabNav>div:hover {
 							color: var(--interactive-hover);
-							background-color: var(--background-modifier-selected);
+							background-color: var(--background-modifier-hover);
 						}
 						
-						.channelTabs-tabContainer[data-tab-count="1"] .channelTabs-tabNav>div {
-							color: var(--text-muted);
+						.channelTabs-tabContainer .channelTabs-tabNav>div:active {
+							color: var(--interactive-active);
+							background-color: var(--background-modifier-active);
+						}
+						
+						/* if only 1 tab */
+						.channelTabs-tabContainer[data-tab-count="1"] .channelTabs-tabNav>.channelTabs-tabNavClose {
+							color: var(--interactive-muted);
+							background: none;
 						}
 						
 						.channelTabs-tabNav>div {
@@ -2666,25 +2677,8 @@ module.exports = (() => {
 							height: var(--channelTabs-tabHeight);
 							width: 32px;
 							border-radius: 4px;
-							margin: 0 3px 3px 0;
+							margin-right: 3px;
 							color: var(--interactive-normal);
-						}
-
-						.channelTabs-tabNav>div:last-child {
-							margin-right: 6px;
-						}
-						
-						.channelTabs-tabNavLeft svg {
-							transform: rotate(90deg);
-						}
-						
-						.channelTabs-tabNavRight svg {
-							transform: rotate(-90deg);
-						}
-
-						.channelTabs-tabNavClose svg {
-							right:2px;
-							transform: scale(0.75)
 						}
 					`;
 		
@@ -2730,7 +2724,7 @@ module.exports = (() => {
 					#channelTabs-container {
 						z-index: 1000;
 						padding: 4px 8px 1px 8px;
-						background: var(--channelTabs-background);
+						background: none;
 					}
 					
 					.channelTabs-tabContainer {
@@ -2748,7 +2742,7 @@ module.exports = (() => {
 						display: flex;
 						align-items: center;
 						height: var(--channelTabs-tabHeight);
-						background: var(--channelTabs-tabBackground);
+						background: none;
 						border-radius: 4px;
 						max-width: var(--channelTabs-tabWidth);
 						min-width: var(--channelTabs-tabWidthMin);
@@ -2763,11 +2757,15 @@ module.exports = (() => {
 					}
 					
 					.channelTabs-tab:not(.channelTabs-selected):hover {
-						background: var(--channelTabs-tabBackgroundHover);
+						background: var(--background-modifier-hover);
+					}
+
+					.channelTabs-tab:not(.channelTabs-selected):active {
+						background: var(--background-modifier-active);
 					}
 					
 					.channelTabs-tab.channelTabs-selected {
-						background: var(--channelTabs-tabBackgroundSelected);
+						background: var(--background-modifier-selected);
 					}
 
 					.channelTabs-tab.channelTabs-unread:not(.channelTabs-selected),
@@ -2830,7 +2828,12 @@ module.exports = (() => {
 						white-space: nowrap;
 						text-overflow: ellipsis;
 					}
+
+					.channelTabs-tab:not(.channelTabs-selected):hover .channelTabs-tabName {
+						color: var(--interactive-hover);
+					}
 					
+					.channelTabs-tab:not(.channelTabs-selected):active .channelTabs-tabName,
 					.channelTabs-tab.channelTabs-selected .channelTabs-tabName {
 						color: var(--interactive-active);
 					}
@@ -2913,8 +2916,13 @@ module.exports = (() => {
 					}
 					
 					.channelTabs-newTab:hover {
-						background: var(--background-modifier-selected);
-						color: white;
+						background: var(--background-modifier-hover);
+						color: var(--interactive-hover);
+					}
+					
+					.channelTabs-newTab:active {
+						background: var(--background-modifier-active);
+						color: var(--interactive-active);
 					}
 
 					.channelTabs-closeTab:hover {
@@ -2968,10 +2976,6 @@ module.exports = (() => {
 					}
 					.channelTabs-unreadBadge {
 						background-color: hsl(235, calc(var(--saturation-factor, 1) * 86%), 65%);
-					}
-
-					.channelTabs-typingBadge {
-						background-color: rgb(44, 47, 51);
 					}
 
 					.channelTabs-classicBadgeAlignment {
@@ -3074,7 +3078,7 @@ module.exports = (() => {
 						min-width: 0;
 						border-radius: 4px;
 						height: var(--channelTabs-favHeight);
-						background: var(--channelTabs-favBackground);
+						background: none;
 						flex: 0 0 1;
 						max-width: var(--channelTabs-tabWidth);
 						margin-bottom: 3px;
@@ -3083,7 +3087,11 @@ module.exports = (() => {
 					}
 
 					.channelTabs-fav:hover {
-						background: var(--channelTabs-favBackgroundHover);
+						background: var(--background-modifier-hover);
+					}
+
+					.channelTabs-fav:active {
+						background: var(--background-modifier-active);
 					}
 
 					.channelTabs-favIcon {
@@ -3100,6 +3108,14 @@ module.exports = (() => {
 						overflow: hidden;
 						white-space: nowrap;
 						text-overflow: ellipsis;
+					}
+
+					.channelTabs-fav:hover .channelTabs-favName {
+						color: var(--interactive-hover);
+					}
+
+					.channelTabs-fav:active .channelTabs-favName {
+						color: var(--interactive-active);
 					}
 					
 					.channelTabs-noFavNotice {
@@ -3447,7 +3463,7 @@ module.exports = (() => {
 						showQuickSettings: true,
 						showNavButtons: true,
 						alwaysFocusNewTabs: false,
-						useStandardNav: false
+						useStandardNav: true
 					};
 				}
 
