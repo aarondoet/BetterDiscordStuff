@@ -123,6 +123,7 @@ module.exports = (() => {
 			const UserStatusStore = DiscordModules.UserStatusStore;
 			const Spinner = WebpackModules.getByDisplayName("Spinner");
 			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
+			const Slider = WebpackModules.getByDisplayName("Slider");
 			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
 
 			const Close = WebpackModules.getByDisplayName("Close");
@@ -670,12 +671,11 @@ module.exports = (() => {
 													}
 												},
 												{
-													id: "tabWidthMinSubText",
-													disabled: true,
-													render: () => {
-														return React.createElement("div", {style: { "color": "var(--text-muted)", "padding": "8px", "font-size": "12px",  "white-space": "pre-wrap" }},
-														"Minimum tab width: " + instance.props.plugin.settings.tabWidthMin + "px");
-													}
+													type: "separator"
+												},
+												{
+													label: "Minimum Tab Width",
+													style: { "pointer-events": "none" }
 												},
 												{
 													id: "tabWidthMin",
@@ -684,20 +684,25 @@ module.exports = (() => {
 															{
 																className: "channelTabs-sliderContainer"
 															},
-															React.createElement("input", {
-																className: "channelTabs-slider",
-																type: "range",
-																min: 50,
-																max: 220,
-																step: 10,
-																defaultValue: instance.props.plugin.settings.tabWidthMin,
-																onChange: ({target}) => (
-																	instance.props.plugin.settings.tabWidthMin = target.value,
-																	instance.props.plugin.saveSettings(),
-																	document.documentElement.style.setProperty("--channelTabs-tabWidthMin", instance.props.plugin.settings.tabWidthMin + "px")
-																),
-																onClick: () => instance.props.plugin.applyStyle("channelTabs-style-constants")
-															})
+															React.createElement(Slider,
+																{
+																	"aria-label": "Minimum Tab Width",
+																	className: "channelTabs-slider",
+																	mini: true,
+																	orientation: "horizontal",
+																	disabled: false,
+																	initialValue: instance.props.plugin.settings.tabWidthMin,
+																	minValue: 50,
+																	maxValue: 220,
+																	onValueRender: value => Math.floor(value / 10) * 10 + 'px',
+																	onValueChange: value => {
+																		value = Math.floor(value / 10) * 10,
+																		instance.props.plugin.settings.tabWidthMin = value,
+																		instance.props.plugin.saveSettings(),
+																		instance.props.plugin.applyStyle("channelTabs-style-constants")
+																	}
+																}
+															)
 														)
 													}
 												},
@@ -2752,7 +2757,7 @@ module.exports = (() => {
 					
 					.channelTabs-tab>div:first-child {
 						display: flex;
-						width: calc(100% - 14px);
+						width: calc(100% - 16px);
 						align-items: center;
 					}
 					
@@ -3179,20 +3184,16 @@ module.exports = (() => {
 
 					.channelTabs-sliderContainer {
 						display: flex;
-						align-items: center;
 						justify-content: center;
-						padding: 13px 0;
+						padding: 4px 8px;
+						margin: 2px 6px 12px 6px;
 						background: var(--slider-background-normal);
 						border-radius: var(--slider-background-radius);
-						margin: 2px 6px 12px 6px;
 					}
 					
-					.channelTabs-sliderContainer:hover {
-						background: var(--slider-background-hover);
-					}
-					
-					.channelTabs-sliderContainer input {
-						height: 6px;
+					.channelTabs-slider {
+						position: relative;
+						top: -14px;
 					}
 
 					.channelTabs-minimized {
