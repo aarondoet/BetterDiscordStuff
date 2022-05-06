@@ -1098,7 +1098,7 @@ module.exports = (() => {
 			const getChannelTypingUsers = (channel_id) => 
 			{
 				const channel = ChannelStore.getChannel(channel_id);
-				const selfId = UserStore.getCurrentUser().id;
+				const selfId = UserStore.getCurrentUser()?.id;
 				if (channel)
 				{	
 					const userIds = Object.keys(UserTypingStore.getTypingUsers(channel_id)).filter(uId => (uId !== selfId));
@@ -1111,7 +1111,7 @@ module.exports = (() => {
 			const isChannelTyping = (channel_id) => 
 			{
 				const channel = ChannelStore.getChannel(channel_id);
-				const selfId = UserStore.getCurrentUser().id;
+				const selfId = UserStore.getCurrentUser()?.id;
 				if (channel)
 				{	
 					const userIds = Object.keys(UserTypingStore.getTypingUsers(channel_id)).filter(uId => (uId !== selfId));
