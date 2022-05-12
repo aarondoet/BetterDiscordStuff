@@ -98,7 +98,7 @@ module.exports = (() => {
 		const plugin = (Plugin, Api) => {
 			const { WebpackModules, PluginUtilities, DiscordModules } = Api;
 			const { React } = DiscordModules;
-			const SelectedChannelStore = WebpackModules.getByProps("getChannelId");
+			const SelectedChannelStore = WebpackModules.getByProps("getLastSelectedChannelId");
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const Dropdown = WebpackModules.find(m => m.prototype && !m.prototype.handleClick && m.prototype.render && m.prototype.render.toString().includes("default.select"));
 			const DeprecatedModal = WebpackModules.getByDisplayName("DeprecatedModal");
@@ -186,14 +186,19 @@ module.exports = (() => {
 				}
 				
 				onSwitch(){
-					const channelId = SelectedChannelStore.getChannelId();
-					const authors = supportChannels[channelId];
+					try{
+					const channelId = SelectedChannelStore.getLastSelectedChannelId();
+					const authors =  supportChannels[channelId];
 					if(authors === undefined) return;
 					const showInfo = ()=>{
 						popupLastShownTime[channelId] = Date.now();
 						PluginUtilities.saveData(this.getName(), "popupLastShownTime", popupLastShownTime);
 						this.showGeneralInformation(authors);
 					}
+					}catch(error){
+						console.log(error)
+					}
+
 					if(this.settings.showHelpButton && !document.getElementById("l0c4lh057-issue-helper")){
 						let module1 = WebpackModules.getByProps("buttons","textArea","textAreaSlate");
 						let module2 = WebpackModules.getByProps("active","button","buttonWrapper");
@@ -218,7 +223,6 @@ module.exports = (() => {
 						showInfo();
 					}
 				}
-				
 				showGeneralInformation(authors){
 					if(!Array.isArray(authors)) authors = [authors];
 					let steps = [
