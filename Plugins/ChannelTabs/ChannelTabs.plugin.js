@@ -2753,6 +2753,7 @@ module.exports = (() => {
 						min-width: var(--channelTabs-tabWidthMin);
 						flex: 1 1 var(--channelTabs-tabWidthMin);
 						margin-bottom: 3px;
+						margin-right: 3px;
 					}
 					
 					.channelTabs-tab>div:first-child {
