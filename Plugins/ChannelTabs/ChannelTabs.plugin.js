@@ -47,39 +47,24 @@ module.exports = (() => {
 					discord_id: "519397452944769025",
 					github_username: "CarJem",
 					twitter_username: "carter5467_99"
+				},
+				{
+					name: "samfundev",
+					discord_id: "76052829285916672",
+					github_username: "samfundev",
 				}
 			],
-			version: "2.6.1",
+			version: "2.6.2",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "Improvements",
-				"type": "improved",
+				"title": "Fixed",
+				"type": "fixed",
 				"items": [
-					"**Tab overflow on minimum width.** Tabs now have a minimum width and can overflow into a new row, preventing the tabs from being squished to oblivion. You can adjust the minimum value in Appearance settings.",
-					"**Standard status indicators.** You can revert to radial indicators in Appearance settings.",
-					"**New default icons.** Fixes blank icon issues.",
-					"**Sharper icons.**"
-				]
-			},
-			{
-				"title": "New stuff",
-				"type": "added",
-				"items": [
-					"**Minimize tabs.** Right click a tab then select *Minimize tab*.",
-					"**Navigation buttons.** LeftClick: Back/Forward/Close, RightClick: LeftTab/RightTab/NewTab. Alternate left and right arrows can be enabled in Behavior settings. The navigation buttons can be disabled in Appearance settings.",
-					"**Support for Favorites experiment.**"
-				]
-			},
-			{
-				"title": "Very thin tabs aren't the only option!",
-				"type": "progress",
-				"items": [
-					"**There's a Compact mode and Cozy mode.** For when your tabs look comically thin, they are in Appearance settings.",
-					"**Some configs may reset.** If this happens to you, I'm sorry."
+					"Fixed many issues related to Discord update.",
 				]
 			}
 		]
@@ -112,24 +97,27 @@ module.exports = (() => {
 
 			//#region Module/Variable Definitions
 
-			const { WebpackModules, PluginUtilities, DiscordModules, Patcher, DCM, ReactComponents, ReactTools, Settings, Modals } = Api;
-			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore } = DiscordModules;
+			const { WebpackModules, PluginUtilities, DiscordModules, Patcher, /* DCM, */ ReactComponents, ReactTools, Settings, Modals } = Api;
+			const { React, DiscordConstants, /* NavigationUtils, */ SelectedChannelStore, SelectedGuildStore, ChannelStore, /* GuildStore, */ UserStore, UserTypingStore } = DiscordModules;
+			const NavigationUtils = WebpackModules.getByProps("transitionToGuildSync");
+			const transitionTo = WebpackModules.find(m => m.toString().includes(`"transitionTo - Transitioning to "`));
+			const GuildStore = WebpackModules.getByProps("getGuildCount");
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
-			const UnreadStateStore = WebpackModules.getByProps("getMentionCount", "hasUnread");
+			const UnreadStateStore = WebpackModules.find(m => m.isEstimated);
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
 			const PermissionUtils  = WebpackModules.getByProps("can", "canManageUser");
-			const Permissions = DiscordModules.DiscordConstants.Permissions;
+			const Permissions = WebpackModules.getModule(m => m.VIEW_CREATOR_MONETIZATION_ANALYTICS);
 			const UserStatusStore = DiscordModules.UserStatusStore;
-			const Spinner = WebpackModules.getByDisplayName("Spinner");
-			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
-			const Slider = WebpackModules.getByDisplayName("Slider");
+			const Spinner = WebpackModules.getModule(m => m.toString().includes("spinningCircle"));
+			const Tooltip = WebpackModules.getModule((m) => m?.toString().includes("shouldShowTooltip") && m?.Positions);
+			const Slider = WebpackModules.getModule(m => m.toString().includes(`"[UIKit]Slider.handleMouseDown(): assert failed: domNode nodeType !== Element"`));
 			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
 
-			const Close = WebpackModules.getByDisplayName("Close");
-			const PlusAlt = WebpackModules.getByDisplayName("PlusAlt");
-			const LeftCaret = WebpackModules.getByDisplayName("LeftCaret");
-			const RightCaret = WebpackModules.getByDisplayName("RightCaret");
+			const Close = WebpackModules.find(m => m.toString().includes("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"));
+			const PlusAlt = WebpackModules.find(m => m.toString().includes("M12 2.00098C6.486 2.00098 2 6.48698 2 12.001C2"));
+			const LeftCaret = WebpackModules.find(m => m.toString().includes("18.35 4.35 16 2 6 12 16 22 18.35 19.65 10.717 12"));
+			const RightCaret = WebpackModules.find(m => m.toString().includes("8.47 2 6.12 4.35 13.753 12 6.12 19.65 8.47 22 18.47 12"));
 
 			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
 			const DefaultUserIconGreen = "https://cdn.discordapp.com/embed/avatars/1.png";
@@ -158,7 +146,57 @@ module.exports = (() => {
 			var currentGroupOpened = -1;
 
 			//#endregion
-			
+
+			// ✨ Context Menu Magic ✨ //
+			const rawModule = webpackChunkdiscord_app.map(a => a[1]).flatMap(a => Object.entries(a)).filter(a => a.toString().includes("groupend"))[0];
+			const webpackModule = WebpackModules.getByIndex(rawModule[0]);
+			const matches = rawModule[1].toString().matchAll(/if\(\w+\.type===\w+\.(\w+)\).+?type:"(.+?)"/g);
+			const itemComponents = {};
+			for (const [, identifier, type] of matches) {
+				itemComponents[type] = webpackModule[identifier];
+			}
+
+			// itemComponents has:
+			// separator
+			// groupstart (a group of items)
+			// customitem (if there's no render, regular item)
+			// checkbox
+			// radio
+			// control / compositecontrol
+			function buildMenuItem(item) {
+				const map = {
+					group: "groupstart",
+					submenu: "customitem",
+					separator: "separator",
+					toggle: "checkbox"
+				};
+
+				let reactElement;
+				if (item.checked) {
+					const originalChecked = item.checked;
+					item.checked = originalChecked();
+
+					Patcher.after(item, "action", (_, __, ___) => {
+						reactElement.props.checked = originalChecked();
+						// HACK: desperately try to get React to rerender
+						ReactTools.getOwnerInstance(document.getElementById("channelTabs-" + item.label)).props.onFocus();
+					});
+				}
+
+				const component = itemComponents[map[item.type] ?? "customitem"];
+				return reactElement = React.createElement(component, { id: item.label, ...item }, item?.items?.map(buildMenuItem));
+			}
+
+			const contextMenuComponent = WebpackModules.getModule(m => m.toString().includes(".isUsingKeyboardNavigation"));
+			const contextMenu = WebpackModules.getByProps("getContextMenu");
+			const openContextMenu = WebpackModules.getModule(m => m.length == 4 && m.toString().includes("enableSpellCheck"));
+
+			const DCM = {
+				openContextMenu: (element, menu) => openContextMenu(element, function*() { yield menu; }),
+				buildMenu: (children) => React.createElement(contextMenuComponent, { onClose: () => contextMenu.close(), navId: "channelTabs" }, children.map(buildMenuItem)),
+				buildMenuChildren: (children) => children.map(buildMenuItem)
+			};
+
 			//#region Context Menu Constructors
 
 			function CreateGuildContextMenuChildren(instance, props, channel)
@@ -279,7 +317,10 @@ module.exports = (() => {
 											label: "Minimize tab",
 											type: "toggle",
 											checked: () => props.minimized,
-											action: ()=> props.minimizeTab(props.tabIndex)
+											action: ()=> {
+												props.minimizeTab(props.tabIndex);
+												props.minimized = !props.minimized;
+											}
 										}
 										
 									]
@@ -1607,7 +1648,7 @@ module.exports = (() => {
 					"data-mention-count": props.mentionCount,
 					"data-unread-count": props.unreadCount,
 					"data-unread-estimated": props.unreadEstimated,
-					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuild(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : NavigationUtils.transitionTo(props.url),
+					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuildSync(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : transitionTo(props.url),
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
 						e.preventDefault();
@@ -2071,7 +2112,7 @@ module.exports = (() => {
 						selectedTabIndex: tabIndex
 					}, this.props.plugin.saveSettings);
 					switching = true;
-					NavigationUtils.transitionTo(this.state.tabs[tabIndex].url);
+					transitionTo(this.state.tabs[tabIndex].url);
 					switching = false;
 				}
 				
@@ -2689,6 +2730,13 @@ module.exports = (() => {
 		
 					const BaseStyle = `
 
+					.channelTabs-contextMenu {
+						position: absolute;
+						padding: 5px;
+						background: var(--background-floating);
+						border-radius: 4px;
+					}
+
 					/* 
 					//#region Tab Base/Container
 					*/
@@ -3252,7 +3300,7 @@ module.exports = (() => {
 					if(this.settings.reopenLastChannel)
 					{
 						switching = true;
-						NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
+						transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
 						switching = false;
 					}
 
