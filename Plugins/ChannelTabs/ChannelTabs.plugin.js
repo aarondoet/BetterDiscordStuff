@@ -2730,13 +2730,6 @@ module.exports = (() => {
 		
 					const BaseStyle = `
 
-					.channelTabs-contextMenu {
-						position: absolute;
-						padding: 5px;
-						background: var(--background-floating);
-						border-radius: 4px;
-					}
-
 					/* 
 					//#region Tab Base/Container
 					*/
