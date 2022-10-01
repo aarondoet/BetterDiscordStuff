@@ -115,7 +115,7 @@ module.exports = (() => {
 			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
 
 			const Close = WebpackModules.find(m => m.toString().includes("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"));
-			const PlusAlt = WebpackModules.find(m => m.toString().includes("M12 2.00098C6.486 2.00098 2 6.48698 2 12.001C2"));
+			const PlusAlt = WebpackModules.find(m => m.toString().includes("15 10 10 10 10 15 8 15 8 10 3 10 3 8 8 8 8 3 10 3 10 8 15 8"));
 			const LeftCaret = WebpackModules.find(m => m.toString().includes("18.35 4.35 16 2 6 12 16 22 18.35 19.65 10.717 12"));
 			const RightCaret = WebpackModules.find(m => m.toString().includes("8.47 2 6.12 4.35 13.753 12 6.12 19.65 8.47 22 18.47 12"));
 
