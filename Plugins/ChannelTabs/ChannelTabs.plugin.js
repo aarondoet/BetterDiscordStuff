@@ -54,7 +54,7 @@ module.exports = (() => {
 					github_username: "samfundev",
 				}
 			],
-			version: "2.6.4",
+			version: "2.6.5",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -100,8 +100,11 @@ module.exports = (() => {
 			//#region Module/Variable Definitions
 
 			const { WebpackModules, PluginUtilities, DiscordModules, ReactComponents, ReactTools, Settings, Modals } = Api;
-			const { React, DiscordConstants, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore, Permissions } = DiscordModules;
-			const { ContextMenu, Patcher } = new BdApi("ChannelTabs");
+			const { React, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore, Permissions } = DiscordModules;
+			const { ContextMenu, Patcher, Webpack } = new BdApi("ChannelTabs");
+			const DiscordConstants = {
+				ChannelTypes: Webpack.getModule(Webpack.Filters.byProps("GUILD_TEXT"), { searchExports: true })
+			};
 			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
 			const UnreadStateStore = WebpackModules.find(m => m.isEstimated);
 			const Flux = WebpackModules.getByProps("connectStores");
@@ -146,56 +149,6 @@ module.exports = (() => {
 
 			//#endregion
 			
-			// ✨ Context Menu Magic ✨ //
-			const rawModule = webpackChunkdiscord_app.map(a => a[1]).flatMap(a => Object.entries(a)).filter(a => a.toString().includes("groupend"))[0];
-			const webpackModule = WebpackModules.getByIndex(rawModule[0]);
-			const matches = rawModule[1].toString().matchAll(/if\(\w+\.type===\w+\.(\w+)\).+?type:"(.+?)"/g);
-			const itemComponents = {};
-			for (const [, identifier, type] of matches) {
-				itemComponents[type] = webpackModule[identifier];
-			}
-
-			// itemComponents has:
-			// separator
-			// groupstart (a group of items)
-			// customitem (if there's no render, regular item)
-			// checkbox
-			// radio
-			// control / compositecontrol
-			function buildMenuItem(item) {
-				const map = {
-					group: "groupstart",
-					submenu: "customitem",
-					separator: "separator",
-					toggle: "checkbox"
-				};
-
-				let reactElement;
-				if (item.checked) {
-					const originalChecked = item.checked;
-					item.checked = originalChecked();
-
-					Patcher.after(item, "action", (_, __, ___) => {
-						reactElement.props.checked = originalChecked();
-						// HACK: desperately try to get React to rerender
-						ReactTools.getOwnerInstance(document.getElementById("channelTabs-" + item.label)).props.onFocus();
-					});
-				}
-
-				const component = itemComponents[map[item.type] ?? "customitem"];
-				return reactElement = React.createElement(component, { id: item.label, ...item }, item?.items?.map(buildMenuItem));
-			}
-
-			const contextMenuComponent = WebpackModules.getModule(m => m.toString().includes(".isUsingKeyboardNavigation"));
-			const contextMenu = WebpackModules.getByProps("getContextMenu");
-			const openContextMenu = WebpackModules.getModule(m => m.length == 4 && m.toString().includes("enableSpellCheck"));
-
-			const DCM = {
-				openContextMenu: (element, menu) => openContextMenu(element, function*() { yield menu; }),
-				buildMenu: (children) => React.createElement(contextMenuComponent, { onClose: () => contextMenu.close(), navId: "channelTabs" }, children.map(buildMenuItem)),
-				buildMenuChildren: (children) => children.map(buildMenuItem)
-			};
-
 			//#region Context Menu Constructors
 
 			function CreateGuildContextMenuChildren(instance, props, channel)
@@ -316,10 +269,7 @@ module.exports = (() => {
 											label: "Minimize tab",
 											type: "toggle",
 											checked: () => props.minimized,
-											action: ()=> {
-												props.minimizeTab(props.tabIndex);
-												props.minimized = !props.minimized;
-										}
+											action: ()=> props.minimizeTab(props.tabIndex)
 										}
 										
 									]
@@ -1573,6 +1523,14 @@ module.exports = (() => {
 						return entry;
 					}
 				);
+
+				if (groups.length === 0) {
+					return [{
+						label: "No groups",
+						disabled: true
+					}]
+				}
+
 				return groups;
 			}
 
@@ -1647,7 +1605,7 @@ module.exports = (() => {
 					"data-mention-count": props.mentionCount,
 					"data-unread-count": props.unreadCount,
 					"data-unread-estimated": props.unreadEstimated,
-					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuildSync(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : transitionTo(props.url),
+					onClick: ()=>props.guildId ? NavigationUtils.transitionToGuild(props.guildId, SelectedChannelStore.getChannelId(props.guildId)) : NavigationUtils.transitionTo(props.url),
 					onMouseUp: e=>{
 						if(e.button !== 1) return;
 						e.preventDefault();
@@ -2111,7 +2069,7 @@ module.exports = (() => {
 						selectedTabIndex: tabIndex
 					}, this.props.plugin.saveSettings);
 					switching = true;
-					transitionTo(this.state.tabs[tabIndex].url);
+					NavigationUtils.transitionTo(this.state.tabs[tabIndex].url);
 					switching = false;
 				}
 				
@@ -3292,7 +3250,7 @@ module.exports = (() => {
 					if(this.settings.reopenLastChannel)
 					{
 						switching = true;
-						transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
+						NavigationUtils.transitionTo((this.settings.tabs.find(tab=>tab.selected) || this.settings.tabs[0]).url);
 						switching = false;
 					}
 
@@ -3357,26 +3315,27 @@ module.exports = (() => {
 				{
 					patches.push(
 						ContextMenu.patch("channel-context", (returnValue, props) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						returnValue.props.children.push(CreateTextChannelContextMenuChildren(this, props));
+							if(!this.settings.showTabBar && !this.settings.showFavBar) return;
+							returnValue.props.children.push(CreateTextChannelContextMenuChildren(this, props));
 						}),
 
 						ContextMenu.patch("user-context", (returnValue, props) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						if(!returnValue) return;
+							if(!this.settings.showTabBar && !this.settings.showFavBar) return;
+							if(!returnValue) return;
+							if (!props.channel || props.channel.recipients.length !== 1 || props.channel.recipients[0] !== props.user.id) return;
 							returnValue.props.children.push(CreateDMContextMenuChildren(this, props));
 						}),
 
 						ContextMenu.patch("gdm-context", (returnValue, props) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						if(!returnValue) return;
-						returnValue.props.children.push(CreateGroupContextMenuChildren(this, props));
+							if(!this.settings.showTabBar && !this.settings.showFavBar) return;
+							if(!returnValue) return;
+							returnValue.props.children.push(CreateGroupContextMenuChildren(this, props));
 						}),
 
 						ContextMenu.patch("guild-context", (returnValue, props) => {
-						if(!this.settings.showTabBar && !this.settings.showFavBar) return;
-						const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId(props.guild.id));
-						returnValue.props.children.push(CreateGuildContextMenuChildren(this, props, channel));
+							if(!this.settings.showTabBar && !this.settings.showFavBar) return;
+							const channel = ChannelStore.getChannel(SelectedChannelStore.getChannelId(props.guild.id));
+							returnValue.props.children.push(CreateGuildContextMenuChildren(this, props, channel));
 						})
 					);
 				}
