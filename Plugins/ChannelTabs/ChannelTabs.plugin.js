@@ -192,7 +192,7 @@ module.exports = (() => {
 									action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.guild.id, props.channel.id, "#" + props.channel.name, props.guild.getIconURL() || "")
 								}],
 								[{
-									label: "Save bookmark",
+									label: "Save channel as bookmark",
 									action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("#" + props.channel.name, props.guild.getIconURL() || "", `/channels/${props.guild.id}/${props.channel.id}`, props.channel.id)
 								}]
 							)
@@ -212,11 +212,11 @@ module.exports = (() => {
 							items: instance.mergeItems(
 								[{
 									label: "Open in new tab",
-									action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.avatarURL)
+									action: ()=>TopBarRef.current && TopBarRef.current.saveChannel(props.channel.guild_id, props.channel.id, "@" + (props.channel.name || props.user.username), props.user.getAvatarURL(null, 40, false))
 								}],
 								[{
-									label: "Save bookmark",
-									action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.user.username), props.user.avatarURL, `/channels/@me/${props.channel.id}`, props.channel.id)
+									label: "Save DM as bookmark",
+									action: ()=>TopBarRef.current && TopBarRef.current.addToFavs("@" + (props.channel.name || props.user.username), props.user.getAvatarURL(null, 40, false), `/channels/@me/${props.channel.id}`, props.channel.id)
 								}]
 							)
 						}
