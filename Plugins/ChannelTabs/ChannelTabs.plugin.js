@@ -54,7 +54,7 @@ module.exports = (() => {
 					github_username: "samfundev",
 				}
 			],
-			version: "2.6.6",
+			version: "2.6.7",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
@@ -64,9 +64,8 @@ module.exports = (() => {
 				"title": "Fixed",
 				"type": "fixed",
 				"items": [
-					"Restored context menus for channels, DMs, and guilds",
-					"Fixed for BD 1.8.0",
-					"Requires ZeresPluginLibrary to be 2.0.7"
+					"Fixed appearance context causing a crash",
+					"Fixed some context menu options displaying incorrectly",
 				]
 			}
 		]
@@ -105,7 +104,7 @@ module.exports = (() => {
 			const DiscordConstants = {
 				ChannelTypes: Webpack.getModule(Webpack.Filters.byProps("GUILD_TEXT"), { searchExports: true })
 			};
-			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text");
+			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text", { searchExports: true });
 			const UnreadStateStore = WebpackModules.find(m => m.isEstimated);
 			const Flux = WebpackModules.getByProps("connectStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
@@ -113,7 +112,7 @@ module.exports = (() => {
 			const UserStatusStore = DiscordModules.UserStatusStore;
 			const Spinner = WebpackModules.getModule(m => m.toString().includes("spinningCircle"));
 			const Tooltip = WebpackModules.getModule((m) => m?.toString().includes("shouldShowTooltip") && m?.Positions);
-			const Slider = WebpackModules.getModule(m => m.toString().includes(`"[UIKit]Slider.handleMouseDown(): assert failed: domNode nodeType !== Element"`));
+			const Slider = WebpackModules.getModule(m => m?.toString().includes(`"[UIKit]Slider.handleMouseDown(): assert failed: domNode nodeType !== Element"`), { searchExports: true });
 			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
 
 			const Close = WebpackModules.find(m => m.toString().includes("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"));
@@ -300,7 +299,7 @@ module.exports = (() => {
 											type: "submenu",
 											label: "Close...",
 											id: "closeMenu",
-											danger: true,
+											color: "danger",
 											action: ()=>props.closeTab(props.tabIndex, "single"),
 											items: mergeLists(
 												{
@@ -308,12 +307,12 @@ module.exports = (() => {
 														{
 															label: "Close tab",
 															action: ()=>props.closeTab(props.tabIndex, "single"),
-															danger: true
+															color: "danger"
 														},
 														{
 															label: "Close all other tabs",
 															action: ()=>props.closeTab(props.tabIndex, "other"),
-															danger: true
+															color: "danger"
 														}
 													]
 												},
@@ -323,7 +322,7 @@ module.exports = (() => {
 														{
 															label: "Close all tabs to right",
 															action: ()=>props.closeTab(props.tabIndex, "right"),
-															danger: true
+															color: "danger"
 														}
 													]
 												},
@@ -333,7 +332,7 @@ module.exports = (() => {
 														{
 															label: "Close all tabs to left",
 															action: ()=>props.closeTab(props.tabIndex, "left"),
-															danger: true
+															color: "danger"
 														}
 													]
 												}
@@ -408,7 +407,7 @@ module.exports = (() => {
 														{
 															label: "Favorites Bar",
 															id: "entryNone",
-															danger: true,
+															color: "danger",
 															action: () => props.moveToFavGroup(props.favIndex, -1)
 														},
 														{
@@ -431,7 +430,7 @@ module.exports = (() => {
 										{
 											label: "Delete",
 											action: props.delete,
-											danger: true
+											color: "danger"
 										}
 									]
 								}
@@ -494,7 +493,7 @@ module.exports = (() => {
 											label: "Delete",
 											id: "deleteGroup",
 											action: ()=>props.removeFavGroup(props.favGroup.groupId),
-											danger: true
+											color: "danger"
 										}
 									]
 								}
@@ -530,7 +529,7 @@ module.exports = (() => {
 								{
 									label: "Hide Favorites",
 									action: props.hideFavBar,
-									danger: true
+									color: "danger"
 								}
 							]
 						}
@@ -703,7 +702,7 @@ module.exports = (() => {
 													label: "Show Tab Bar",
 													type: "toggle",
 													id: "showTabBar",
-													danger: true,
+													color: "danger",
 													checked: () => TopBarRef.current.state.showTabBar,
 													action: () => {
 														instance.setState({
@@ -718,7 +717,7 @@ module.exports = (() => {
 													label: "Show Fav Bar",
 													type: "toggle",
 													id: "showFavBar",
-													danger: true,
+													color: "danger",
 													checked: () => TopBarRef.current.state.showFavBar,
 													action: () => {
 														instance.setState({
@@ -733,7 +732,7 @@ module.exports = (() => {
 													label: "Show Quick Settings",
 													type: "toggle",
 													id: "showQuickSettings",
-													danger: true,
+													color: "danger",
 													checked: () => TopBarRef.current.state.showQuickSettings,
 													action: () => {
 														instance.setState({
