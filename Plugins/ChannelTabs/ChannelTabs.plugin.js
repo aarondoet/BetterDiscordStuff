@@ -1,10 +1,9 @@
 /**
 * @name ChannelTabs
 * @displayName ChannelTabs
-* @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/ChannelTabs.plugin.js
-* @patreon https://www.patreon.com/l0c4lh057
-* @authorId 226677096091484160
-* @invite YzzeuJPpyj
+* @source https://github.com/samfundev/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/ChannelTabs.plugin.js
+* @donate https://paypal.me/samfun123
+* @authorId 76052829285916672
 */
 /*@cc_on
 @if (@_jscript)
@@ -54,18 +53,17 @@ module.exports = (() => {
 					github_username: "samfundev",
 				}
 			],
-			version: "2.6.7",
+			version: "2.6.8",
 			description: "Allows you to have multiple tabs and bookmark channels",
-			github: "https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
-			github_raw: "https://raw.githubusercontent.com/l0c4lh057/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
+			github: "https://github.com/samfundev/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
+			github_raw: "https://raw.githubusercontent.com/samfundev/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
 				"title": "Fixed",
 				"type": "fixed",
 				"items": [
-					"Fixed appearance context causing a crash",
-					"Fixed some context menu options displaying incorrectly",
+					"Fixed typing indicator causing a crash"
 				]
 			}
 		]
@@ -98,27 +96,61 @@ module.exports = (() => {
 
 			//#region Module/Variable Definitions
 
-			const { WebpackModules, PluginUtilities, DiscordModules, ReactComponents, ReactTools, Settings, Modals } = Api;
+			const { PluginUtilities, DiscordModules, ReactComponents, ReactTools, Settings, Modals } = Api;
 			const { React, NavigationUtils, SelectedChannelStore, SelectedGuildStore, ChannelStore, GuildStore, UserStore, UserTypingStore, Permissions } = DiscordModules;
 			const { ContextMenu, Patcher, Webpack } = new BdApi("ChannelTabs");
-			const DiscordConstants = {
-				ChannelTypes: Webpack.getModule(Webpack.Filters.byProps("GUILD_TEXT"), { searchExports: true })
-			};
-			const Textbox = WebpackModules.find(m => m.defaultProps && m.defaultProps.type == "text", { searchExports: true });
-			const UnreadStateStore = WebpackModules.find(m => m.isEstimated);
-			const Flux = WebpackModules.getByProps("connectStores");
-			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
-			const PermissionUtils  = WebpackModules.getByProps("can", "canManageUser");
-			const UserStatusStore = DiscordModules.UserStatusStore;
-			const Spinner = WebpackModules.getModule(m => m.toString().includes("spinningCircle"));
-			const Tooltip = WebpackModules.getModule((m) => m?.toString().includes("shouldShowTooltip") && m?.Positions);
-			const Slider = WebpackModules.getModule(m => m?.toString().includes(`"[UIKit]Slider.handleMouseDown(): assert failed: domNode nodeType !== Element"`), { searchExports: true });
-			const NavShortcuts = WebpackModules.getByProps("NAVIGATE_BACK", "NAVIGATE_FORWARD");
 
-			const Close = WebpackModules.find(m => m.toString().includes("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"));
-			const PlusAlt = WebpackModules.find(m => m.toString().includes("15 10 10 10 10 15 8 15 8 10 3 10 3 8 8 8 8 3 10 3 10 8 15 8"));
-			const LeftCaret = WebpackModules.find(m => m.toString().includes("18.35 4.35 16 2 6 12 16 22 18.35 19.65 10.717 12"));
-			const RightCaret = WebpackModules.find(m => m.toString().includes("8.47 2 6.12 4.35 13.753 12 6.12 19.65 8.47 22 18.47 12"));
+			function getModule(filter, options = {}) {
+				const foundModule = Webpack.getModule(filter, options);
+
+				if (!foundModule) {
+					missingModule(options);
+					if (options.onFail) options.onFail(options);
+				}
+
+				return foundModule;
+			}
+
+			function getStack() {
+				const original = Error.prepareStackTrace;
+				Error.prepareStackTrace = (_, stackTraces) => stackTraces;
+
+				const stack = new Error().stack.slice(1);
+
+				Error.prepareStackTrace = original;
+				return stack;
+			}
+
+			function missingModule({ name = "<unnamed>", feature, fatal = false }) {
+				const stack = getStack();
+				const index = stack.findIndex(site => site.getFunctionName() === "getModule");
+				const trace = stack.filter((_, i) => i > index).join("\n");
+				console.warn(`Could not find '${name}' module.\n${trace}`);
+				if (fatal) throw `Could not find '${name}' module.`;
+				if (feature != null) {
+					BdApi.Toasts.showToast(`Something changed in Discord's internals! ${feature} will be unavailable.`, { type: "warning" });
+				}
+			}
+
+			const { byProps, byStrings } = Webpack.Filters;
+			const DiscordConstants = {
+				ChannelTypes: getModule(byProps("GUILD_TEXT"), { searchExports: true })
+			};
+			const Textbox = getModule(m => m.defaultProps && m.defaultProps.type == "text", { searchExports: true });
+			const UnreadStateStore = getModule(m => m.isEstimated);
+			const Flux = getModule(byProps("connectStores"));
+			const MutedStore = getModule(byProps("isMuted", "isChannelMuted"));
+			const PermissionUtils  = getModule(byProps("can", "canManageUser"));
+			const UserStatusStore = DiscordModules.UserStatusStore;
+			const Spinner = getModule(m => m.Type?.SPINNING_CIRCLE, { searchExports: true })
+			const Tooltip = getModule((m) => m?.toString().includes("shouldShowTooltip") && m?.Positions);
+			const Slider = getModule(byStrings(`"[UIKit]Slider.handleMouseDown(): assert failed: domNode nodeType !== Element"`), { searchExports: true });
+			const NavShortcuts = getModule(byProps("NAVIGATE_BACK", "NAVIGATE_FORWARD"));
+
+			const Close = getModule(byStrings("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"));
+			const PlusAlt = getModule(byStrings("15 10 10 10 10 15 8 15 8 10 3 10 3 8 8 8 8 3 10 3 10 8 15 8"));
+			const LeftCaret = getModule(byStrings("18.35 4.35 16 2 6 12 16 22 18.35 19.65 10.717 12"));
+			const RightCaret = getModule(byStrings("8.47 2 6.12 4.35 13.753 12 6.12 19.65 8.47 22 18.47 12"));
 
 			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
 			const DefaultUserIconGreen = "https://cdn.discordapp.com/embed/avatars/1.png";
@@ -3302,7 +3334,7 @@ module.exports = (() => {
 						].flat();
 					});
 					const forceUpdate = ()=>{
-						const { app } = WebpackModules.getByProps("app", "layers") || {};
+						const { app } = getModule(byProps("app", "layers") || {});
 						const query = document.querySelector(`.${app}`);
 						if(query) ReactTools.getOwnerInstance(query)?.forceUpdate?.();
 					};
