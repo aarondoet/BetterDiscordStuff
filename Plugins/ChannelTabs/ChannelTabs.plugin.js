@@ -53,17 +53,24 @@ module.exports = (() => {
 					github_username: "samfundev",
 				}
 			],
-			version: "2.6.8",
+			version: "2.6.9",
 			description: "Allows you to have multiple tabs and bookmark channels",
 			github: "https://github.com/samfundev/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/",
 			github_raw: "https://raw.githubusercontent.com/samfundev/BetterDiscordStuff/master/Plugins/ChannelTabs/ChannelTabs.plugin.js"
 		},
 		changelog: [
 			{
-				"title": "Fixed",
-				"type": "fixed",
-				"items": [
-					"Fixed typing indicator causing a crash"
+				title: "Fixed",
+				type: "fixed",
+				items: [
+					"Fixed tooltip causing a crash",
+				]
+			},
+			{
+				title: "Improved Stability",
+				type: "improved",
+				items: [
+					"Discord updates should cause less crashes/bugs",
 				]
 			}
 		]
@@ -101,7 +108,7 @@ module.exports = (() => {
 			const { ContextMenu, Patcher, Webpack } = new BdApi("ChannelTabs");
 
 			function getModule(filter, options = {}) {
-				const foundModule = Webpack.getModule(filter, options);
+				const foundModule = options.fail ? undefined : Webpack.getModule(filter, options);
 
 				if (!foundModule) {
 					missingModule(options);
@@ -121,6 +128,9 @@ module.exports = (() => {
 				return stack;
 			}
 
+			if (this.dismissWarning) this.dismissWarning()
+			this.dismissWarning = null;
+			let missingFeatures = [];
 			function missingModule({ name = "<unnamed>", feature, fatal = false }) {
 				const stack = getStack();
 				const index = stack.findIndex(site => site.getFunctionName() === "getModule");
@@ -128,29 +138,40 @@ module.exports = (() => {
 				console.warn(`Could not find '${name}' module.\n${trace}`);
 				if (fatal) throw `Could not find '${name}' module.`;
 				if (feature != null) {
-					BdApi.Toasts.showToast(`Something changed in Discord's internals! ${feature} will be unavailable.`, { type: "warning" });
+					missingFeatures.push(feature);
+
+					if (dismissWarning) dismissWarning()
+					const content = BdApi.DOM.parseHTML(`<span style="background: white; color: var(--color); padding: 1px 3px; margin-right: 3px; border-radius: 5px;">ChannelTabs</span> These features are unavailable: ${missingFeatures.join(", ")}`, true);
+					dismissWarning = BdApi.UI.showNotice(content, { type: "warning" })
 				}
+			}
+
+			class FakeUnreadStateStore extends require("events").EventEmitter {
+				getUnreadCount() { return 0; }
+				getMentionCount() { return 0; }
+				isEstimated() { return false; }
+				hasUnread() { return false; }
 			}
 
 			const { byProps, byStrings } = Webpack.Filters;
 			const DiscordConstants = {
 				ChannelTypes: getModule(byProps("GUILD_TEXT"), { searchExports: true })
 			};
-			const Textbox = getModule(m => m.defaultProps && m.defaultProps.type == "text", { searchExports: true });
-			const UnreadStateStore = getModule(m => m.isEstimated);
-			const Flux = getModule(byProps("connectStores"));
+			const Textbox = getModule(m => m.defaultProps && m.defaultProps.type == "text", { searchExports: true }) ?? (props => React.createElement("input", { ...props, onChange: e => props?.onChange(e.target.value) }));
+			const UnreadStateStore = getModule(m => m.isEstimated, { feature: "Unread/Mention Indicators" }) ?? new FakeUnreadStateStore();
+			const Flux = getModule(byProps("connectStores"), { name: "Flux", fatal: true });
 			const MutedStore = getModule(byProps("isMuted", "isChannelMuted"));
-			const PermissionUtils  = getModule(byProps("can", "canManageUser"));
+			const PermissionUtils = getModule(byProps("can", "canManageUser"));
 			const UserStatusStore = DiscordModules.UserStatusStore;
-			const Spinner = getModule(m => m.Type?.SPINNING_CIRCLE, { searchExports: true })
-			const Tooltip = getModule((m) => m?.toString().includes("shouldShowTooltip") && m?.Positions);
+			const Spinner = getModule(m => m.Type?.SPINNING_CIRCLE, { searchExports: true, feature: "Typing Indicators" });
+			const Tooltip = BdApi.Components.Tooltip;
 			const Slider = getModule(byStrings(`"[UIKit]Slider.handleMouseDown(): assert failed: domNode nodeType !== Element"`), { searchExports: true });
 			const NavShortcuts = getModule(byProps("NAVIGATE_BACK", "NAVIGATE_FORWARD"));
 
-			const Close = getModule(byStrings("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z"));
-			const PlusAlt = getModule(byStrings("15 10 10 10 10 15 8 15 8 10 3 10 3 8 8 8 8 3 10 3 10 8 15 8"));
-			const LeftCaret = getModule(byStrings("18.35 4.35 16 2 6 12 16 22 18.35 19.65 10.717 12"));
-			const RightCaret = getModule(byStrings("8.47 2 6.12 4.35 13.753 12 6.12 19.65 8.47 22 18.47 12"));
+			const Close = getModule(byStrings("M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z")) ?? (() => React.createElement("div", { style: { width: "16px", "text-align": "center" } }, "⨯"));
+			const PlusAlt = getModule(byStrings("15 10 10 10 10 15 8 15 8 10 3 10 3 8 8 8 8 3 10 3 10 8 15 8")) ?? (() => React.createElement("b", null, "＋"));
+			const LeftCaret = getModule(byStrings("18.35 4.35 16 2 6 12 16 22 18.35 19.65 10.717 12")) ?? (() => React.createElement("b", null, "<"));
+			const RightCaret = getModule(byStrings("8.47 2 6.12 4.35 13.753 12 6.12 19.65 8.47 22 18.47 12")) ?? (() => React.createElement("b", null, ">"));
 
 			const DefaultUserIconGrey = "https://cdn.discordapp.com/embed/avatars/0.png";
 			const DefaultUserIconGreen = "https://cdn.discordapp.com/embed/avatars/1.png";
@@ -1371,7 +1392,7 @@ module.exports = (() => {
 			}, props.mentionCount);
 
 			const TabTypingBadge = ({viewMode, isTyping, userIds})=>{
-				if (isTyping === false) return null;
+				if (isTyping === false || !Spinner) return null;
 				const text = getChannelTypingTooltipText(userIds);
 				return React.createElement(
 					"div",
@@ -1607,6 +1628,7 @@ module.exports = (() => {
 
 
 			const FavTypingBadge = ({isTyping, userIds})=>{
+				if (!Spinner) return null;
 				const text = getChannelTypingTooltipText(userIds);
 				return React.createElement(
 					Tooltip,
@@ -3334,7 +3356,7 @@ module.exports = (() => {
 						].flat();
 					});
 					const forceUpdate = ()=>{
-						const { app } = getModule(byProps("app", "layers") || {});
+						const { app } = getModule(byProps("app", "layers")) || {};
 						const query = document.querySelector(`.${app}`);
 						if(query) ReactTools.getOwnerInstance(query)?.forceUpdate?.();
 					};
