@@ -4,6 +4,7 @@
 * @source https://github.com/samfundev/BetterDiscordStuff/blob/master/Plugins/ChannelTabs/ChannelTabs.plugin.js
 * @donate https://paypal.me/samfun123
 * @authorId 76052829285916672
+* @version 2.6.9
 */
 /*@cc_on
 @if (@_jscript)
@@ -2050,6 +2051,7 @@ module.exports = (() => {
 						tabs: props.tabs,
 						favs: props.favs,
 						favGroups: props.favGroups,
+						reopenLastChannel: props.reopenLastChannel,
 						showTabBar: props.showTabBar,
 						showFavBar: props.showFavBar,
 						showFavUnreadBadges: props.showFavUnreadBadges,
@@ -2073,7 +2075,7 @@ module.exports = (() => {
 						showQuickSettings: props.showQuickSettings,
 						showNavButtons: props.showNavButtons,
 						alwaysFocusNewTabs: props.alwaysFocusNewTabs,
-						useStandardNav: props.useStandardNav
+						useStandardNav: props.useStandardNav,
 					};
 					this.switchToTab = this.switchToTab.bind(this);
 					this.closeTab = this.closeTab.bind(this);
@@ -3320,6 +3322,7 @@ module.exports = (() => {
 					Patcher.after(AppView.component.prototype, "render", (thisObject, _, returnValue) => {
 						returnValue.props.children = [
 							React.createElement(TopBar, {
+								reopenLastChannel: this.settings.reopenLastChannel,
 								showTabBar: this.settings.showTabBar,
 								showFavBar: this.settings.showFavBar,
 								showFavUnreadBadges: this.settings.showFavUnreadBadges,
