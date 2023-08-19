@@ -102,7 +102,8 @@ module.exports = (() => {
 			const Spinner = BdApi.Webpack.getModule(x=>x.Spinner).Spinner; //WebpackModules.getByDisplayName("Spinner");
 			const Tooltip = BdApi.Components.Tooltip;
 			
-			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
+			// I don't think anyone wants this, aaron. Requested removal.
+			/*if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
 				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
 				BdApi.showConfirmationModal("Do you want to download a helper plugin?", `Do you want to download a helper plugin that makes it easier for you to report issues? That plugin is not needed to anything else to function correctly but nice to have when reporting iissues, shortening the time until the problem gets resolved by asking you for specific information and also including additional information you did not provide.`, {
 					confirmText: "Download",
@@ -116,23 +117,28 @@ module.exports = (() => {
 						});
 					}
 				});
-			}
+			}*/
 			
 			const renderElement = ({userIds, opacity, type, isFocused, id})=>{
 				userIds = [...new Set(userIds)];
 				if(userIds.length === 0) return null;
-				const usernames = userIds.map(userId => UserStore.getUser(userId)).filter(user => user).map(user => user.tag);
+				const usernames = userIds
+					.map(userId => UserStore.getUser(userId))
+					.filter(user => user !== null)  // For some reason faulty name existed. so null check OwO
+					.map(user => user.tag);
+				const filteredUsernames = usernames.map(username => username.replace(/#0000$/, ''));
+				
 				const remainingUserCount = userIds.length - usernames.length;
 				const text = (()=>{
-					if(usernames.length === 0){
+					if(filteredUsernames.length === 0){
 						return `${remainingUserCount} user${remainingUserCount > 1 ? "s" : ""}`;
 					}else if(userIds.length > 2){
-						const otherCount = usernames.length - 1 + remainingUserCount;
-						return `${usernames[0]} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
+						const otherCount = filteredUsernames.length - 1 + remainingUserCount;
+						return `${filteredUsernames[0]} and ${otherCount} other${otherCount > 1 ? "s" : ""}`;
 					}else if(remainingUserCount === 0){
-						return usernames.join(", ");
+						return filteredUsernames.join(", ");
 					}else{
-						return `${usernames.join(", ")} and ${remainingUserCount} other${remainingUserCount > 1 ? "s" : ""}`;
+						return `${filteredUsernames.join(", ")} and ${remainingUserCount} other${remainingUserCount > 1 ? "s" : ""}`;
 					}
 				})();
 				return React.createElement(
@@ -178,7 +184,7 @@ module.exports = (() => {
 					`);
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
 					this.patchChannelList();
-					//this.patchGuildList(this.promises.state);
+					this.patchGuildList(this.promises.state);
 					this.patchHomeIcon(this.promises.state);
 					this.patchFolders(this.promises.state);
 				}
@@ -245,9 +251,9 @@ module.exports = (() => {
 				}
 				
 				// this still doesnt work but it was an attempt to fix it and im too lazy to undo it for release
-				/*patchGuildList(promiseState){
-					const GuildComponents = WebpackModules.getModule(m => m?.default?.displayName === "GuildNode");
-					if (!GuildComponents || typeof GuildComponents.default !== "function") return console.error("[TypingIndicator] Could not find Guild components");
+				// Yeah it isnt gonna work for now. Will rework later with better result
+				patchGuildList(promiseState){
+					const result = (target => target ? [target, Object.keys(target).find(k => ['includeActivity', 'onBlur'].every(s => target[k]?.toString?.().includes(s)))] : [])(WebpackModules.getModule(m => Object.values(m).some(m => ['includeActivity', 'onBlur'].every(s => m?.toString?.().includes(s))), {searchGetters: false}));
 					const selfId = UserStore.getCurrentUser()?.id;
 					if(!selfId) return setTimeout(()=>this.patchGuildList(promiseState), 100);
 					const Indicator = guildId => {
@@ -276,13 +282,17 @@ module.exports = (() => {
 						}
 						return returnValue;
 					}
-					Patcher.after(GuildComponents, "default", (_, [args], returnValue)=>{
-						const original = returnValue.type;
-						returnValue.type = PatchedGuild;
-						returnValue.props.__TI_original = original;
+					Patcher.after(...result, (_, [args], returnValue)=>{ // Woah? Patch??
+						Patcher.after(returnValue.props.text, 'type', (self, _, value) => { // WOAH!? ANOTHER PATCH??!!
+							console.log("patched guild",returnValue.props.text)
+							const original = returnValue.type;
+							returnValue.type = PatchedGuild;
+							returnValue.props.__TI_original = original;
+							//returnValue.props.children.props.children.push(Indicator({guildId: returnValue.props.text.props.guild.id}));
+						})
 					});
 					this.forceUpdateGuilds(promiseState);
-				}*/
+				}
 				
 				async patchHomeIcon(promiseState){
 					const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(/ /g, "."));
@@ -308,7 +318,7 @@ module.exports = (() => {
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 1, type: "dms", isFocused: WindowInfo.isFocused()});
 						});
-						children.props.children = React.Children.toArray(children.props.children);
+						children.props.children = React.Children.toArray(children.props.children.children.props.children);
 						if(children.props.children.push) children.props.children.push(React.createElement(wrappedCount));
 					});
 					Home.forceUpdateAll();
