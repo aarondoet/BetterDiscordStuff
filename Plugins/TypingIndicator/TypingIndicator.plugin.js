@@ -284,7 +284,6 @@ module.exports = (() => {
 					}
 					Patcher.after(...result, (_, [args], returnValue)=>{ // Woah? Patch??
 						Patcher.after(returnValue.props.text, 'type', (self, _, value) => { // WOAH!? ANOTHER PATCH??!!
-							console.log("patched guild",returnValue.props.text)
 							const original = returnValue.type;
 							returnValue.type = PatchedGuild;
 							returnValue.props.__TI_original = original;
