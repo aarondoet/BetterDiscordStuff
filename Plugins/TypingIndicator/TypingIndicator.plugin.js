@@ -5,7 +5,7 @@
  * @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js
  * @patreon https://www.patreon.com/l0c4lh057
  * @invite YzzeuJPpyj
- * @authorId 226677096091484160, 917630027477159986, 568109529884000260
+ * @authorId 226677096091484160, 917630027477159986, 933076363102007317
  * @author l0c4lh057 , imafrogowo , davilarek
  */
 
