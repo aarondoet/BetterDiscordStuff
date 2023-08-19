@@ -135,7 +135,6 @@ module.exports = (() => {
 						return `${usernames.join(", ")} and ${remainingUserCount} other${remainingUserCount > 1 ? "s" : ""}`;
 					}
 				})();
-				console.log(usernames)
 				return React.createElement(
 					Tooltip,
 					{
