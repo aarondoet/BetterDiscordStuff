@@ -5,7 +5,8 @@
  * @source https://github.com/l0c4lh057/BetterDiscordStuff/blob/master/Plugins/TypingIndicator/TypingIndicator.plugin.js
  * @patreon https://www.patreon.com/l0c4lh057
  * @invite YzzeuJPpyj
- * @authorId 226677096091484160
+ * @authorId 226677096091484160, 917630027477159986, 933076363102007317
+ * @author l0c4lh057 , imafrogowo , davilarek
  */
 
 module.exports = (() => {
@@ -98,8 +99,8 @@ module.exports = (() => {
 			const Flux = WebpackModules.getByProps("connectStores");
 			const FluxUtils = WebpackModules.getByProps("useStateFromStores");
 			const MutedStore = WebpackModules.getByProps("isMuted", "isChannelMuted");
-			const Spinner = WebpackModules.getByDisplayName("Spinner");
-			const Tooltip = WebpackModules.getByDisplayName("Tooltip");
+			const Spinner = BdApi.Webpack.getModule(x=>x.Spinner).Spinner; //WebpackModules.getByDisplayName("Spinner");
+			const Tooltip = BdApi.Components.Tooltip;
 			
 			if(!BdApi.Plugins.get("BugReportHelper") && !BdApi.getData(config.info.name, "didShowIssueHelperPopup")){
 				BdApi.saveData(config.info.name, "didShowIssueHelperPopup", true);
@@ -158,26 +159,26 @@ module.exports = (() => {
 				onStart(){
 					PluginUtilities.addStyle("typingindicator-css", `
 						.typingindicator-guild, .typingindicator-dms, .typingindicator-folder {
-							position: absolute;
-							bottom: 0;
-							padding: 3px;
-							border-radius: 6px;
-							background-color: var(--background-tertiary);
-							right: 14px;
+							position: absolute !important;
+							bottom: 0 !important;
+							padding: 3px !important;
+							border-radius: 6px !important;
+							background-color: var(--background-tertiary) !important;
+							right: 14px !important;
 						}
 						.ti-indicator span.pulsingEllipsisItem-3pNmEc {
-							background-color: var(--channels-default);
+							background-color: var(--channels-default) !important;
 						}
 						.ti-indicator .pulsingEllipsis-3YiXRF {
-							width: 22px;
+							width: 22px !important;
 						}
 						.ti-indicator .pulsingEllipsisItem-3pNmEc:nth-of-type(3) {
-							margin-right: 0;
+							margin-right: 0 !important;
 						}
 					`);
 					this.promises = {state:{cancelled: false}, cancel(){this.state.cancelled = true;}};
 					this.patchChannelList();
-					this.patchGuildList(this.promises.state);
+					//this.patchGuildList(this.promises.state);
 					this.patchHomeIcon(this.promises.state);
 					this.patchFolders(this.promises.state);
 				}
@@ -197,9 +198,13 @@ module.exports = (() => {
 				}
 				
 				patchChannelList(){
-					const ChannelItem = WebpackModules.getModule(m => Object(m.default).displayName==="ChannelItem");
-					Patcher.after(ChannelItem, "default", (_, [props], returnValue) => {
-						if(props.channel.type!==DiscordConstants.ChannelTypes.GUILD_TEXT) return;
+					const ChannelItem = WebpackModules.getModule((m) =>
+					["canHaveDot", "unreadRelevant", "UNREAD_HIGHLIGHT"].every((s) =>
+					  m?.Z?.toString().includes(s)
+					)
+				  );
+					const ChannelTypes = {GUILD_TEXT: 15}
+					Patcher.after(ChannelItem, "Z", (_, [props], returnValue) => {
 						if(props.selected) return;
 						if(props.muted && !this.settings.includeMuted) return;
 						const selfId = UserStore.getCurrentUser()?.id;
@@ -210,7 +215,7 @@ module.exports = (() => {
 						const wrappedCount = fluxWrapper(({userIds}) => {
 							return React.createElement(renderElement, {userIds, opacity: 0.7, type: "channel", isFocused: WindowInfo.isFocused(), id: props.channel.id});
 						});
-						const itemList = Utilities.getNestedProp(returnValue, "props.children.props.children.1.props");
+						const itemList = Utilities.getNestedProp(returnValue, "props.children.props.children.1.props.children.props.children.1.props");
 						if(itemList) itemList.children = [...(Array.isArray(itemList.children) ? itemList.children : [itemList.children]), React.createElement(wrappedCount)];
 					});
 				}
@@ -240,7 +245,7 @@ module.exports = (() => {
 				}
 				
 				// this still doesnt work but it was an attempt to fix it and im too lazy to undo it for release
-				patchGuildList(promiseState){
+				/*patchGuildList(promiseState){
 					const GuildComponents = WebpackModules.getModule(m => m?.default?.displayName === "GuildNode");
 					if (!GuildComponents || typeof GuildComponents.default !== "function") return console.error("[TypingIndicator] Could not find Guild components");
 					const selfId = UserStore.getCurrentUser()?.id;
@@ -277,7 +282,7 @@ module.exports = (() => {
 						returnValue.props.__TI_original = original;
 					});
 					this.forceUpdateGuilds(promiseState);
-				}
+				}*/
 				
 				async patchHomeIcon(promiseState){
 					const Home = await ReactComponents.getComponentByName("TutorialIndicator", "." + WebpackModules.getByProps("badgeIcon", "circleIcon", "listItem", "pill").listItem.replace(/ /g, "."));
