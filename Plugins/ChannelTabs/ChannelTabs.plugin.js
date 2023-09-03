@@ -2683,6 +2683,14 @@ module.exports = (() => {
 							margin-right: 3px;
 							color: var(--interactive-normal);
 						}
+						
+						.channelTabs-tabIcon  {
+							filter: blur(3px)
+						} 
+                        
+            .channelTabs-noneIcon {
+							filter: blur(3px)
+						}
 					`;
 		
 					const BaseStyle = `
