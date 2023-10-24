@@ -2807,9 +2807,9 @@ module.exports = (() => {
 					
 					.channelTabs-settingsIcon {
 						max-width: 40px;
-						position: absolute;
-						top: 50%;
-						left: 50%;
+						position: relative;
+						top: 60%;
+						left: 40%;
 						transform: translate(-50%, -50%);
 						max-height: 40px;
 					}
