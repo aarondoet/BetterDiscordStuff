@@ -204,13 +204,9 @@ module.exports = (() => {
 				}
 				
 				patchChannelList(){
-					const ChannelItem = WebpackModules.getModule((m) =>
-					["canHaveDot", "unreadRelevant", "UNREAD_HIGHLIGHT"].every((s) =>
-					  m?.Z?.toString().includes(s)
-					)
-				  );
+					const ChannelItem = WebpackModules.getModule(x=>x.ChannelItemIcon)
 					const ChannelTypes = {GUILD_TEXT: 15}
-					Patcher.after(ChannelItem, "Z", (_, [props], returnValue) => {
+					Patcher.after(ChannelItem, "default", (_, [props], returnValue) => {
 						if(props.selected) return;
 						if(props.muted && !this.settings.includeMuted) return;
 						const selfId = UserStore.getCurrentUser()?.id;
